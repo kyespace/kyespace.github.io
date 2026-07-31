@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SOLID 원칙 — 객체지향 설계 스터디</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&family=Gowun+Batang:wght@400;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F2F4F8;
+  --paper-line:rgba(43,76,140,0.07);
+  --ink:#182338;
+  --ink-soft:#4A5670;
+  --blue:#2B4C8C;
+  --blue-deep:#16294F;
+  --bad:#B3402A;
+  --bad-bg:#FBF1EE;
+  --good:#2F7D53;
+  --good-bg:#EFF7F1;
+  --code-bg:#131B2E;
+  --code-ink:#D8DEEC;
+  --code-comment:#6B7A9C;
+  --code-keyword:#8FB4FF;
+  --code-string:#A8D8B0;
+  --code-annot:#E4C580;
+  --card:#FFFFFF;
+  --hairline:#D5DBE7;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{
+  font-family:'IBM Plex Sans KR',sans-serif;
+  background:var(--paper);
+  background-image:
+    linear-gradient(var(--paper-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--paper-line) 1px, transparent 1px);
+  background-size:28px 28px;
+  color:var(--ink);
+  line-height:1.75;
+  font-size:16px;
+}
+.wrap{max-width:880px;margin:0 auto;padding:0 24px;}
+
+/* ---------- hero ---------- */
+header{
+  border-bottom:2px solid var(--blue-deep);
+  padding:72px 0 48px;
+  position:relative;
+  overflow:hidden;
+}
+.eyebrow{
+  font-family:'IBM Plex Mono',monospace;
+  font-size:12px;letter-spacing:0.18em;
+  color:var(--blue);text-transform:uppercase;
+  margin-bottom:20px;
+}
+.hero-letters{
+  display:flex;gap:10px;flex-wrap:wrap;
+  margin-bottom:28px;
+}
+.hero-letters span{
+  display:flex;flex-direction:column;justify-content:flex-end;
+  width:96px;height:120px;
+  border:1.5px solid var(--blue-deep);
+  background:var(--card);
+  padding:8px 10px;
+  position:relative;
+}
+.hero-letters span b{
+  font-size:56px;font-weight:700;line-height:1;color:var(--blue-deep);
+}
+.hero-letters span i{
+  font-family:'IBM Plex Mono',monospace;font-style:normal;
+  font-size:10px;letter-spacing:0.04em;color:var(--ink-soft);
+  margin-top:6px;line-height:1.3;
+}
+h1{font-size:30px;font-weight:700;letter-spacing:-0.01em;margin-bottom:14px;}
+.hero-quote{
+  font-family:'Gowun Batang',serif;
+  font-size:18px;color:var(--ink-soft);
+  max-width:620px;
+}
+.hero-quote strong{color:var(--blue-deep);font-weight:700;}
+
+/* ---------- toc ---------- */
+nav.toc{
+  margin:40px 0 0;
+  border:1.5px solid var(--blue-deep);
+  background:var(--card);
+}
+nav.toc .toc-head{
+  font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.15em;
+  background:var(--blue-deep);color:#fff;padding:8px 16px;
+}
+nav.toc ol{list-style:none;}
+nav.toc li{border-top:1px solid var(--hairline);}
+nav.toc li:first-child{border-top:none;}
+nav.toc a{
+  display:flex;align-items:baseline;gap:14px;
+  padding:12px 16px;text-decoration:none;color:var(--ink);
+  transition:background 0.15s;
+}
+nav.toc a:hover{background:#EEF2FA;}
+nav.toc a:focus-visible{outline:2px solid var(--blue);outline-offset:-2px;}
+nav.toc .mono{
+  font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--blue);
+  min-width:34px;font-weight:600;
+}
+nav.toc .sub{margin-left:auto;font-size:12.5px;color:var(--ink-soft);}
+
+/* ---------- sections ---------- */
+main{padding:24px 0 80px;}
+section{margin-top:72px;position:relative;}
+.sec-head{
+  display:flex;align-items:center;gap:16px;margin-bottom:8px;
+}
+.sec-letter{
+  font-size:44px;font-weight:700;color:var(--card);
+  background:var(--blue-deep);
+  width:64px;height:64px;flex:0 0 64px;
+  display:flex;align-items:center;justify-content:center;
+}
+h2{font-size:23px;font-weight:700;line-height:1.3;}
+h2 small{
+  display:block;font-family:'IBM Plex Mono',monospace;
+  font-size:12px;font-weight:500;color:var(--blue);letter-spacing:0.04em;
+  margin-top:2px;
+}
+.one-liner{
+  font-family:'Gowun Batang',serif;
+  font-size:17px;color:var(--blue-deep);
+  border-left:3px solid var(--blue);
+  padding:6px 0 6px 16px;
+  margin:20px 0 24px;
+}
+p{margin-bottom:16px;color:var(--ink);}
+p.soft{color:var(--ink-soft);}
+h3{
+  font-size:16px;font-weight:600;margin:32px 0 12px;
+  display:flex;align-items:center;gap:8px;
+}
+h3::before{
+  content:"";width:10px;height:10px;background:var(--blue);
+  display:inline-block;flex:0 0 10px;
+}
+
+/* ---------- code ---------- */
+.code-pair{margin:20px 0 8px;}
+.code-block{
+  border:1.5px solid var(--hairline);
+  margin-bottom:20px;
+  background:var(--card);
+}
+.code-label{
+  display:flex;align-items:center;gap:10px;
+  font-family:'IBM Plex Mono',monospace;
+  font-size:11.5px;font-weight:600;letter-spacing:0.06em;
+  padding:8px 14px;
+}
+.code-label .tag{
+  padding:2px 8px;font-size:10.5px;letter-spacing:0.1em;
+}
+.code-block.bad{border-color:#DEB3A8;}
+.code-block.bad .code-label{background:var(--bad-bg);color:var(--bad);}
+.code-block.bad .tag{background:var(--bad);color:#fff;}
+.code-block.good{border-color:#A9CDB8;}
+.code-block.good .code-label{background:var(--good-bg);color:var(--good);}
+.code-block.good .tag{background:var(--good);color:#fff;}
+pre{
+  background:var(--code-bg);color:var(--code-ink);
+  font-family:'IBM Plex Mono',monospace;
+  font-size:13px;line-height:1.7;
+  padding:16px 18px;overflow-x:auto;
+}
+pre .c{color:var(--code-comment);}
+pre .k{color:var(--code-keyword);}
+pre .s{color:var(--code-string);}
+pre .a{color:var(--code-annot);}
+.arrow-divider{
+  text-align:center;
+  font-family:'IBM Plex Mono',monospace;
+  font-size:12px;color:var(--blue);
+  margin:-8px 0 12px;letter-spacing:0.1em;
+}
+
+/* ---------- signal box ---------- */
+.signals{
+  background:var(--card);
+  border:1.5px solid var(--hairline);
+  padding:18px 20px;margin:24px 0;
+}
+.signals .sig-title{
+  font-family:'IBM Plex Mono',monospace;font-size:11px;
+  letter-spacing:0.14em;color:var(--bad);font-weight:600;
+  margin-bottom:10px;
+}
+.signals ul{list-style:none;}
+.signals li{
+  padding:5px 0 5px 22px;position:relative;font-size:14.5px;color:var(--ink);
+}
+.signals li::before{
+  content:"⚠";position:absolute;left:0;color:var(--bad);font-size:13px;
+}
+.spring-note{
+  background:#EEF2FA;
+  border:1.5px solid var(--blue);
+  padding:18px 20px;margin:24px 0;
+}
+.spring-note .sig-title{
+  font-family:'IBM Plex Mono',monospace;font-size:11px;
+  letter-spacing:0.14em;color:var(--blue);font-weight:600;
+  margin-bottom:8px;
+}
+.spring-note p{margin-bottom:8px;font-size:14.5px;}
+.spring-note p:last-child{margin-bottom:0;}
+.spring-note code, p code, li code, td code{
+  font-family:'IBM Plex Mono',monospace;font-size:0.88em;
+  background:#E4E9F4;color:var(--blue-deep);
+  padding:1px 5px;border-radius:2px;
+}
+
+/* ---------- overview map ---------- */
+.map{
+  border:1.5px solid var(--blue-deep);background:var(--card);
+  margin:28px 0;
+}
+.map-head{
+  font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0.15em;
+  background:var(--blue-deep);color:#fff;padding:8px 16px;
+}
+.map-body{padding:20px;}
+.map-row{
+  display:grid;grid-template-columns:150px 1fr;gap:16px;
+  padding:12px 0;border-top:1px dashed var(--hairline);
+  align-items:baseline;
+}
+.map-row:first-child{border-top:none;}
+.map-row .axis{
+  font-family:'IBM Plex Mono',monospace;font-size:12px;
+  color:var(--blue);font-weight:600;
+}
+.map-row .desc{font-size:14.5px;}
+
+/* ---------- tables ---------- */
+table{
+  width:100%;border-collapse:collapse;margin:20px 0;
+  background:var(--card);font-size:14px;
+}
+th{
+  background:var(--blue-deep);color:#fff;text-align:left;
+  padding:10px 14px;font-weight:600;font-size:13px;
+  font-family:'IBM Plex Mono',monospace;letter-spacing:0.04em;
+}
+td{padding:10px 14px;border:1px solid var(--hairline);vertical-align:top;}
+tr:nth-child(even) td{background:#F8FAFD;}
+
+/* ---------- checklist ---------- */
+.checklist{
+  background:var(--card);border:1.5px solid var(--blue-deep);
+  padding:22px 24px;margin:24px 0;
+}
+.checklist li{
+  list-style:none;padding:7px 0 7px 28px;position:relative;font-size:14.5px;
+}
+.checklist li::before{
+  content:"";position:absolute;left:0;top:12px;
+  width:13px;height:13px;border:1.5px solid var(--blue);
+}
+footer{
+  border-top:2px solid var(--blue-deep);
+  padding:28px 0 60px;
+  font-family:'IBM Plex Mono',monospace;
+  font-size:12px;color:var(--ink-soft);
+}
+@media (max-width:640px){
+  .hero-letters span{width:56px;height:80px;}
+  .hero-letters span b{font-size:32px;}
+  .hero-letters span i{display:none;}
+  .map-row{grid-template-columns:1fr;gap:4px;}
+  .sec-letter{width:48px;height:48px;flex-basis:48px;font-size:32px;}
+}
+@media (prefers-reduced-motion:no-preference){
+  section{animation:rise 0.5s ease both;}
+  @keyframes rise{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="eyebrow">OBJECT-ORIENTED DESIGN · STUDY NOTE</div>
+    <div class="hero-letters">
+      <span><b>S</b><i>Single<br>Responsibility</i></span>
+      <span><b>O</b><i>Open /<br>Closed</i></span>
+      <span><b>L</b><i>Liskov<br>Substitution</i></span>
+      <span><b>I</b><i>Interface<br>Segregation</i></span>
+      <span><b>D</b><i>Dependency<br>Inversion</i></span>
+    </div>
+    <h1>SOLID 원칙 — 변경에 강한 객체지향 설계의 다섯 기둥</h1>
+    <p class="hero-quote">다섯 원칙은 결국 하나의 질문으로 수렴한다. <strong>"요구사항이 바뀌었을 때, 코드의 어디까지 손대야 하는가?"</strong> SOLID는 그 수정 범위를 최소화하기 위한 구조적 장치다.</p>
+
+    <nav class="toc" aria-label="목차">
+      <div class="toc-head">TABLE OF CONTENTS</div>
+      <ol>
+        <li><a href="#overview"><span class="mono">00</span>전체 그림 — 왜 SOLID인가<span class="sub">배경과 관계도</span></a></li>
+        <li><a href="#srp"><span class="mono">S</span>단일 책임 원칙 (SRP)<span class="sub">변경의 이유는 하나</span></a></li>
+        <li><a href="#ocp"><span class="mono">O</span>개방-폐쇄 원칙 (OCP)<span class="sub">확장에 열고 수정에 닫기</span></a></li>
+        <li><a href="#lsp"><span class="mono">L</span>리스코프 치환 원칙 (LSP)<span class="sub">하위 타입은 상위 타입을 대체</span></a></li>
+        <li><a href="#isp"><span class="mono">I</span>인터페이스 분리 원칙 (ISP)<span class="sub">쓰지 않는 것에 의존하지 않기</span></a></li>
+        <li><a href="#dip"><span class="mono">D</span>의존성 역전 원칙 (DIP)<span class="sub">구체가 아닌 추상에 의존</span></a></li>
+        <li><a href="#synthesis"><span class="mono">99</span>종합 — 원칙 간 관계와 체크리스트<span class="sub">한 장 요약</span></a></li>
+      </ol>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+<!-- ============ 00 OVERVIEW ============ -->
+<section id="overview">
+  <div class="sec-head">
+    <div class="sec-letter">00</div>
+    <h2>전체 그림 — 왜 SOLID인가<small>Robert C. Martin, 2000s · 객체지향 설계 5원칙</small></h2>
+  </div>
+
+  <p>소프트웨어의 비용은 "처음 만드는 비용"보다 "바꾸는 비용"이 지배한다. 요구사항은 반드시 변하고, 변경이 발생할 때마다 코드 전체가 흔들리는 구조라면 유지보수 비용은 기하급수적으로 커진다. SOLID는 <strong>변경의 파급 범위를 격리</strong>하기 위한 다섯 가지 설계 원칙이다.</p>
+
+  <p>다섯 원칙은 독립적인 규칙 나열이 아니라 계층 구조를 이룬다. 아래 지도를 먼저 머리에 넣고 각 원칙을 보면, 개별 원칙이 어느 층을 담당하는지가 보인다.</p>
+
+  <div class="map">
+    <div class="map-head">STRUCTURAL MAP — 각 원칙이 다루는 축</div>
+    <div class="map-body">
+      <div class="map-row"><div class="axis">SRP → 클래스 내부</div><div class="desc">하나의 클래스가 <strong>몇 개의 변경 이유</strong>를 갖는가. 응집도의 문제.</div></div>
+      <div class="map-row"><div class="axis">OCP → 변경 전략</div><div class="desc">새 요구사항이 올 때 <strong>기존 코드를 고치는가, 새 코드를 붙이는가</strong>. 확장 구조의 문제.</div></div>
+      <div class="map-row"><div class="axis">LSP → 상속 계약</div><div class="desc">다형성이 <strong>실제로 안전한가</strong>. 상위 타입의 계약을 하위 타입이 지키는가의 문제.</div></div>
+      <div class="map-row"><div class="axis">ISP → 인터페이스 폭</div><div class="desc">클라이언트가 <strong>쓰지도 않는 메서드</strong>에 묶여 있는가. 결합 범위의 문제.</div></div>
+      <div class="map-row"><div class="axis">DIP → 의존 방향</div><div class="desc">의존성 화살표가 <strong>구체를 향하는가, 추상을 향하는가</strong>. 아키텍처 방향의 문제.</div></div>
+    </div>
+  </div>
+
+  <p class="soft">읽는 순서 팁 — OCP가 목표(수정 없이 확장)라면, DIP·LSP·ISP는 그 목표를 달성하는 수단이고, SRP는 그 모든 것의 전제 조건이다. 이 관계는 마지막 종합 섹션에서 다시 정리한다.</p>
+</section>
+
+<!-- ============ S : SRP ============ -->
+<section id="srp">
+  <div class="sec-head">
+    <div class="sec-letter">S</div>
+    <h2>단일 책임 원칙<small>Single Responsibility Principle</small></h2>
+  </div>
+
+  <div class="one-liner">"하나의 클래스는 단 하나의 변경 이유만 가져야 한다." — 여기서 '책임'은 기능의 개수가 아니라 <strong>변경을 요구하는 액터(actor)의 수</strong>다.</div>
+
+  <p>흔한 오해는 "클래스는 한 가지 일만 해야 한다"로 읽는 것이다. 정확한 정의는 <strong>변경의 이유(reason to change)가 하나</strong>여야 한다는 것. 주문 정책이 바뀌어도, 알림 채널이 바뀌어도, 회계 포맷이 바뀌어도 매번 같은 클래스를 열어야 한다면 그 클래스는 세 명의 주인을 섬기고 있는 것이다.</p>
+
+  <h3>위반 → 개선 예제: 주문 처리 서비스</h3>
+
+  <div class="code-pair">
+    <div class="code-block bad">
+      <div class="code-label"><span class="tag">BAD</span>하나의 클래스에 세 가지 변경 이유가 공존</div>
+<pre><span class="k">public class</span> OrderService {
+
+    <span class="k">public void</span> placeOrder(Order order) {
+        <span class="c">// [책임 1] 주문 도메인 로직 — 정책 변경 시 수정</span>
+        validateStock(order);
+        applyDiscount(order);
+        orderRepository.save(order);
+
+        <span class="c">// [책임 2] 알림 발송 — 채널(메일→카카오톡) 변경 시 수정</span>
+        String html = <span class="s">"&lt;h1&gt;주문 완료&lt;/h1&gt;..."</span>;
+        smtpClient.send(order.getEmail(), html);
+
+        <span class="c">// [책임 3] 정산 기록 — 회계 포맷 변경 시 수정</span>
+        String csv = order.getId() + <span class="s">","</span> + order.getAmount();
+        settlementFileWriter.append(csv);
+    }
+}</pre>
+    </div>
+    <div class="arrow-divider">▼ 변경 이유별로 분리 ▼</div>
+    <div class="code-block good">
+      <div class="code-label"><span class="tag">GOOD</span>변경 이유 1개 = 클래스 1개, 조립은 상위에서</div>
+<pre><span class="k">public class</span> OrderService {          <span class="c">// 주문 정책만 책임</span>
+    <span class="k">private final</span> OrderNotifier notifier;
+    <span class="k">private final</span> SettlementRecorder recorder;
+
+    <span class="k">public void</span> placeOrder(Order order) {
+        validateStock(order);
+        applyDiscount(order);
+        orderRepository.save(order);
+        notifier.notifyPlaced(order);      <span class="c">// 알림은 위임</span>
+        recorder.record(order);            <span class="c">// 정산도 위임</span>
+    }
+}
+
+<span class="k">public class</span> EmailOrderNotifier <span class="k">implements</span> OrderNotifier { ... }
+<span class="k">public class</span> CsvSettlementRecorder <span class="k">implements</span> SettlementRecorder { ... }</pre>
+    </div>
+  </div>
+
+  <p>이제 알림 채널이 카카오톡으로 바뀌면 <code>KakaoOrderNotifier</code>를 새로 만들 뿐, <code>OrderService</code>는 열지 않는다. 각 클래스의 테스트도 독립적으로 작성할 수 있게 된다.</p>
+
+  <div class="signals">
+    <div class="sig-title">SRP 위반 신호</div>
+    <ul>
+      <li>클래스 이름에 <code>Manager</code>, <code>Util</code>, <code>Processor</code>처럼 책임이 안 보이는 단어가 들어간다</li>
+      <li>서로 다른 팀/직군(기획·회계·인프라)의 요청이 같은 클래스 수정으로 이어진다</li>
+      <li>메서드들이 서로 다른 필드 집합만 사용한다 (응집도 낮음)</li>
+      <li>단위 테스트 하나를 위해 관계없는 의존성까지 전부 mock해야 한다</li>
+    </ul>
+  </div>
+
+  <div class="spring-note">
+    <div class="sig-title">SPRING에서는</div>
+    <p><code>@Controller</code> / <code>@Service</code> / <code>@Repository</code> 계층 분리 자체가 SRP의 거시적 적용이다 — 요청 처리·비즈니스 규칙·영속성이라는 서로 다른 변경 이유를 계층으로 격리한다.</p>
+    <p>트랜잭션(<code>@Transactional</code>)이나 로깅을 AOP로 빼내는 것도 SRP의 연장이다. 횡단 관심사를 프록시가 대신 책임지므로 비즈니스 클래스에는 변경 이유가 하나만 남는다.</p>
+  </div>
+</section>
+
+<!-- ============ O : OCP ============ -->
+<section id="ocp">
+  <div class="sec-head">
+    <div class="sec-letter">O</div>
+    <h2>개방-폐쇄 원칙<small>Open-Closed Principle</small></h2>
+  </div>
+
+  <div class="one-liner">"확장에는 열려 있고, 수정에는 닫혀 있어야 한다." — 새 기능은 <strong>새 코드를 추가</strong>해서 구현하고, 검증이 끝난 기존 코드는 건드리지 않는다.</div>
+
+  <p>모순처럼 들리는 이 문장의 열쇠는 <strong>추상화</strong>다. 변하는 부분을 인터페이스 뒤로 숨기면, 새 요구사항은 그 인터페이스의 새 구현체를 추가하는 것으로 흡수된다. 기존 코드는 인터페이스만 바라보므로 재컴파일·재테스트·재배포 위험이 격리된다.</p>
+
+  <h3>위반 → 개선 예제: 결제 수단 추가</h3>
+
+  <div class="code-pair">
+    <div class="code-block bad">
+      <div class="code-label"><span class="tag">BAD</span>결제 수단이 늘 때마다 if-else 수술</div>
+<pre><span class="k">public class</span> PaymentService {
+    <span class="k">public void</span> pay(Order order, String method) {
+        <span class="k">if</span> (method.equals(<span class="s">"CARD"</span>)) {
+            <span class="c">// 카드 결제 로직</span>
+        } <span class="k">else if</span> (method.equals(<span class="s">"BANK"</span>)) {
+            <span class="c">// 계좌이체 로직</span>
+        } <span class="k">else if</span> (method.equals(<span class="s">"KAKAO_PAY"</span>)) {
+            <span class="c">// ← 신규 요구사항마다 이 파일을 열고,</span>
+            <span class="c">//   기존 분기 전체를 회귀 테스트해야 한다</span>
+        }
+    }
+}</pre>
+    </div>
+    <div class="arrow-divider">▼ 전략(Strategy) 패턴으로 추상화 ▼</div>
+    <div class="code-block good">
+      <div class="code-label"><span class="tag">GOOD</span>새 결제수단 = 새 클래스 추가, 기존 코드 무수정</div>
+<pre><span class="k">public interface</span> PaymentProcessor {
+    <span class="k">boolean</span> supports(PaymentMethod method);
+    <span class="k">void</span> pay(Order order);
+}
+
+<span class="a">@Component</span>
+<span class="k">public class</span> CardPaymentProcessor <span class="k">implements</span> PaymentProcessor { ... }
+
+<span class="a">@Component</span>
+<span class="k">public class</span> KakaoPayProcessor <span class="k">implements</span> PaymentProcessor { ... }
+
+<span class="a">@Service</span>
+<span class="k">public class</span> PaymentService {
+    <span class="k">private final</span> List&lt;PaymentProcessor&gt; processors;  <span class="c">// 스프링이 전부 주입</span>
+
+    <span class="k">public void</span> pay(Order order, PaymentMethod method) {
+        processors.stream()
+            .filter(p -&gt; p.supports(method))
+            .findFirst()
+            .orElseThrow(() -&gt; <span class="k">new</span> UnsupportedPaymentException(method))
+            .pay(order);
+    }
+}</pre>
+    </div>
+  </div>
+
+  <p>네이버페이가 추가돼도 <code>NaverPayProcessor</code> 클래스 하나를 새로 만들면 끝이다. <code>PaymentService</code>는 컴파일조차 다시 할 필요가 없다.</p>
+
+  <div class="signals">
+    <div class="sig-title">OCP 위반 신호</div>
+    <ul>
+      <li>같은 <code>if-else</code> / <code>switch</code> 분기가 여러 클래스에 중복해서 나타난다</li>
+      <li>"OO 유형 하나 추가해주세요"라는 요청에 수정해야 할 파일이 3개 이상이다</li>
+      <li>타입 문자열·enum 비교로 동작을 갈라치는 코드가 핵심 로직 안에 있다</li>
+    </ul>
+  </div>
+
+  <div class="spring-note">
+    <div class="sig-title">SPRING에서는</div>
+    <p><code>List&lt;PaymentProcessor&gt;</code>처럼 같은 타입의 빈을 컬렉션으로 주입받는 기능이 OCP 구현의 핵심 도구다. 새 <code>@Component</code>를 추가하는 것만으로 컨테이너가 자동으로 목록에 편입시킨다.</p>
+    <p>Spring Security의 <code>FilterChainProxy</code>가 필터 목록을 조립하는 방식, <code>HandlerMapping</code>/<code>HandlerAdapter</code>의 확장 구조도 모두 "기존 코드 수정 없이 구현체 추가"라는 OCP 설계다.</p>
+  </div>
+</section>
+
+<!-- ============ L : LSP ============ -->
+<section id="lsp">
+  <div class="sec-head">
+    <div class="sec-letter">L</div>
+    <h2>리스코프 치환 원칙<small>Liskov Substitution Principle</small></h2>
+  </div>
+
+  <div class="one-liner">"하위 타입은 상위 타입이 쓰이는 자리에 <strong>동작의 변경 없이</strong> 치환될 수 있어야 한다." — 상속은 문법이 아니라 <strong>계약</strong>이다.</div>
+
+  <p>컴파일러는 시그니처만 검사한다. LSP는 그 너머, 상위 타입이 암묵적으로 약속한 <strong>행동 규약</strong>(사전조건·사후조건·불변식)까지 하위 타입이 지켜야 한다고 말한다. 이것이 깨지면 다형성을 믿고 작성한 모든 클라이언트 코드가 잠재적 지뢰밭이 된다.</p>
+
+  <h3>위반 → 개선 예제: 정사각형은 직사각형인가?</h3>
+
+  <div class="code-pair">
+    <div class="code-block bad">
+      <div class="code-label"><span class="tag">BAD</span>is-a처럼 보이지만 계약을 깨는 상속</div>
+<pre><span class="k">public class</span> Rectangle {
+    <span class="k">protected int</span> width, height;
+    <span class="k">public void</span> setWidth(<span class="k">int</span> w)  { <span class="k">this</span>.width = w; }
+    <span class="k">public void</span> setHeight(<span class="k">int</span> h) { <span class="k">this</span>.height = h; }
+    <span class="k">public int</span> area() { <span class="k">return</span> width * height; }
+}
+
+<span class="k">public class</span> Square <span class="k">extends</span> Rectangle {
+    <span class="a">@Override</span> <span class="k">public void</span> setWidth(<span class="k">int</span> w)  { width = w; height = w; }
+    <span class="a">@Override</span> <span class="k">public void</span> setHeight(<span class="k">int</span> h) { width = h; height = h; }
+}
+
+<span class="c">// 클라이언트: Rectangle의 계약("width와 height는 독립")을 믿는다</span>
+<span class="k">void</span> resize(Rectangle r) {
+    r.setWidth(<span class="s">5</span>);
+    r.setHeight(<span class="s">4</span>);
+    <span class="k">assert</span> r.area() == <span class="s">20</span>;   <span class="c">// Square가 들어오면 16 — 계약 위반!</span>
+}</pre>
+    </div>
+    <div class="arrow-divider">▼ 상속 대신 계약이 맞는 추상화로 ▼</div>
+    <div class="code-block good">
+      <div class="code-label"><span class="tag">GOOD</span>공통 계약만 추상화하고, 가변 setter는 각자 소유</div>
+<pre><span class="k">public interface</span> Shape {
+    <span class="k">int</span> area();          <span class="c">// 모든 도형이 안전하게 지킬 수 있는 계약만 노출</span>
+}
+
+<span class="k">public class</span> Rectangle <span class="k">implements</span> Shape {
+    <span class="k">private final int</span> width, height;
+    <span class="k">public</span> Rectangle(<span class="k">int</span> w, <span class="k">int</span> h) { width = w; height = h; }
+    <span class="k">public int</span> area() { <span class="k">return</span> width * height; }
+}
+
+<span class="k">public class</span> Square <span class="k">implements</span> Shape {
+    <span class="k">private final int</span> side;
+    <span class="k">public</span> Square(<span class="k">int</span> s) { side = s; }
+    <span class="k">public int</span> area() { <span class="k">return</span> side * side; }
+}</pre>
+    </div>
+  </div>
+
+  <p>수학적으로 정사각형은 직사각형이지만, <strong>"가로·세로를 독립적으로 바꿀 수 있다"는 행동 계약</strong> 안에서는 아니다. is-a 판정은 개념이 아니라 계약으로 해야 한다. 자바 표준 라이브러리의 악명 높은 반례가 <code>java.util.Stack extends Vector</code>다 — 스택인데 중간 삽입이 가능해져 버렸다.</p>
+
+  <div class="signals">
+    <div class="sig-title">LSP 위반 신호</div>
+    <ul>
+      <li>오버라이드한 메서드가 <code>UnsupportedOperationException</code>을 던진다</li>
+      <li>클라이언트 코드에 <code>instanceof</code>로 특정 하위 타입을 걸러내는 분기가 있다</li>
+      <li>하위 클래스가 상위 메서드를 빈 구현(no-op)으로 덮어쓴다</li>
+      <li>상위 타입보다 사전조건을 강화하거나(더 까다로운 입력 요구) 사후조건을 약화한다</li>
+    </ul>
+  </div>
+
+  <div class="spring-note">
+    <div class="sig-title">SPRING에서는</div>
+    <p>컨테이너가 주입하는 빈은 대부분 인터페이스 타입으로 다뤄진다 — <code>PlatformTransactionManager</code> 자리에 <code>DataSourceTransactionManager</code>든 <code>JpaTransactionManager</code>든 치환 가능해야 전체가 동작한다. Spring 생태계 자체가 LSP 위에 서 있는 셈이다.</p>
+    <p>CGLIB 프록시가 원본 클래스를 상속해 만들어지는 것도 같은 전제다: 프록시는 원본과 <strong>행동상 구분 불가능</strong>해야 하며, 그래서 <code>final</code> 메서드는 프록시할 수 없다는 제약이 생긴다.</p>
+  </div>
+</section>
+
+<!-- ============ I : ISP ============ -->
+<section id="isp">
+  <div class="sec-head">
+    <div class="sec-letter">I</div>
+    <h2>인터페이스 분리 원칙<small>Interface Segregation Principle</small></h2>
+  </div>
+
+  <div class="one-liner">"클라이언트는 자신이 사용하지 않는 메서드에 의존하도록 강제되어서는 안 된다." — 뚱뚱한 인터페이스 하나보다 <strong>역할별로 얇은 인터페이스 여럿</strong>이 낫다.</div>
+
+  <p>SRP가 클래스의 응집도라면 ISP는 <strong>인터페이스의 응집도</strong>다. 하나의 거대 인터페이스에 여러 클라이언트의 요구를 몰아넣으면, 구현체는 쓰지도 않는 메서드를 억지로 구현해야 하고(→ LSP 위반의 온상), 한 클라이언트의 요구 변경이 무관한 클라이언트까지 재빌드시킨다.</p>
+
+  <h3>위반 → 개선 예제: 다기능 복합기 인터페이스</h3>
+
+  <div class="code-pair">
+    <div class="code-block bad">
+      <div class="code-label"><span class="tag">BAD</span>모든 기기에 모든 기능을 강요하는 인터페이스</div>
+<pre><span class="k">public interface</span> MultiFunctionDevice {
+    <span class="k">void</span> print(Document d);
+    <span class="k">void</span> scan(Document d);
+    <span class="k">void</span> fax(Document d);
+}
+
+<span class="c">// 보급형 프린터: 인쇄만 되는데 전부 구현해야 한다</span>
+<span class="k">public class</span> BasicPrinter <span class="k">implements</span> MultiFunctionDevice {
+    <span class="k">public void</span> print(Document d) { <span class="c">/* OK */</span> }
+    <span class="k">public void</span> scan(Document d)  { <span class="k">throw new</span> UnsupportedOperationException(); }
+    <span class="k">public void</span> fax(Document d)   { <span class="k">throw new</span> UnsupportedOperationException(); }
+}   <span class="c">// ← ISP 위반이 곧바로 LSP 위반으로 번지는 전형적 패턴</span></pre>
+    </div>
+    <div class="arrow-divider">▼ 역할(role) 단위로 분리 ▼</div>
+    <div class="code-block good">
+      <div class="code-label"><span class="tag">GOOD</span>필요한 역할만 골라 구현·의존</div>
+<pre><span class="k">public interface</span> Printer { <span class="k">void</span> print(Document d); }
+<span class="k">public interface</span> Scanner { <span class="k">void</span> scan(Document d); }
+<span class="k">public interface</span> Fax     { <span class="k">void</span> fax(Document d); }
+
+<span class="k">public class</span> BasicPrinter <span class="k">implements</span> Printer { ... }
+
+<span class="k">public class</span> OfficeMachine <span class="k">implements</span> Printer, Scanner, Fax { ... }
+
+<span class="c">// 클라이언트도 필요한 역할에만 의존한다</span>
+<span class="k">public class</span> ReportGenerator {
+    <span class="k">private final</span> Printer printer;   <span class="c">// scan/fax의 존재조차 모른다</span>
+}</pre>
+    </div>
+  </div>
+
+  <div class="signals">
+    <div class="sig-title">ISP 위반 신호</div>
+    <ul>
+      <li>구현체 곳곳에 빈 메서드나 <code>UnsupportedOperationException</code>이 있다</li>
+      <li>인터페이스 메서드가 10개를 넘고, 구현체마다 실제 쓰는 부분집합이 다르다</li>
+      <li>인터페이스에 메서드 하나를 추가했더니 무관한 구현체 전부가 컴파일 에러를 낸다</li>
+    </ul>
+  </div>
+
+  <div class="spring-note">
+    <div class="sig-title">SPRING에서는</div>
+    <p>빈 생명주기 콜백이 좋은 예다 — <code>InitializingBean</code>, <code>DisposableBean</code>, <code>BeanNameAware</code>가 하나의 거대 인터페이스가 아니라 콜백별로 잘게 쪼개져 있어 필요한 것만 선택 구현한다.</p>
+    <p>Spring Data의 <code>Repository</code> 계층도 마찬가지: <code>CrudRepository</code> → <code>PagingAndSortingRepository</code> → <code>JpaRepository</code>로 역할을 누적하는 구조라, 읽기 전용 저장소는 상위의 얇은 인터페이스만 노출하는 식의 통제가 가능하다.</p>
+  </div>
+</section>
+
+<!-- ============ D : DIP ============ -->
+<section id="dip">
+  <div class="sec-head">
+    <div class="sec-letter">D</div>
+    <h2>의존성 역전 원칙<small>Dependency Inversion Principle</small></h2>
+  </div>
+
+  <div class="one-liner">"고수준 모듈은 저수준 모듈에 의존해서는 안 된다. <strong>둘 다 추상화에 의존</strong>해야 한다." — 의존성 화살표를 세부사항이 아닌 정책 쪽으로 뒤집는다.</div>
+
+  <p>전통적 절차 구조에서는 정책(비즈니스 규칙)이 세부사항(DB, 외부 API, 파일)에 의존한다. DB 벤더를 바꾸면 비즈니스 코드가 흔들리는 이유다. DIP는 이 방향을 뒤집는다 — <strong>정책이 인터페이스를 소유</strong>하고, 세부사항이 그 인터페이스를 구현하러 온다. "역전(inversion)"이라는 이름은 이 화살표 방향의 반전을 가리킨다.</p>
+
+  <h3>위반 → 개선 예제: 알림 발송 의존성</h3>
+
+  <div class="code-pair">
+    <div class="code-block bad">
+      <div class="code-label"><span class="tag">BAD</span>고수준(주문 정책)이 저수준(SMTP 구현)을 직접 생성·의존</div>
+<pre><span class="k">public class</span> OrderService {
+    <span class="c">// 구체 클래스를 직접 new — SMTP에 영구 결합</span>
+    <span class="k">private final</span> SmtpEmailSender sender = <span class="k">new</span> SmtpEmailSender(<span class="s">"smtp.corp.com"</span>);
+
+    <span class="k">public void</span> placeOrder(Order order) {
+        <span class="c">// ... 주문 로직 ...</span>
+        sender.sendEmail(order.getEmail(), <span class="s">"주문 완료"</span>);
+        <span class="c">// 문제 1: 카카오톡 알림으로 못 바꾼다 (코드 수술 필요)</span>
+        <span class="c">// 문제 2: 테스트 시 실제 SMTP 서버가 필요하다</span>
+    }
+}</pre>
+    </div>
+    <div class="arrow-divider">▼ 추상화를 정책 쪽에 두고, 구현을 주입 ▼</div>
+    <div class="code-block good">
+      <div class="code-label"><span class="tag">GOOD</span>정책이 소유한 인터페이스에 양쪽 모두 의존</div>
+<pre><span class="c">// 고수준 모듈(주문 도메인)이 이 추상화를 "소유"한다</span>
+<span class="k">public interface</span> NotificationSender {
+    <span class="k">void</span> send(String to, String message);
+}
+
+<span class="a">@Service</span>
+<span class="k">public class</span> OrderService {
+    <span class="k">private final</span> NotificationSender sender;   <span class="c">// 추상에만 의존</span>
+
+    <span class="k">public</span> OrderService(NotificationSender sender) {  <span class="c">// 생성자 주입</span>
+        <span class="k">this</span>.sender = sender;
+    }
+
+    <span class="k">public void</span> placeOrder(Order order) {
+        <span class="c">// ... 주문 로직 ...</span>
+        sender.send(order.getEmail(), <span class="s">"주문 완료"</span>);
+    }
+}
+
+<span class="c">// 저수준 모듈이 추상화를 "구현하러 온다" — 화살표 역전</span>
+<span class="a">@Component</span>
+<span class="k">public class</span> SmtpEmailSender <span class="k">implements</span> NotificationSender { ... }
+
+<span class="c">// 테스트에서는 가짜 구현으로 즉시 대체 가능</span>
+<span class="k">class</span> FakeSender <span class="k">implements</span> NotificationSender {
+    List&lt;String&gt; sent = <span class="k">new</span> ArrayList&lt;&gt;();
+    <span class="k">public void</span> send(String to, String msg) { sent.add(to + <span class="s">":"</span> + msg); }
+}</pre>
+    </div>
+  </div>
+
+  <p>주의할 구분 — <strong>DIP는 원칙, DI(의존성 주입)는 기법, IoC 컨테이너는 도구</strong>다. DIP가 "추상에 의존하라"는 방향을 제시하면, DI는 그 추상의 구현체를 외부에서 꽂아주는 방법이고, Spring 컨테이너는 그 꽂아주는 일을 자동화하는 프레임워크다. 세 용어는 층위가 다르다.</p>
+
+  <div class="signals">
+    <div class="sig-title">DIP 위반 신호</div>
+    <ul>
+      <li>비즈니스 클래스 안에 <code>new 구체클래스()</code>가 직접 등장한다</li>
+      <li>도메인 코드가 특정 벤더 SDK·드라이버 클래스를 import한다</li>
+      <li>단위 테스트가 DB·네트워크 없이는 실행되지 않는다</li>
+      <li>모듈 의존 그래프에서 화살표가 안정적인 것 → 변덕스러운 것 방향으로 흐른다</li>
+    </ul>
+  </div>
+
+  <div class="spring-note">
+    <div class="sig-title">SPRING에서는</div>
+    <p>IoC 컨테이너의 존재 이유 그 자체다. 빈 정의를 읽어 객체 그래프를 조립하고 생성자 주입으로 꽂아주는 전 과정이 "구체 생성의 책임을 애플리케이션 코드에서 컨테이너로 역전"시킨 것이다.</p>
+    <p><code>DataSource</code>, <code>PlatformTransactionManager</code>, <code>CacheManager</code> 같은 포트 인터페이스에 코드를 작성하고 구현체는 설정으로 갈아끼우는 Spring의 일관된 관례가 곧 DIP의 실천이다.</p>
+  </div>
+</section>
+
+<!-- ============ 99 SYNTHESIS ============ -->
+<section id="synthesis">
+  <div class="sec-head">
+    <div class="sec-letter">99</div>
+    <h2>종합 — 원칙 간 관계와 실전 체크리스트<small>Putting It All Together</small></h2>
+  </div>
+
+  <h3>다섯 원칙의 역학 관계</h3>
+  <p>SOLID는 다섯 개의 독립 규칙이 아니라 하나의 목표를 향한 협력 구조다.</p>
+
+  <div class="map">
+    <div class="map-head">RELATIONSHIP MAP</div>
+    <div class="map-body">
+      <div class="map-row"><div class="axis">목표: OCP</div><div class="desc">"수정 없이 확장한다"가 SOLID 전체가 지향하는 상태다.</div></div>
+      <div class="map-row"><div class="axis">수단: DIP</div><div class="desc">추상화에 의존해야 구현체를 갈아끼울 수 있다 — OCP의 구조적 토대.</div></div>
+      <div class="map-row"><div class="axis">보증: LSP</div><div class="desc">치환이 안전해야 DIP의 "갈아끼우기"가 실제로 동작한다 — 다형성의 품질 보증.</div></div>
+      <div class="map-row"><div class="axis">정밀화: ISP</div><div class="desc">추상화가 얇고 역할 중심이어야 LSP를 지키기 쉽고 결합 범위가 최소화된다.</div></div>
+      <div class="map-row"><div class="axis">전제: SRP</div><div class="desc">책임이 뒤엉킨 클래스에서는 위 네 원칙을 적용할 단위 자체가 성립하지 않는다.</div></div>
+    </div>
+  </div>
+
+  <h3>한 장 요약표</h3>
+  <table>
+    <thead><tr><th>원칙</th><th>한 줄 정의</th><th>핵심 질문</th><th>대표 처방</th></tr></thead>
+    <tbody>
+      <tr><td><strong>SRP</strong></td><td>변경 이유는 하나</td><td>이 클래스를 고치게 만드는 사람이 몇 명인가?</td><td>책임 단위로 클래스 분리, AOP로 횡단 관심사 격리</td></tr>
+      <tr><td><strong>OCP</strong></td><td>확장에 열고 수정에 닫기</td><td>새 유형 추가 시 기존 파일을 여는가?</td><td>Strategy·Template Method, 컬렉션 빈 주입</td></tr>
+      <tr><td><strong>LSP</strong></td><td>하위 타입은 계약 준수</td><td>이 상속, 모든 클라이언트 코드에서 안전한가?</td><td>상속 대신 조합, 계약 기반 is-a 판정</td></tr>
+      <tr><td><strong>ISP</strong></td><td>안 쓰는 것에 의존 금지</td><td>구현체에 빈 메서드가 있는가?</td><td>역할 인터페이스로 분리, 다중 구현으로 조합</td></tr>
+      <tr><td><strong>DIP</strong></td><td>추상에 의존</td><td>비즈니스 코드에 new 구체클래스가 있는가?</td><td>포트-어댑터, 생성자 주입, IoC 컨테이너</td></tr>
+    </tbody>
+  </table>
+
+  <h3>코드 리뷰 체크리스트</h3>
+  <ul class="checklist">
+    <li>이 클래스의 변경 이유를 한 문장으로 말할 수 있는가? 두 문장이 필요하면 SRP 검토</li>
+    <li>새 유형·정책 추가 요구가 왔다고 가정할 때, 추가되는 파일 수 &gt; 수정되는 파일 수인가?</li>
+    <li>모든 오버라이드 메서드가 상위 타입의 시그니처뿐 아니라 <strong>기대 행동</strong>까지 지키는가?</li>
+    <li>인터페이스의 모든 메서드를 모든 구현체가 의미 있게 구현하고 있는가?</li>
+    <li>도메인·서비스 계층에서 인프라 구체 클래스 import가 0건인가?</li>
+    <li>이 클래스의 단위 테스트를 외부 시스템 없이 작성할 수 있는가? (다섯 원칙 준수의 종합 리트머스)</li>
+  </ul>
+
+  <p class="soft">마지막 주의 — SOLID는 법이 아니라 트레이드오프 도구다. 변경 가능성이 낮은 코드에 추상화를 선제 도입하면 오히려 간접 계층만 늘어난다(과잉 설계). 원칙을 적용하는 기준은 언제나 "이 지점에 실제로 변경 압력이 존재하는가"이다.</p>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">SOLID PRINCIPLES · OOP DESIGN STUDY · JAVA / SPRING EXAMPLES</div>
+</footer>
+
+</body>
+</html>

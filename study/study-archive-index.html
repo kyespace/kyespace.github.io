@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>영은의 스터디 아카이브 — Study Repository Index</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Pretendard:wght@400;500;600;700&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F6F5F1;
+    --panel:#FFFFFF;
+    --ink:#1A1D21;
+    --slate:#5B6470;
+    --faint:#98A0AB;
+    --line:#E2E0D8;
+    --forest:#1E5E43;        /* repository green */
+    --forest-soft:#EAF3EE;
+    --forest-line:#BCD9CB;
+    --copper:#A05A2C;        /* archived / warning */
+    --copper-soft:#F8EFE7;
+    --indigo:#3B4A8C;
+    --indigo-soft:#EDEFF8;
+    --mono:'IBM Plex Mono',ui-monospace,monospace;
+    --sans:'IBM Plex Sans KR','Pretendard',-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--sans);
+    font-size:15.5px;
+    line-height:1.7;
+  }
+  ::selection{background:var(--forest-line)}
+  a{color:inherit}
+
+  .shell{max-width:880px;margin:0 auto;padding:0 24px 100px}
+
+  /* ===== header — repository manifest ===== */
+  header{
+    border-bottom:2px solid var(--ink);
+    padding:56px 24px 36px;
+    background:var(--panel);
+  }
+  .head-inner{max-width:880px;margin:0 auto}
+  .coord{
+    font-family:var(--mono);
+    font-size:12.5px;
+    color:var(--forest);
+    letter-spacing:.04em;
+    margin-bottom:14px;
+  }
+  .coord .g{color:var(--faint)}
+  header h1{
+    font-size:clamp(26px,4.5vw,38px);
+    font-weight:700;
+    letter-spacing:-.02em;
+    line-height:1.25;
+  }
+  header p.sub{
+    margin-top:12px;
+    color:var(--slate);
+    font-size:15px;
+    max-width:620px;
+  }
+  .manifest{
+    margin-top:26px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:0;
+    border:1px solid var(--line);
+    border-radius:8px;
+    overflow:hidden;
+    font-family:var(--mono);
+    font-size:12px;
+  }
+  .manifest div{
+    padding:10px 18px;
+    border-right:1px solid var(--line);
+    background:var(--bg);
+  }
+  .manifest div:last-child{border-right:0}
+  .manifest b{display:block;color:var(--faint);font-weight:500;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:2px}
+  .manifest span{color:var(--ink);font-weight:600}
+
+  /* ===== notice ===== */
+  .notice{
+    margin:36px 0 0;
+    border:1px solid var(--copper);
+    border-left-width:4px;
+    background:var(--copper-soft);
+    border-radius:6px;
+    padding:16px 20px;
+    font-size:14px;
+    color:#5C3A1E;
+  }
+  .notice b{color:var(--copper)}
+
+  /* ===== TOC ===== */
+  nav.toc{
+    margin:36px 0 8px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  nav.toc a{
+    font-family:var(--mono);
+    font-size:12px;
+    text-decoration:none;
+    border:1px solid var(--line);
+    background:var(--panel);
+    border-radius:100px;
+    padding:6px 14px;
+    color:var(--slate);
+    transition:border-color .15s,color .15s;
+  }
+  nav.toc a:hover{border-color:var(--forest);color:var(--forest)}
+  nav.toc a b{color:var(--ink);font-weight:600}
+
+  /* ===== repository section ===== */
+  section.repo{margin-top:52px}
+  .repo-head{
+    display:flex;
+    align-items:baseline;
+    gap:14px;
+    border-bottom:1px solid var(--ink);
+    padding-bottom:10px;
+    margin-bottom:4px;
+  }
+  .repo-head .repo-id{
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--forest);
+    background:var(--forest-soft);
+    border:1px solid var(--forest-line);
+    border-radius:4px;
+    padding:2px 8px;
+    white-space:nowrap;
+  }
+  .repo-head h2{
+    font-size:19px;
+    font-weight:700;
+    letter-spacing:-.01em;
+  }
+  .repo-head .count{
+    margin-left:auto;
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--faint);
+  }
+
+  /* ===== artifact row ===== */
+  .artifact{
+    display:block;
+    text-decoration:none;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-top:0;
+    padding:18px 22px 16px;
+    transition:background .15s;
+    position:relative;
+  }
+  .artifact:first-of-type{border-top:1px solid var(--line);border-radius:8px 8px 0 0;margin-top:14px}
+  .artifact:last-of-type{border-radius:0 0 8px 8px}
+  .artifact:only-of-type{border-radius:8px}
+  .artifact:hover{background:var(--forest-soft)}
+  .artifact:hover .a-title{color:var(--forest)}
+  .a-top{
+    display:flex;
+    align-items:baseline;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+  .a-title{
+    font-size:16px;
+    font-weight:600;
+    letter-spacing:-.01em;
+    transition:color .15s;
+  }
+  .a-date{
+    font-family:var(--mono);
+    font-size:11.5px;
+    color:var(--faint);
+    margin-left:auto;
+    white-space:nowrap;
+  }
+  .a-desc{
+    margin-top:6px;
+    font-size:14px;
+    color:var(--slate);
+    max-width:680px;
+  }
+  .a-meta{
+    margin-top:10px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    align-items:center;
+  }
+  .file-tag{
+    font-family:var(--mono);
+    font-size:11.5px;
+    color:var(--indigo);
+    background:var(--indigo-soft);
+    border-radius:4px;
+    padding:2px 8px;
+  }
+  .file-tag::before{content:"⬇ ";opacity:.6}
+  .kw{
+    font-family:var(--mono);
+    font-size:11px;
+    color:var(--faint);
+  }
+  .go{
+    position:absolute;
+    right:22px;
+    bottom:16px;
+    font-family:var(--mono);
+    font-size:11.5px;
+    color:var(--forest);
+    opacity:0;
+    transition:opacity .15s;
+  }
+  .artifact:hover .go{opacity:1}
+
+  /* ===== footer ===== */
+  footer{
+    margin-top:72px;
+    border-top:1px solid var(--line);
+    padding-top:24px;
+    font-family:var(--mono);
+    font-size:11.5px;
+    color:var(--faint);
+    letter-spacing:.04em;
+  }
+  footer .row{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+
+  @media(max-width:560px){
+    .a-date{margin-left:0;width:100%}
+    .go{display:none}
+    .repo-head{flex-wrap:wrap}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="head-inner">
+    <div class="coord"><span class="g">group:</span>youngeun.study <span class="g">· format:</span>index <span class="g">· policy:</span>release</div>
+    <h1>스터디 아카이브 인덱스</h1>
+    <p class="sub">Claude와 함께 진행한 기술 스터디 세션 전체 목록. 각 항목을 클릭하면 원본 대화로 이동하며, 대화 안에서 생성했던 HTML 자료를 다시 다운로드하거나 재생성할 수 있다.</p>
+    <div class="manifest">
+      <div><b>Artifacts</b><span>18</span></div>
+      <div><b>Repositories</b><span>5</span></div>
+      <div><b>Period</b><span>2026.04 — 2026.07</span></div>
+      <div><b>Indexed</b><span>2026-07-31</span></div>
+    </div>
+  </div>
+</header>
+
+<div class="shell">
+
+  <div class="notice">
+    <b>보관 안내</b> — 대화에서 생성된 HTML 파일은 세션 종료 후 서버에서 삭제된다. 파일명이 표시된 항목은 해당 대화에 접속해 아티팩트를 다시 다운로드하거나, 파일이 만료된 경우 재생성을 요청하면 된다.
+  </div>
+
+  <nav class="toc">
+    <a href="#spring"><b>spring-internals</b> · 6</a>
+    <a href="#design"><b>design-patterns</b> · 4</a>
+    <a href="#infra"><b>docker-infra</b> · 4</a>
+    <a href="#ai"><b>ai-protocols</b> · 3</a>
+    <a href="#misc"><b>misc-tech</b> · 2</a>
+  </nav>
+
+  <!-- ============ spring-internals ============ -->
+  <section class="repo" id="spring">
+    <div class="repo-head">
+      <span class="repo-id">spring-internals</span>
+      <h2>Java / Spring 내부 구조</h2>
+      <span class="count">6 artifacts</span>
+    </div>
+
+    <a class="artifact" href="https://claude.ai/chat/867b9082-2ed2-4e55-bb09-1b5760303f96" target="_blank">
+      <div class="a-top"><span class="a-title">스프링의 핵심 구성요소 이해하기</span><span class="a-date">2026-07-16</span></div>
+      <p class="a-desc">IoC 컨테이너와 AOP를 코어 두 축으로 놓는 위상 정리. WebMVC vs WebFlux 스레드 모델, 구조 vs 메커니즘 구분, 오답노트(Errata) 7건과 학습 로드맵 포함.</p>
+      <div class="a-meta"><span class="file-tag">HTML 스터디 문서</span><span class="kw">IoC · AOP · PSA · WebFlux · Tomcat</span></div>
+      <span class="go">대화 열기 →</span>
+    </a>
+
+    <a class="artifact" href="https://claude.ai/chat/c932195a-cc83-4cce-b401-faec31c5e68e" target="_blank">
+      <div class="a-top"><span class="a-title">스프링 IoC 컨테이너와 빈 생성 과정</span><span class="a-date">2026-07-13</span></div>
+      <p class="a-desc">JDK 동적 프록시 vs CGLIB 내부 동작 비교. proxyTargetClass 기본값의 이유(성능 아닌 일관성), self-invocation 함정, GoF Proxy/Decorator 관계까지 정리.</p>
+      <div class="a-meta"><span class="file-tag">proxy-guide.html</span><span class="kw">CGLIB · JDK Proxy · InvocationHandler · 다크모드 토글</span></div>
+      <span class="go">대화 열기 →</span>
+    </a>
+
+    <a class="artifact" href="https://claude.ai/chat/86b39002-42a6-4669-9ce6-f1f42e382f95" target="_blank">
+      <div class="a-top"><span class="a-title">ThreadLocal의 동작원리와 구조</span><span class="a-date">2026-07-29</span></div>
+      <p class="a-desc">각 Thread가 자신의 ThreadLocalMap을 소유하고 ThreadLocal 객체가 키가 되는 구조. WeakReference 키와 강한 참조 value로 인한 스레드풀 메모리 누수 패턴.</p>
+      <div class="a-meta"><span class="kw">ThreadLocalMap · WeakReference · remove() · Tomcat 워커 스레드</span></div>
+      <span class="go">대화 열기 →</span>
+    </a>
+
+    <a class="artifact" href="https://claude.ai/chat/df5bc448-a134-4ef1-90b6-ff3d118d522f" target="_blank">
+      <div class="a-top"><span class="a-title">SecurityContextHolder의 역할과 ThreadLocal</span><span class="a-date">2026-07-23</span></div>
+      <p class="a-desc">SecurityContextHolder는 저장소가 아닌 접근 창구. 만 명의 인증 상태는 HttpSession이 들고, ThreadLocal은 요청 처리 순간의 임시 매핑. @Async 전파 문제까지.</p>
+      <div class="a-meta"><span class="kw">MODE_THREADLOCAL · SecurityContextRepository · JWT stateless</span></div>
+      <span class="go">대화 열기 →</span>
+    </a>
+
+    <a class="artifact" href="https://claude.ai/chat/801681ad-b76b-4b0c-833f-b7e94541f965" target="_blank">
+      <div class="a-top"><span class="a-title">DelegatingFilterProxy와 서블릿 컨테이너 통신 원리</span><span class="a-date">2026-07-16</span></div>
+      <p class="a-desc">Tomcat은 Spring을 모른다 — Spring이 Tomcat 스펙에 맞추는 어댑터. ServletContext를 통한 FilterChainProxy 조회 구조와 Guice의 GuiceFilter 병렬 사례.</p>
+      <div class="a-meta"><span class="kw">FilterChainProxy · ServletContext · 생명주기 브릿지</span></div>
+      <span class="go">대화 열기 →</span>
+    </a>
+
+    <a class="artifact" href="https://claude.ai/chat/c7645e15-b420-457d-8d1d-8bb1bc799d0a" target="_blank">
+      <div class="a-top"><span class="a-title">스프링 부트 톰캣 버전 업그레이드 부작용</span><span class="a-date">2026-06-08</span></div>
+      <p class="a-desc">tomcat.version 직접 오버라이드의 위험(javax→jakarta 경계, embed 모듈 간 충돌)과 Boot BOM 기반 업그레이드가 정답인 이유. CVE 긴급 대응 예외 케이스 포함.</p>
+      <div class="a-meta"><span class="kw">BOM · tomcat-embed · CVE 대응</span></div>
+      <span class="go">대화 열기 →</span>
+    </a>
+  </section>
+
+  <!-- ============ design-patterns ============ -->
+  <section class="repo" id="design">
+    <div class="repo-head">
+      <span class="repo-id">design-patterns</span>
+      <h2>설계 원칙 / 디자인 패턴</h2>
+      <span class="count">4 artifacts</span>
+    </div>
+
+    <a class="artifact" href="https://claude.ai/chat/f70574c5-a7f9-495b-9751-d9a803f2d66e" target="_blank">
+      <div class="a-top"><span class="a-title">SOLID 원칙 스터디</span><span class="a-date">2026-07-23</span></div>
+      <p class="a-desc">설계도면 컨셉의 원칙별 정리. BAD→GOOD Java 코드 비교, 위반 신호 체크리스트, FilterChainProxy·CGLIB·IoC 컨테이너로 잇는 Spring 연결 노트, 원칙 간 역학 관계.</p>
+      <div class="a-meta"><span class="file-tag">solid-principles-study.html</span><span class="kw">SRP · OCP · LSP · ISP · DIP · 면접 대비</span></div>
+      <span class="go">대화 열기 →</span>
+    </a>
+
+    <a class="artifact" href="https://claude.ai/chat/02e7ef08-8631-41bb-9600-3c8fb7bd9b1f" target="_blank">
+      <div class="a-top"><span class="a-title">스프링 백엔드 GoF 디자인 패턴</span><span class="a-date">2026-07-06</span></div>
+      <p class="a-desc">SET A(프레임워크가 자동 적용) / SET B(개발자가 직접 구현)로 나눈 10개 패턴. Nexus 자산·SBOM 도메인 기반 예제와 4단계 면접 답변 프레임워크 포함.</p>
+      <div class="a-meta"><span class="file-tag">HTML 스터디 문서</span><span class="kw">Strategy · Template Method · Builder · 면접</span></div>
+      <span class="go">대화 열기 →</span>
+    </a>
+
+    <a class="artifact" href="https://claude.ai/chat/d8b0b937-cc24-4063-a5eb-9b09c18cddb6" target="_blank">
+      <div class="a-top"><span class="a-title">프록시 패턴의 유용성</span><span class="a-date">2026-07-23</span></div>
+      <p class="a-desc">GoF 프록시 패턴과 네트워크 프록시(Nexus, Nginx)의 범주 구분. Virtual/Protection/Remote 프록시 분류와 JPA 지연 로딩, HikariCP, unmodifiableList 코드 사례.</p>
+      <div class="a-meta"><span class="kw">GoF Proxy · Nexus proxy repo · HikariCP</span></div>
+      <span class="go">대화 열기 →</span>
+    </a>
+
+    <a class="artifact" href="https://claude.ai/chat/cd26ff02-f12e-4e0f-8d4c-3a6efd190058" target="_blank">
+      <div class="a-top"><span class="a-title">CGLIB 프록시 어노테이션 조회 방어 코드</span><span class="a-date">2026-05-11</span></div>
+      <p class="a-desc">PR #1555 리뷰에서 출발한 실무 스터디. AopUtils + AnnotationUtils 방어 코드가 Java 21에서도 필요한 이유, ConcurrentHashMap 캐싱 vs eager MethodInterceptor 3안 비교.</p>
+      <div class="a-meta"><span class="kw">AopUtils · computeIfAbsent · BeanPostProcessor</span></div>
+      <span class="go">대화 열기 →</span>
+    </a>
+  </section>
+
+  <!-- ============ docker-infra ============ -->
+  <section class="repo" id="infra">
+    <div class="repo-head">
+      <span class="repo-id">docker-infra</span>
+      <h2>Docker / 인프라</h2>
+      <span class="count">4 artifacts</span>
+    </div>
+
+    <a class="artifact" href="https://claude.ai/chat/152d45e7-7ec7-4b7a-9b83-98f2b0dd5da1" target="_blank">
+      <div class="a-top"><span class="a-title">Docker 레이어 구조 기술 원리</span><span class="a-date">2026-05-20</span></div>
+      <p class="a-desc">OverlayFS의 lowerdir/upperdir/merged 구조와 mount 명령, Copy-on-Write, Storage Driver 비교표(overlay2가 표준인 이유), 레이어 캐시와 빌드 최적화.</p>
+      <div class="a-meta"><span class="file-tag">HTML 스터디 문서</span><span class="kw">OverlayFS · CoW · overlay2 · 캐시 무효화</span></div>
+      <span class="go">대화 열기 →</span>
+    </a>
+
+    <a class="artifact" href="https://claude.ai/chat/eacb72fa-6e4b-4d27-8524-7ed33701282e" target="_blank">
+      <div class="a-top"><span class="a-title">Docker Container 스터디 자료</span><span class="a-date">2026-06-30</span></div>
+      <p class="a-desc">Container vs VM(커널 공유/격리), whiteout 파일, Cache HIT/MISS, dockerd→containerd→runc 계층, VirtualBox on Linux(KVM 미사용)까지 다룬 3페이지 종합본.</p>
+      <div class="a-meta"><span class="file-tag">docker-container-study.html</span><span class="kw">Namespace · cgroup · containerd · runc</span></div>
+      <span class="go">대화 열기 →</span>
+    </a>
+
+    <a class="artifact" href="https://claude.ai/chat/2f1874b9-3c9d-4f1c-9334-34365d0f3744" target="_blank">
+      <div class="a-top"><span class="a-title">Docker 이미지 삭제와 blob 레이어</span><span class="a-date">2026-05-16</span></div>
+      <p class="a-desc">docker rmi와 실제 blob 삭제의 차이, 레이어(논리)와 blob(물리)의 구분, container→image→builder prune 순서가 중요한 이유와 --keep-storage/--filter until 상호작용.</p>
+      <div class="a-meta"><span class="kw">dangling layer · build cache · prune 전략</span></div>
+      <span class="go">대화 열기 →</span>
+    </a>
+
+    <a class="artifact" href="https://claude.ai/chat/f1279aed-f17c-4764-a992-f69150c1e849" target="_blank">
+      <div class="a-top"><span class="a-title">setgid와 ACL 개념 스터디</span><span class="a-date">2026-05-28</span></div>
+      <p class="a-desc">빌드서버 except_list 디렉터리의 root:root 소유권 사고에서 출발. setgid의 S/s 표기, umask 022, Docker 컨테이너가 root로 도는 이유, docker-compose user 지정 해법까지 Q&amp;A 형식.</p>
+      <div class="a-meta"><span class="file-tag">linux-permissions-study-v2.html</span><span class="kw">setgid · setfacl · umask · 산업은행 환경</span></div>
+      <span class="go">대화 열기 →</span>
+    </a>
+  </section>
+
+  <!-- ============ ai-protocols ============ -->
+  <section class="repo" id="ai">
+    <div class="repo-head">
+      <span class="repo-id">ai-protocols</span>
+      <h2>AI / 프로토콜 / 도구</h2>
+      <span class="count">3 artifacts</span>
+    </div>
+
+    <a class="artifact" href="https://claude.ai/chat/1ca81e4b-5bc5-4c8e-ac5c-f3272ffbc330" target="_blank">
+      <div class="a-top"><span class="a-title">MCP 작동원리와 도구 개발 실무 가이드</span><span class="a-date">2026-07-31</span></div>
+      <p class="a-desc">JSON-RPC 2.0 프로토콜부터 FastMCP 서버 빌드까지. "MCP 서버는 프로그램, stdio는 통로" 층위 구분, MySQL 연결 stdio 서버 예제 코드 포함. 가장 최근 자료.</p>
+      <div class="a-meta"><span class="file-tag">mcp-study-guide.html</span><span class="file-tag">mysql_mcp_server.py</span><span class="kw">JSON-RPC · stdio vs HTTP · FastMCP</span></div>
+      <span class="go">대화 열기 →</span>
+    </a>
+
+    <a class="artifact" href="https://claude.ai/chat/b16919bf-d84e-40e0-b5a2-b9824f168d6d" target="_blank">
+      <div class="a-top"><span class="a-title">Agentic Engineering 학습 자료</span><span class="a-date">2026-06-08</span></div>
+      <p class="a-desc">요구사항 정리→기획→화면 기획→기술검토 4단계에 집중한 Spec-Driven Development 가이드. EARS 표기법, harnessability, ArchUnit 헥사고날 아키텍처 강제 예제, 계정/요금 정리.</p>
+      <div class="a-meta"><span class="file-tag">agentic-engineering.html</span><span class="kw">SDD · Harness · ArchUnit · Claude Code</span></div>
+      <span class="go">대화 열기 →</span>
+    </a>
+
+    <a class="artifact" href="https://claude.ai/chat/28a9059b-edfd-4b13-a2d5-81aa5decd6b1" target="_blank">
+      <div class="a-top"><span class="a-title">Claude Artifact 기술 메커니즘</span><span class="a-date">2026-05-21</span></div>
+      <p class="a-desc">Artifact의 렌더링 파이프라인과 샌드박스 동작 방식을 다룬 기술 스터디. 다크 그리드 디자인의 HTML 문서.</p>
+      <div class="a-meta"><span class="file-tag">claude-artifact-study.html</span><span class="kw">샌드박스 · 렌더링 파이프라인</span></div>
+      <span class="go">대화 열기 →</span>
+    </a>
+  </section>
+
+  <!-- ============ misc-tech ============ -->
+  <section class="repo" id="misc">
+    <div class="repo-head">
+      <span class="repo-id">misc-tech</span>
+      <h2>기타 기술 스터디</h2>
+      <span class="count">2 artifacts</span>
+    </div>
+
+    <a class="artifact" href="https://claude.ai/chat/f8790bc8-9c73-4e6f-bdf3-2ede06e6dc56" target="_blank">
+      <div class="a-top"><span class="a-title">Git 기초 스터디 (초보자용)</span><span class="a-date">2026-07-07</span></div>
+      <p class="a-desc">초보자에게 알려주기 위한 Git 버전관리 기초. 커밋 로그/터미널 컨셉의 인터랙티브 학습 페이지.</p>
+      <div class="a-meta"><span class="file-tag">git-basics-study.html</span><span class="kw">commit · branch · 터미널 컨셉</span></div>
+      <span class="go">대화 열기 →</span>
+    </a>
+
+    <a class="artifact" href="https://claude.ai/chat/ae882fb3-4399-4553-b6de-fe8d2bf34fbe" target="_blank">
+      <div class="a-top"><span class="a-title">Webhook 기술 스터디</span><span class="a-date">2026-05-20</span></div>
+      <p class="a-desc">역방향 API 프레이밍, Push vs Pull, HMAC-SHA256 서명 검증과 Replay Attack 방어, Exponential Backoff 재시도와 멱등성, DLQ 아키텍처, FastAPI+ngrok 실습.</p>
+      <div class="a-meta"><span class="file-tag">webhook-study.html</span><span class="kw">HMAC · 멱등성 · DLQ · Stripe/GitHub 사례</span></div>
+      <span class="go">대화 열기 →</span>
+    </a>
+  </section>
+
+  <footer>
+    <div class="row">
+      <span>YOUNGEUN STUDY ARCHIVE · INDEXED 2026-07-31</span>
+      <span>18 ARTIFACTS · 5 REPOSITORIES</span>
+    </div>
+  </footer>
+
+</div>
+</body>
+</html>

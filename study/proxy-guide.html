@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>프록시 배선반 — JDK 동적 프록시 vs CGLIB</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #f5f6f4;
+    --panel: #ffffff;
+    --panel-2: #eef0ec;
+    --ink: #16211d;
+    --ink-soft: #4a564f;
+    --line: #d7dcd3;
+    --jack: #0f7a6e;
+    --jack-glow: rgba(15,122,110,0.18);
+    --amber: #b5650a;
+    --amber-bg: rgba(181,101,10,0.1);
+    --red-wire: #b23a3a;
+    --shadow: 0 1px 2px rgba(20,30,25,0.06), 0 8px 24px rgba(20,30,25,0.05);
+    --radius: 10px;
+  }
+  html.dark{
+    --bg: #0d1412;
+    --panel: #131c19;
+    --panel-2: #182420;
+    --ink: #e7ede9;
+    --ink-soft: #9db0a6;
+    --line: #223530;
+    --jack: #5eead4;
+    --jack-glow: rgba(94,234,212,0.16);
+    --amber: #f0a839;
+    --amber-bg: rgba(240,168,57,0.12);
+    --red-wire: #e07a7a;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 12px 32px rgba(0,0,0,0.35);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'IBM Plex Sans KR', sans-serif;
+    line-height:1.7;
+    transition:background .25s ease, color .25s ease;
+    padding-bottom:80px;
+  }
+  code, .mono{font-family:'IBM Plex Mono', monospace;}
+  h1,h2,h3{font-family:'Space Grotesk','IBM Plex Sans KR',sans-serif;}
+
+  /* ---- top bar ---- */
+  .topbar{
+    position:sticky; top:0; z-index:50;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 28px;
+    background:var(--panel);
+    border-bottom:1px solid var(--line);
+    backdrop-filter:blur(6px);
+  }
+  .brand{display:flex; align-items:center; gap:10px; font-size:14px; letter-spacing:0.02em; color:var(--ink-soft);}
+  .brand .jack-dot{width:9px;height:9px;border-radius:50%;background:var(--jack); box-shadow:0 0 0 4px var(--jack-glow);}
+  .toggle{
+    border:1px solid var(--line); background:var(--panel-2); color:var(--ink);
+    padding:7px 14px; border-radius:999px; cursor:pointer; font-size:13px;
+    font-family:'IBM Plex Mono',monospace;
+    display:flex; align-items:center; gap:8px;
+  }
+  .toggle:hover{border-color:var(--jack);}
+
+  /* ---- hero ---- */
+  .hero{
+    max-width:900px; margin:0 auto; padding:64px 28px 24px;
+  }
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:0.14em;
+    text-transform:uppercase; color:var(--jack); margin-bottom:14px;
+  }
+  .hero h1{
+    font-size:clamp(28px,4vw,44px); font-weight:700; margin:0 0 16px; line-height:1.2;
+  }
+  .hero p{color:var(--ink-soft); font-size:16px; max-width:620px; margin:0 0 0;}
+
+  /* ---- patch panel signature ---- */
+  .panel{
+    max-width:900px; margin:36px auto 0; padding:0 28px;
+  }
+  .patchboard{
+    background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+    padding:28px; box-shadow:var(--shadow); position:relative; overflow:hidden;
+  }
+  .patchboard::before{
+    content:''; position:absolute; inset:0;
+    background-image: radial-gradient(circle, var(--line) 1px, transparent 1px);
+    background-size:18px 18px; opacity:.35; pointer-events:none;
+  }
+  .jacks-row{display:flex; gap:14px; flex-wrap:wrap; position:relative; z-index:1; margin-bottom:18px;}
+  .jack-item{
+    display:flex; flex-direction:column; align-items:center; gap:6px;
+    font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--ink-soft);
+  }
+  .jack-ring{
+    width:34px;height:34px;border-radius:50%;
+    border:2px solid var(--line); background:var(--panel-2);
+    display:flex;align-items:center;justify-content:center;
+    position:relative;
+  }
+  .jack-ring::after{content:'';width:8px;height:8px;border-radius:50%;background:var(--ink-soft);}
+  .jack-ring.active{border-color:var(--jack);}
+  .jack-ring.active::after{background:var(--jack); box-shadow:0 0 8px var(--jack-glow);}
+  .cable-line{
+    position:relative; z-index:1; padding:14px 16px; border-radius:8px;
+    background:var(--panel-2); border:1px dashed var(--line); font-size:13.5px; color:var(--ink-soft);
+  }
+  .cable-line b{color:var(--ink); font-weight:600;}
+
+  /* ---- section ---- */
+  section{max-width:900px; margin:0 auto; padding:56px 28px 0;}
+  .section-tag{
+    display:inline-flex; align-items:center; gap:8px;
+    font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--jack);
+    border:1px solid var(--line); padding:4px 10px; border-radius:999px; margin-bottom:16px;
+  }
+  section h2{font-size:26px; margin:0 0 6px;}
+  .sub{color:var(--ink-soft); font-size:14.5px; margin:0 0 24px;}
+
+  .card{
+    background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+    padding:22px 24px; box-shadow:var(--shadow); margin-bottom:16px;
+  }
+  .card h3{font-size:16.5px; margin:0 0 10px; display:flex; align-items:center; gap:8px;}
+  .card h3 .num{
+    font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--jack);
+    border:1px solid var(--jack); border-radius:6px; padding:1px 7px;
+  }
+  .card p{margin:0 0 10px; font-size:14.8px; color:var(--ink-soft);}
+  .card p:last-child{margin-bottom:0;}
+  .card p b{color:var(--ink); font-weight:600;}
+
+  pre{
+    background:var(--panel-2); border:1px solid var(--line); border-radius:8px;
+    padding:16px 18px; overflow-x:auto; font-size:13px; margin:10px 0;
+    color:var(--ink);
+  }
+  pre .cm{color:var(--ink-soft);}
+
+  .flow{
+    font-family:'IBM Plex Mono',monospace; font-size:13px;
+    background:var(--panel-2); border:1px solid var(--line); border-radius:8px;
+    padding:16px 18px; margin:10px 0; white-space:pre-wrap; color:var(--ink-soft); line-height:2;
+  }
+  .flow .step{color:var(--ink); font-weight:600;}
+  .flow .arrow{color:var(--jack);}
+
+  /* ---- two-column compare ---- */
+  .compare-grid{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+  @media (max-width:680px){.compare-grid{grid-template-columns:1fr;}}
+  .compare-card{
+    border-radius:var(--radius); padding:20px 22px; border:1px solid var(--line);
+    background:var(--panel);
+  }
+  .compare-card .tag{
+    font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.08em;
+    text-transform:uppercase; padding:3px 9px; border-radius:6px; display:inline-block; margin-bottom:12px;
+  }
+  .tag.jdk{background:var(--jack-glow); color:var(--jack);}
+  .tag.cglib{background:var(--amber-bg); color:var(--amber);}
+  .compare-card ul{margin:0; padding-left:18px; font-size:14px; color:var(--ink-soft);}
+  .compare-card li{margin-bottom:8px;}
+  .compare-card li b{color:var(--ink);}
+
+  table{width:100%; border-collapse:collapse; font-size:14px; margin:16px 0;}
+  th,td{text-align:left; padding:10px 12px; border-bottom:1px solid var(--line);}
+  th{color:var(--ink-soft); font-weight:600; font-family:'IBM Plex Mono',monospace; font-size:12px; text-transform:uppercase; letter-spacing:0.04em;}
+  td b{color:var(--ink);}
+
+  .warn{
+    border:1px solid var(--amber); background:var(--amber-bg); border-radius:8px;
+    padding:16px 18px; font-size:14.2px; color:var(--ink); margin:16px 0;
+  }
+  .warn .warn-tag{
+    font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--amber);
+    text-transform:uppercase; letter-spacing:0.08em; margin-bottom:6px; display:block;
+  }
+
+  .self-inv-diagram{
+    background:var(--panel-2); border:1px solid var(--line); border-radius:8px;
+    padding:20px; margin:14px 0; font-family:'IBM Plex Mono',monospace; font-size:13px;
+  }
+  .self-inv-diagram .ext-call{color:var(--jack);}
+  .self-inv-diagram .broken{color:var(--red-wire); font-weight:600;}
+
+  .takeaway{
+    max-width:900px; margin:56px auto 0; padding:0 28px;
+  }
+  .takeaway .box{
+    background:var(--panel); border:1px solid var(--jack); border-radius:var(--radius);
+    padding:24px 26px; box-shadow:var(--shadow);
+  }
+  .takeaway .box .section-tag{color:var(--jack); border-color:var(--jack);}
+  .takeaway ol{margin:0; padding-left:20px; font-size:14.8px;}
+  .takeaway li{margin-bottom:10px; color:var(--ink-soft);}
+  .takeaway li b{color:var(--ink);}
+
+  footer{
+    max-width:900px; margin:56px auto 0; padding:24px 28px 0; border-top:1px solid var(--line);
+    color:var(--ink-soft); font-size:12.5px; font-family:'IBM Plex Mono',monospace;
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand"><span class="jack-dot"></span> SPRING AOP · PATCH PANEL 01</div>
+  <button class="toggle" id="modeToggle">🌙 다크모드</button>
+</div>
+
+<div class="hero">
+  <div class="eyebrow">Study Guide — Proxy Internals</div>
+  <h1>모든 호출은 배선반을 거친다</h1>
+  <p>JDK 동적 프록시와 CGLIB이 내부적으로 어떻게 호출을 가로채는지, 왜 요즘은 CGLIB이 기본값이 됐는지, 그리고 그 밑바탕에 있는 GoF Proxy 패턴까지 — 나눴던 질문들을 순서대로 정리했습니다.</p>
+</div>
+
+<div class="panel">
+  <div class="patchboard">
+    <div class="jacks-row">
+      <div class="jack-item"><div class="jack-ring active"></div>UserService</div>
+      <div class="jack-item"><div class="jack-ring"></div>save()</div>
+      <div class="jack-item"><div class="jack-ring active"></div>invoke()</div>
+      <div class="jack-item"><div class="jack-ring"></div>@Around</div>
+      <div class="jack-item"><div class="jack-ring active"></div>target</div>
+    </div>
+    <div class="cable-line">
+      <b>비유:</b> 프록시는 전화 교환원, <code>InvocationHandler</code>는 교환원이 들고 있는 매뉴얼입니다. 메서드 호출(전화)이 오면 교환원은 항상 매뉴얼을 먼저 보고, 거기 적힌 순서대로 진짜 대상(부장님)에게 연결합니다.
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 1 -->
+<section>
+  <div class="section-tag">① 왜 프록시가 필요한가</div>
+  <h2>대리인을 세우는 이유</h2>
+  <p class="sub">원본 코드를 건드리지 않고, 호출 앞뒤에 공통 로직을 끼워넣기 위함</p>
+  <div class="card">
+    <p>트랜잭션, 로깅, 보안 체크 같은 <b>횡단 관심사(cross-cutting concern)</b>를 모든 메서드에 직접 작성하면 중복이 폭발합니다. 그래서 스프링은 진짜 객체 앞에 <b>대리인(프록시)</b>을 세워두고, 그 대리인이 호출을 가로채서 부가 로직을 자동으로 끼워넣게 만듭니다.</p>
+    <p>스프링 컨테이너가 빈을 만들 때, <b>@Transactional·@Around 같은 것과 매칭되는 빈이 있으면</b> 원본 객체 대신 그걸 감싸는 프록시 객체를 만들어 <b>그 프록시를 진짜 빈으로 등록</b>합니다. 매칭되는 게 없으면 원본 객체가 그대로 빈이 됩니다.</p>
+  </div>
+</section>
+
+<!-- SECTION 2 -->
+<section>
+  <div class="section-tag">② JDK 동적 프록시</div>
+  <h2>기존 인터페이스를 구현하는 새 클래스</h2>
+  <p class="sub">인터페이스가 있을 때만 동작 — 상속이 아니라 위임(delegation)</p>
+
+  <div class="card">
+    <h3><span class="num">1</span> 핵심 오해 정정</h3>
+    <p>JDK 동적 프록시는 <b>새 인터페이스를 만드는 게 아닙니다.</b> 원래 있던 인터페이스(<code>UserService</code>)를 그대로 <b>구현하는 새로운 클래스</b>를 런타임에 만드는 것입니다. 자식 클래스를 만드는 CGLIB과 반대로, 상속이 아니라 <b>같은 인터페이스를 구현하는 별개의 클래스</b>입니다.</p>
+  </div>
+
+  <div class="card">
+    <h3><span class="num">2</span> 두 가지 구성요소</h3>
+    <p><b>java.lang.reflect.Proxy</b> — 인터페이스를 구현하는 프록시 클래스를 런타임에 생성하는 자바 표준 팩토리</p>
+    <p><b>InvocationHandler</b> — 자바 표준 라이브러리의 인터페이스. 프록시의 모든 메서드 호출이 도착하는 단 하나의 창구. 스프링에서는 <code>JdkDynamicAopProxy</code>라는 클래스가 이걸 구현하고 있음 (개발자가 직접 구현하지 않음)</p>
+  </div>
+
+  <div class="card">
+    <h3><span class="num">3</span> 생성 순서</h3>
+    <div class="flow"><span class="step">1단계</span> 스프링이 핸들러 생성 <span class="arrow">→</span> <code>JdkDynamicAopProxy</code>(진짜 대상 + 매칭된 어노테이션 정보를 담고 있음)
+<span class="step">2단계</span> 그 핸들러를 재료로 <span class="arrow">→</span> <code>Proxy.newProxyInstance(classLoader, [UserService.class], handler)</code>
+<span class="step">3단계</span> 결과 <span class="arrow">→</span> <code>UserService</code>를 구현하는 프록시 객체 완성, 이게 컨테이너에 빈으로 등록됨</div>
+  </div>
+
+  <div class="card">
+    <h3><span class="num">4</span> 호출 시점 동작</h3>
+    <pre><span class="cm">// 프록시의 save()는 로직이 없고 무조건 invoke로 위임</span>
+proxy.save(user)
+    → handler.invoke(proxy, saveMethod, args)
+        → [어노테이션 코드 앞부분] (@Before, @Around 진입부)
+        → method.invoke(target, args)  <span class="cm">// 진짜 UserServiceImpl.save() 실행 (리플렉션)</span>
+        → [어노테이션 코드 뒷부분] (@After, @Around 나머지)</pre>
+    <p><b>필수 조건:</b> 대상이 인터페이스를 구현하고 있어야만 동작합니다. 인터페이스가 없으면 이 방식 자체가 불가능합니다.</p>
+  </div>
+</section>
+
+<!-- SECTION 3 -->
+<section>
+  <div class="section-tag">③ CGLIB</div>
+  <h2>대상 클래스를 상속하는 자식 클래스</h2>
+  <p class="sub">Code Generation LIBrary — 인터페이스 없이도 동작</p>
+
+  <div class="card">
+    <h3><span class="num">1</span> 동작 방식</h3>
+    <p>CGLIB은 대상 클래스(<code>UserServiceImpl</code>) 자체를 <b>상속</b>하는 자식 클래스를 바이트코드 조작으로 런타임에 만듭니다. 그 자식 클래스에서 메서드를 <b>오버라이드</b>해서, 그 안에서 부가 로직을 실행한 뒤 <code>super.method()</code>로 진짜 로직을 호출합니다.</p>
+    <pre>class UserServiceImpl$$CGLIB extends UserServiceImpl {
+    @Override
+    public void save(User user) {
+        <span class="cm">// [어노테이션 코드 앞부분]</span>
+        super.save(user);   <span class="cm">// 직접 바이트코드 호출 (리플렉션 아님)</span>
+        <span class="cm">// [어노테이션 코드 뒷부분]</span>
+    }
+}</pre>
+  </div>
+
+  <div class="card">
+    <h3><span class="num">2</span> 제약사항</h3>
+    <p>상속 기반이라 <b>final 클래스·final 메서드는 프록시 불가</b>(오버라이드 자체가 안 됨), <b>private 메서드</b>도 프록시 대상에서 제외됩니다. 과거엔 기본 생성자가 필요했지만, 최신 CGLIB(Objenesis 사용)은 이 제약도 우회 가능합니다.</p>
+  </div>
+</section>
+
+<!-- COMPARE -->
+<section>
+  <div class="section-tag">④ 나란히 비교</div>
+  <h2>구현 vs 상속</h2>
+  <div class="compare-grid">
+    <div class="compare-card">
+      <span class="tag jdk">JDK 동적 프록시</span>
+      <ul>
+        <li><b>구조</b>: 인터페이스 구현 (위임)</li>
+        <li><b>실행 위치</b>: <code>InvocationHandler.invoke()</code> 안에서 전후 실행</li>
+        <li><b>대상 호출</b>: 리플렉션 (<code>method.invoke</code>)</li>
+        <li><b>필수 조건</b>: 인터페이스 반드시 필요</li>
+      </ul>
+    </div>
+    <div class="compare-card">
+      <span class="tag cglib">CGLIB</span>
+      <ul>
+        <li><b>구조</b>: 클래스 상속 (오버라이드)</li>
+        <li><b>실행 위치</b>: 오버라이드 메서드 안에서 <code>super.method()</code> 전후 실행</li>
+        <li><b>대상 호출</b>: 직접 바이트코드 호출 → 미세하게 더 빠름</li>
+        <li><b>필수 조건</b>: 인터페이스 불필요, final만 아니면 됨</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 5 -->
+<section>
+  <div class="section-tag">⑤ 왜 요즘은 CGLIB이 기본값인가</div>
+  <h2>proxyTargetClass = true</h2>
+  <div class="card">
+    <p>Spring Boot 2.x부터 AOP 자동설정의 <code>proxyTargetClass</code> 기본값이 <b>true</b>로 바뀌었습니다. 그 결과 인터페이스가 있든 없든 <b>CGLIB이 기본으로 선택</b>됩니다.</p>
+    <p>배경: 예전엔 "인터페이스 있으면 JDK 프록시"가 기본이었지만, 실무에서 <b>인터페이스 없이 구현 클래스만 빈으로 등록</b>하는 스타일이 흔해지면서(구현체가 하나뿐인 경우가 대부분, Mockito로 클래스 자체를 목킹 가능) 일관성을 위해 CGLIB로 통일된 것입니다.</p>
+    <p>성능 차이는 현재 버전들에서 체감될 정도는 아니며, <b>선택 기준은 성능보다 일관성</b>(모든 빈이 같은 방식으로 프록시되게)입니다.</p>
+  </div>
+</section>
+
+<!-- SECTION 6 -->
+<section>
+  <div class="section-tag">⑥ 흔한 함정</div>
+  <h2>Self-Invocation 문제</h2>
+  <p class="sub">프록시를 거치지 않으면 AOP는 작동하지 않는다</p>
+
+  <div class="card">
+    <p>컨테이너에 등록되고 <code>@Autowired</code>로 주입되는 건 <b>원본이 아니라 프록시</b>입니다. 외부에서 프록시를 거쳐 호출하면 AOP가 걸리지만, <b>클래스 내부에서 자기 자신을 호출(this.method())</b>하면 프록시를 거치지 않고 원본 객체끼리 직접 호출해버립니다.</p>
+    <div class="self-inv-diagram">
+@Service
+public class UserService {
+
+    @Transactional
+    public void outer() {
+        this.inner(); <span class="broken">// ← this는 프록시가 아니라 원본 객체 자신</span>
+    }
+
+    @Transactional
+    public void inner() {
+        <span class="broken">// 트랜잭션 적용 안 됨!</span>
+    }
+}
+    </div>
+    <p><span class="ext-call" style="font-family:'IBM Plex Mono',monospace;">외부 → userServiceBean.outer()</span> 는 프록시를 거치므로 ✅ 정상 적용되지만, <code>outer()</code> 내부의 <code>this.inner()</code>는 <code>invoke()</code> 자체를 거치지 않으므로 어노테이션 매칭 로직이 실행되지 않습니다.</p>
+    <div class="warn">
+      <span class="warn-tag">해결책 (참고)</span>
+      메서드를 별도 빈으로 분리하기 · <code>AopContext.currentProxy()</code>로 현재 프록시 얻기 · 자기 자신을 <code>@Autowired</code>로 셀프 주입하기
+    </div>
+  </div>
+
+  <div class="card">
+    <h3><span class="num">✕</span> AspectJ 위빙은 이 문제가 없음</h3>
+    <p>스프링 AOP는 <b>런타임 프록시</b> 방식을 택해서 self-invocation 문제가 생기지만, <b>AspectJ</b>는 컴파일/로드 타임에 바이트코드 자체를 조작(위빙)해서 끼워넣기 때문에 프록시가 아예 필요 없고 이 문제도 없습니다.</p>
+  </div>
+</section>
+
+<!-- SECTION 7 -->
+<section>
+  <div class="section-tag">⑦ GoF와의 연결</div>
+  <h2>AOP ⊃ 프록시 패턴</h2>
+  <div class="card">
+    <p><b>AOP</b>는 횡단 관심사를 분리한다는 <b>개념/패러다임</b>이고, <b>프록시 패턴</b>은 그걸 자바에서 구현하는 <b>실제 기술적 수단</b> 중 하나입니다. AOP를 구현하는 방법이 프록시만 있는 건 아니며, AspectJ 위빙이 그 다른 예입니다.</p>
+  </div>
+  <table>
+    <tr><th>패턴</th><th>목적</th><th>스프링 AOP와의 관계</th></tr>
+    <tr><td><b>Proxy (GoF)</b></td><td>실제 객체에 대한 접근을 제어</td><td>관례적으로 스프링이 "프록시"라 부르는 근거</td></tr>
+    <tr><td><b>Decorator (GoF)</b></td><td>기능을 추가</td><td>구조는 Proxy와 거의 동일, 실질적 의도는 스프링 AOP가 이쪽에 더 가까움</td></tr>
+  </table>
+  <div class="card">
+    <p>스프링 AOP는 "접근 제어"가 아니라 "부가 기능 삽입"이 목적이라, GoF 기준으로는 사실 <b>Decorator 패턴에 더 가까운 변형</b>인데 관례적으로 Proxy라 불립니다.</p>
+  </div>
+</section>
+
+<div class="takeaway">
+  <div class="box">
+    <div class="section-tag">핵심 요약</div>
+    <ol>
+      <li><b>JDK 동적 프록시</b>는 인터페이스를 구현하는 새 클래스를 만들고, <code>InvocationHandler.invoke()</code>라는 단일 창구를 거쳐 리플렉션으로 대상을 호출한다.</li>
+      <li><b>CGLIB</b>은 대상 클래스를 상속하는 자식 클래스를 만들고, 오버라이드한 메서드 안에서 <code>super.method()</code>를 직접 호출한다.</li>
+      <li>Spring Boot는 <b>proxyTargetClass=true</b>가 기본값이라 <b>CGLIB이 사실상 기본</b>이며, 이유는 성능이 아니라 <b>일관성</b>이다.</li>
+      <li>AOP는 반드시 <b>프록시를 거쳐야</b> 작동하므로, <b>self-invocation(this.method())</b>에서는 걸리지 않는다.</li>
+      <li>스프링 AOP의 "Proxy"라는 이름은 관례이며, 의도상으로는 GoF의 <b>Decorator</b>에 더 가깝다.</li>
+    </ol>
+  </div>
+</div>
+
+<footer>
+  Spring AOP Study Guide · JDK Dynamic Proxy / CGLIB Internals · for 영은
+</footer>
+
+<script>
+  const btn = document.getElementById('modeToggle');
+  btn.addEventListener('click', () => {
+    document.documentElement.classList.toggle('dark');
+    const isDark = document.documentElement.classList.contains('dark');
+    btn.textContent = isDark ? '☀️ 라이트모드' : '🌙 다크모드';
+  });
+</script>
+
+</body>
+</html>

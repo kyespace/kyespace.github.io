@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MCP 심화 — 원격 운용, 인증, 프로덕션 (Part 2)</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FAFBFC;
+    --panel:#FFFFFF;
+    --ink:#101828;
+    --slate:#475467;
+    --faint:#98A2B3;
+    --line:#E4E7EC;
+    --wire:#0E7490;
+    --wire-soft:#ECFDFF;
+    --wire-line:#A5F3FC;
+    --amber:#B45309;
+    --amber-soft:#FFFBEB;
+    --code-bg:#0F172A;
+    --code-ink:#E2E8F0;
+    --code-key:#7DD3FC;
+    --code-str:#FDE68A;
+    --code-num:#F0ABFC;
+    --code-cmt:#64748B;
+    --good:#15803D;
+    --good-soft:#F0FDF4;
+    --bad:#B91C1C;
+    --bad-soft:#FEF2F2;
+    --mono:'IBM Plex Mono',ui-monospace,monospace;
+    --sans:'IBM Plex Sans KR',-apple-system,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.75;font-size:16px}
+  ::selection{background:var(--wire-line)}
+  .shell{max-width:920px;margin:0 auto;padding:0 24px 120px}
+
+  header.hero{
+    border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg,#FFFFFF 0%,var(--bg) 100%);
+    padding:64px 24px 48px;
+  }
+  .hero-inner{max-width:920px;margin:0 auto}
+  .hero .proto-tag{
+    font-family:var(--mono);font-size:12px;letter-spacing:.12em;
+    color:var(--wire);border:1px solid var(--wire-line);background:var(--wire-soft);
+    display:inline-block;padding:4px 12px;border-radius:3px;margin-bottom:20px;
+  }
+  h1{font-size:clamp(28px,4.5vw,42px);font-weight:700;letter-spacing:-.02em;line-height:1.25}
+  .hero .sub{margin-top:16px;color:var(--slate);font-size:17px;max-width:680px}
+  .hero .wire-strip{
+    margin-top:36px;font-family:var(--mono);font-size:12.5px;color:var(--faint);
+    display:flex;gap:0;align-items:center;flex-wrap:wrap;
+  }
+  .wire-strip .node{border:1px solid var(--line);background:#fff;padding:6px 14px;border-radius:4px;color:var(--slate);font-weight:500}
+  .wire-strip .arrow{color:var(--wire);padding:0 10px;font-weight:600}
+
+  nav.toc{margin:48px 0 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel);padding:28px 32px}
+  nav.toc h2{font-size:13px;font-family:var(--mono);letter-spacing:.14em;color:var(--faint);margin-bottom:16px;font-weight:600}
+  nav.toc ol{list-style:none;counter-reset:toc;columns:2;column-gap:40px}
+  nav.toc li{counter-increment:toc;margin-bottom:8px;break-inside:avoid}
+  nav.toc a{color:var(--ink);text-decoration:none;font-size:15px;font-weight:500}
+  nav.toc a:hover{color:var(--wire)}
+  nav.toc a::before{content:counter(toc,decimal-leading-zero);font-family:var(--mono);font-size:12px;color:var(--wire);margin-right:12px}
+  @media(max-width:640px){nav.toc ol{columns:1}}
+
+  section{margin-top:88px}
+  .sec-label{font-family:var(--mono);font-size:12px;letter-spacing:.14em;color:var(--wire);font-weight:600;margin-bottom:10px}
+  h2{font-size:28px;font-weight:700;letter-spacing:-.015em;margin-bottom:8px;line-height:1.35}
+  .lede{color:var(--slate);font-size:16.5px;margin-bottom:28px;max-width:720px}
+  h3{font-size:19px;font-weight:600;margin:44px 0 14px;letter-spacing:-.01em}
+  h4{font-size:16px;font-weight:600;margin:28px 0 10px}
+  p{margin-bottom:16px;max-width:760px}
+  strong{font-weight:600}
+  ul.plain{margin:0 0 16px 4px;list-style:none}
+  ul.plain li{padding-left:20px;position:relative;margin-bottom:8px;max-width:740px}
+  ul.plain li::before{content:'—';position:absolute;left:0;color:var(--wire);font-family:var(--mono)}
+  code.inline{font-family:var(--mono);font-size:.875em;background:#F1F5F9;border:1px solid var(--line);padding:1px 6px;border-radius:4px;color:#0F172A;white-space:nowrap}
+
+  .code{background:var(--code-bg);border-radius:8px;margin:20px 0 28px;overflow:hidden}
+  .code .bar{display:flex;justify-content:space-between;align-items:center;padding:9px 16px;border-bottom:1px solid #1E293B}
+  .code .bar span{font-family:var(--mono);font-size:11.5px;color:#64748B;letter-spacing:.08em}
+  .code pre{padding:18px 20px;overflow-x:auto;font-family:var(--mono);font-size:13.5px;line-height:1.7;color:var(--code-ink)}
+  .code .k{color:var(--code-key)}
+  .code .s{color:var(--code-str)}
+  .code .n{color:var(--code-num)}
+  .code .c{color:var(--code-cmt);font-style:italic}
+  .code .kw{color:#C4B5FD}
+
+  .wire-box{border:1px solid var(--wire-line);border-radius:8px;background:var(--wire-soft);margin:24px 0 32px;overflow:hidden}
+  .wire-box .wb-head{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--wire-line)}
+  .wire-box .wb-head.three{grid-template-columns:1fr 1fr 1fr}
+  .wire-box .wb-head div{text-align:center;padding:10px 8px;font-family:var(--mono);font-size:12.5px;font-weight:600;color:var(--wire);letter-spacing:.06em}
+  .wire-box .wb-head div + div{border-left:1px dashed var(--wire-line)}
+  .wmsg{display:flex;align-items:flex-start;gap:14px;padding:13px 20px;border-bottom:1px dashed var(--wire-line)}
+  .wmsg:last-child{border-bottom:none}
+  .wmsg .dir{font-family:var(--mono);font-size:12px;font-weight:600;flex-shrink:0;width:56px;text-align:center;padding:2px 0;border-radius:3px;margin-top:2px}
+  .wmsg .dir.right{color:var(--wire);background:#CFFAFE}
+  .wmsg .dir.left{color:#7C3AED;background:#EDE9FE}
+  .wmsg .dir.note{color:var(--faint);background:transparent;font-weight:400}
+  .wmsg .body{font-size:14px;color:var(--ink)}
+  .wmsg .body .m{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--wire)}
+  .wmsg .body .d{color:var(--slate);font-size:13.5px}
+
+  table{width:100%;border-collapse:collapse;margin:20px 0 28px;font-size:14.5px;background:#fff;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  th{text-align:left;font-family:var(--mono);font-size:12px;letter-spacing:.08em;color:var(--slate);background:#F8FAFC;padding:11px 16px;border-bottom:1px solid var(--line);font-weight:600}
+  td{padding:12px 16px;border-bottom:1px solid var(--line);vertical-align:top}
+  tr:last-child td{border-bottom:none}
+  td code, th code{font-family:var(--mono);font-size:.9em;color:var(--wire);font-weight:500}
+
+  .callout{border-radius:8px;padding:18px 22px;margin:22px 0 28px;font-size:15px;border:1px solid;max-width:780px}
+  .callout .ct{font-family:var(--mono);font-size:11.5px;letter-spacing:.12em;font-weight:600;display:block;margin-bottom:8px}
+  .callout.field{background:var(--amber-soft);border-color:#FDE68A}
+  .callout.field .ct{color:var(--amber)}
+  .callout.idea{background:var(--wire-soft);border-color:var(--wire-line)}
+  .callout.idea .ct{color:var(--wire)}
+  .callout p:last-child{margin-bottom:0}
+
+  ol.steps{list-style:none;counter-reset:st;margin:20px 0 28px}
+  ol.steps li{counter-increment:st;position:relative;padding:0 0 22px 52px;max-width:760px}
+  ol.steps li::before{
+    content:counter(st);position:absolute;left:0;top:1px;width:32px;height:32px;
+    border:1px solid var(--wire-line);background:var(--wire-soft);color:var(--wire);
+    font-family:var(--mono);font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;border-radius:6px;
+  }
+  ol.steps li::after{content:'';position:absolute;left:16px;top:36px;bottom:2px;width:1px;background:var(--wire-line)}
+  ol.steps li:last-child::after{display:none}
+  ol.steps li .st{font-weight:600;display:block;margin-bottom:4px}
+  ol.steps li p{color:var(--slate);font-size:15px;margin-bottom:8px}
+
+  .sumgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:24px}
+  @media(max-width:680px){.sumgrid{grid-template-columns:1fr}}
+  .sumcard{border:1px solid var(--line);border-radius:8px;background:#fff;padding:20px 22px}
+  .sumcard h4{margin:0 0 10px;font-size:15px}
+  .sumcard h4 code{color:var(--wire);font-family:var(--mono);font-size:13px}
+  .sumcard p{font-size:14px;color:var(--slate);margin:0}
+
+  footer{margin-top:100px;padding-top:28px;border-top:1px solid var(--line);color:var(--faint);font-size:13px;font-family:var(--mono)}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-inner">
+    <div class="proto-tag">PROTOCOL STUDY · PART 2 / ADVANCED</div>
+    <h1>MCP 심화<br>원격 운용, 인증, 그리고 프로덕션</h1>
+    <p class="sub">Part 1이 "구조를 이해하고 첫 stdio 서버를 만드는 것"까지였다면, Part 2는 그 서버를 팀이 함께 쓰는 원격 서비스로 키우는 과정입니다 — Streamable HTTP의 세션 내부, OAuth 2.1, 역방향 프리미티브, Spring 스택 구현, 테스트와 운영까지.</p>
+    <div class="wire-strip">
+      <span class="node">stdio 서버 (Part 1)</span><span class="arrow">▶</span>
+      <span class="node">세션·스트리밍</span><span class="arrow">▶</span>
+      <span class="node">인증</span><span class="arrow">▶</span>
+      <span class="node">테스트</span><span class="arrow">▶</span>
+      <span class="node">사내 공용 배포</span>
+    </div>
+  </div>
+</header>
+
+<div class="shell">
+
+<nav class="toc">
+  <h2>CONTENTS · PART 2</h2>
+  <ol>
+    <li><a href="#http">Streamable HTTP 내부 — 세션, SSE, 재개</a></li>
+    <li><a href="#auth">인증 — OAuth 2.1과 Resource Server로서의 MCP</a></li>
+    <li><a href="#reverse">역방향 프리미티브 — Sampling · Elicitation · Roots</a></li>
+    <li><a href="#ops-msg">운용 메시지 — Progress · Cancellation · Logging · Pagination</a></li>
+    <li><a href="#structured">Structured Output과 Context 객체</a></li>
+    <li><a href="#spring">Spring AI로 MCP 서버 만들기</a></li>
+    <li><a href="#client">클라이언트를 직접 만들어보기 — 에이전트 루프의 실체</a></li>
+    <li><a href="#testing">테스트 전략 — Inspector 이후의 자동화</a></li>
+    <li><a href="#deploy">배포와 운영 — 사내 공용 MCP 서버</a></li>
+    <li><a href="#summary2">요약과 로드맵</a></li>
+  </ol>
+</nav>
+
+<!-- ============ 1 ============ -->
+<section id="http">
+  <div class="sec-label">01 · TRANSPORT INTERNALS</div>
+  <h2>Streamable HTTP 내부 — 세션, SSE, 재개</h2>
+  <p class="lede">Part 1에서 "원격은 Streamable HTTP"라고 한 문장으로 지나갔던 것을 열어봅니다. 핵심은 단일 엔드포인트 위에서 요청-응답과 서버발 스트림을 동시에 처리하는 방식입니다.</p>
+
+  <h3>동작 규칙</h3>
+  <ul class="plain">
+    <li>서버는 <strong>엔드포인트 하나</strong>(관례상 <code class="inline">/mcp</code>)만 노출하고, 클라이언트의 모든 JSON-RPC 메시지는 이곳으로 <strong>HTTP POST</strong>됩니다</li>
+    <li>서버는 각 POST에 두 가지 방식으로 응답할 수 있습니다 — 단답이면 <code class="inline">Content-Type: application/json</code>으로 즉시 응답, 진행 통지·중간 메시지가 필요하면 <code class="inline">text/event-stream</code>으로 전환해 SSE 스트림으로 여러 메시지를 흘려보낸 뒤 최종 응답으로 마감</li>
+    <li>클라이언트는 별도의 <strong>HTTP GET</strong>으로 대기용 스트림을 열어둘 수 있습니다 — 서버가 요청과 무관하게 보내는 통지(<code class="inline">tools/list_changed</code> 등)를 받는 채널</li>
+  </ul>
+
+  <h3>세션의 수립과 유지</h3>
+  <div class="wire-box">
+    <div class="wb-head"><div>CLIENT</div><div>SERVER (/mcp)</div></div>
+    <div class="wmsg">
+      <span class="dir right">POST</span>
+      <div class="body"><span class="m">initialize</span><br><span class="d">첫 요청. 아직 세션 없음</span></div>
+    </div>
+    <div class="wmsg">
+      <span class="dir left">200</span>
+      <div class="body"><span class="m">initialize result</span> + 헤더 <code class="inline">Mcp-Session-Id: a1b2c3…</code><br><span class="d">서버가 세션을 생성하고 ID를 발급</span></div>
+    </div>
+    <div class="wmsg">
+      <span class="dir right">POST</span>
+      <div class="body"><span class="m">tools/call</span> + 헤더 <code class="inline">Mcp-Session-Id: a1b2c3…</code><br><span class="d">이후 모든 요청에 세션 ID를 실어 보냄. 서버는 이 ID로 협상된 capability·상태를 복원</span></div>
+    </div>
+    <div class="wmsg">
+      <span class="dir left">404</span>
+      <div class="body"><span class="m">세션 만료 시</span><br><span class="d">서버가 세션을 잊었다면 404 — 클라이언트는 initialize부터 다시 수행해야 함</span></div>
+    </div>
+  </div>
+
+  <p>여기서 Part 1의 "MCP는 stateful 세션"이라는 명제가 HTTP라는 stateless 전송 위에서 어떻게 구현되는지가 보입니다 — <strong>세션 ID 헤더가 상태의 열쇠</strong>이고, 이는 서블릿 컨테이너가 <code class="inline">JSESSIONID</code> 쿠키로 HttpSession을 복원하는 것과 정확히 같은 패턴입니다. 다만 쿠키가 아닌 명시적 헤더라는 점, 그리고 스케일아웃 시 세션 저장소(Redis 등)나 sticky routing이 필요해진다는 함의도 동일하게 따라옵니다.</p>
+
+  <h3>끊긴 스트림의 재개 (Resumability)</h3>
+  <p>SSE 스트림의 각 이벤트에 서버가 <code class="inline">id:</code> 필드를 붙여두면, 네트워크가 끊긴 클라이언트는 재접속 시 <code class="inline">Last-Event-ID</code> 헤더로 "여기까지 받았다"를 알릴 수 있고, 서버는 그 이후 메시지만 재전송합니다. 장시간 도는 도구(대량 스캔, 빌드)를 원격 서버에 두려면 이 재개 지원 여부가 실질적인 안정성을 좌우합니다 — SDK가 대부분 처리해주지만, 프록시/로드밸런서가 SSE를 버퍼링하거나 idle timeout으로 끊지 않는지는 인프라 쪽에서 직접 챙겨야 하는 부분입니다.</p>
+
+  <div class="callout field">
+    <span class="ct">실무 노트 — 리버스 프록시 뒤의 SSE</span>
+    <p>Nginx 뒤에 MCP 서버를 두면 기본 설정이 SSE를 망가뜨리는 경우가 많습니다. <code class="inline">proxy_buffering off</code>, 충분한 <code class="inline">proxy_read_timeout</code>, HTTP/1.1 + <code class="inline">Connection ""</code> 설정이 없으면 "도구가 오래 걸리면 응답이 안 와요" 류의 장애가 됩니다. 증상만 보면 서버 버그처럼 보이는데 원인은 프록시 버퍼링인, 전형적인 계층 착시 사례입니다.</p>
+  </div>
+</section>
+
+<!-- ============ 2 ============ -->
+<section id="auth">
+  <div class="sec-label">02 · AUTHORIZATION</div>
+  <h2>인증 — OAuth 2.1과 Resource Server로서의 MCP</h2>
+  <p class="lede">원격 서버를 띄우는 순간 "누가 이 도구를 호출할 수 있는가"가 프로토콜 문제가 됩니다. 2025-06-18 스펙의 답은 명확합니다 — MCP 서버는 OAuth 2.1의 Resource Server다.</p>
+
+  <h3>역할 분리가 핵심</h3>
+  <p>초기 스펙은 MCP 서버가 인가 서버(Authorization Server) 역할까지 겸하는 모양이었지만, 현행 스펙은 이를 분리했습니다. MCP 서버는 <strong>토큰을 발급하지 않고 검증만</strong> 합니다. 토큰 발급은 기존 IdP(Keycloak, Okta, 사내 SSO)가 담당합니다. 즉 여러분이 만드는 서버에 로그인 화면을 구현할 필요가 없습니다.</p>
+
+  <div class="wire-box">
+    <div class="wb-head three"><div>CLIENT (호스트)</div><div>MCP SERVER (RS)</div><div>AUTH SERVER (IdP)</div></div>
+    <div class="wmsg">
+      <span class="dir right">──▶</span>
+      <div class="body"><span class="m">토큰 없이 요청</span><br><span class="d">클라이언트가 일단 /mcp에 POST</span></div>
+    </div>
+    <div class="wmsg">
+      <span class="dir left">◀──</span>
+      <div class="body"><span class="m">401 + WWW-Authenticate</span><br><span class="d">헤더에 Protected Resource Metadata 위치 안내 → 클라이언트가 <code class="inline">/.well-known/oauth-protected-resource</code>를 읽어 "어느 인가 서버에서 토큰을 받아야 하는지" 발견</span></div>
+    </div>
+    <div class="wmsg">
+      <span class="dir note">OAuth</span>
+      <div class="body"><span class="d">클라이언트 ↔ IdP 사이에서 표준 Authorization Code + <strong>PKCE</strong> 플로우 진행 (브라우저 열림 → 사용자 로그인·동의 → 토큰 발급). 사전 등록이 없다면 Dynamic Client Registration으로 자동 등록</span></div>
+    </div>
+    <div class="wmsg">
+      <span class="dir right">──▶</span>
+      <div class="body"><span class="m">Authorization: Bearer &lt;token&gt;</span><br><span class="d">이후 모든 MCP 요청에 토큰 첨부. 서버는 서명·만료·<strong>audience</strong>를 검증</span></div>
+    </div>
+  </div>
+
+  <div class="callout idea">
+    <span class="ct">Audience 검증이 왜 강조되는가 — Confused Deputy 차단</span>
+    <p>스펙이 유독 힘주어 요구하는 것이 "토큰의 audience가 <strong>이 MCP 서버</strong>인지 검증하고, 받은 토큰을 뒤단 API로 <strong>그대로 전달(passthrough)하지 말 것</strong>"입니다. Jira용으로 발급된 토큰을 들고 온 클라이언트에게 Nexus 작업을 해주는 순간, 서버가 권한 없는 요청의 대리인(confused deputy)이 되기 때문입니다. 뒤단 호출이 필요하면 서버 자신의 자격증명이나 token exchange로 별도 토큰을 써야 합니다. Part 1 보안 장의 위협 모델이 여기서 프로토콜 규칙으로 구체화됩니다.</p>
+  </div>
+
+  <div class="callout field">
+    <span class="ct">실무 노트 — 폐쇄망의 현실적 타협</span>
+    <p>내부망 전용 서버에서 풀 OAuth가 과할 때 실무에서는 (a) mTLS + 네트워크 ACL, (b) 정적 Bearer 토큰(서비스 계정 단위) 같은 축약형을 쓰기도 합니다. 다만 이 경우 "누가 무슨 도구를 호출했는가"의 사용자 단위 감사 추적을 포기하는 것이므로, 금융권 감사 요건이 있다면 처음부터 사내 IdP 연동으로 가는 편이 재작업을 줄입니다.</p>
+  </div>
+</section>
+
+<!-- ============ 3 ============ -->
+<section id="reverse">
+  <div class="sec-label">03 · CLIENT-SIDE PRIMITIVES</div>
+  <h2>역방향 프리미티브 — Sampling · Elicitation · Roots</h2>
+  <p class="lede">Part 1에서 이름만 소개했던, 서버 → 클라이언트 방향의 요청들입니다. 이것들을 이해하면 "서버는 수동적 응답기"라는 그림이 "서버도 대화의 참여자"로 확장됩니다.</p>
+
+  <h3>Sampling — 서버가 지능을 빌려 쓰는 방법</h3>
+  <p>서버가 <code class="inline">sampling/createMessage</code> 요청을 클라이언트로 보내면, 클라이언트(호스트)가 자기 LLM으로 추론을 수행해 결과를 돌려줍니다. 서버 입장의 의미가 큽니다 — <strong>API 키 없이, 어느 모델인지도 모른 채</strong> LLM 능력을 쓸 수 있습니다. 비용과 모델 선택권은 호스트 사용자에게 남습니다.</p>
+  <div class="code">
+    <div class="bar"><span>FastMCP — 도구 안에서 sampling 사용</span><span>python</span></div>
+    <pre><span class="k">@mcp.tool()</span>
+<span class="kw">async def</span> summarize_incident_log(path: <span class="kw">str</span>, ctx: Context) -> <span class="kw">str</span>:
+    <span class="s">"""장애 로그 파일을 읽어 핵심 타임라인을 요약합니다."""</span>
+    raw = read_log(path, max_bytes=<span class="n">200_000</span>)
+    result = <span class="kw">await</span> ctx.session.create_message(          <span class="c"># ← 서버→클라이언트 역요청</span>
+        messages=[SamplingMessage(role=<span class="s">"user"</span>,
+            content=TextContent(type=<span class="s">"text"</span>,
+                text=<span class="s">f"다음 로그에서 장애 타임라인을 5줄로 요약:\n{raw}"</span>))],
+        max_tokens=<span class="n">500</span>)
+    <span class="kw">return</span> result.content.text</pre>
+  </div>
+  <p>주의할 점: 호스트가 sampling capability를 선언한 경우에만 쓸 수 있고, 호스트는 요청을 사용자 승인 대상으로 취급할 수 있습니다. 실제 호스트 지원 편차가 커서, sampling에 핵심 로직을 의존하는 서버는 지원 안 되는 호스트에서의 폴백을 함께 설계해야 합니다.</p>
+
+  <h3>Elicitation — 실행 중간에 사용자에게 묻기</h3>
+  <p>도구 실행 도중 서버가 구조화된 스키마와 함께 "추가 입력이 필요하다"고 요청하면, 호스트가 사용자에게 폼/질문을 띄워 답을 회수해 돌려줍니다. 사용자는 수락 외에 <strong>거절(decline)과 취소(cancel)</strong>를 선택할 수 있고 서버는 세 경우를 모두 처리해야 합니다. "인자를 미리 다 받는 대신, 필요해진 시점에 묻는" 대화형 도구가 가능해지는 메커니즘입니다 — 예컨대 티켓 생성 도구가 프로젝트 키가 모호할 때 후보를 제시하고 고르게 하는 식입니다.</p>
+
+  <h3>Roots — 작업 경계의 선언</h3>
+  <p>클라이언트가 서버에게 파일시스템 URI 목록을 알려주는 메커니즘입니다. "이 프로젝트 디렉터리들 안에서 작업하라"는 <strong>가이드라인</strong>이며, 강제 샌드박스가 아닙니다 — 실제 격리는 OS 권한·컨테이너로 별도 확보해야 합니다. 잘 만든 파일시스템 계열 서버는 roots 변경 통지(<code class="inline">roots/list_changed</code>)를 구독해 작업 범위를 동적으로 갱신합니다.</p>
+</section>
+
+<!-- ============ 4 ============ -->
+<section id="ops-msg">
+  <div class="sec-label">04 · OPERATIONAL MESSAGES</div>
+  <h2>운용 메시지 — Progress · Cancellation · Logging · Pagination</h2>
+  <p class="lede">데모 서버와 프로덕션 서버의 차이는 대부분 이 장에 있습니다. 오래 걸리는 작업, 중단, 관측, 큰 목록을 프로토콜이 어떻게 다루는지.</p>
+
+  <table>
+    <tr><th>메커니즘</th><th>동작</th><th>실무 포인트</th></tr>
+    <tr>
+      <td><strong>Progress</strong></td>
+      <td>요청에 <code>progressToken</code>이 있으면 서버가 <code>notifications/progress</code>로 진행률(progress/total/message)을 스트리밍</td>
+      <td>수십 초 넘는 도구는 필수 — 진행 통지가 없으면 호스트·프록시 타임아웃으로 오인 종료됨. FastMCP에선 <code>ctx.report_progress()</code></td>
+    </tr>
+    <tr>
+      <td><strong>Cancellation</strong></td>
+      <td><code>notifications/cancelled</code>로 진행 중 요청 취소 통지. 응답은 오지 않을 수 있음</td>
+      <td>통지는 "요청"일 뿐 — 서버 코드가 취소를 체크하지 않으면 백그라운드 작업은 계속 돕니다. 긴 루프에 취소 체크포인트를 심을 것</td>
+    </tr>
+    <tr>
+      <td><strong>Logging</strong></td>
+      <td>서버가 <code>notifications/message</code>로 구조화된 로그(level: debug~emergency)를 클라이언트에 전송. 클라이언트는 <code>logging/setLevel</code>로 수위 조절</td>
+      <td>stdio의 stderr 로그(사람용)와 별개인 <strong>프로토콜 내 로그 채널</strong>. Inspector의 Notifications 탭에서 보이는 것이 이것</td>
+    </tr>
+    <tr>
+      <td><strong>Pagination</strong></td>
+      <td><code>tools/list</code>·<code>resources/list</code> 등 목록 응답에 <code>nextCursor</code> — 있으면 그 커서로 재요청</td>
+      <td>커서는 불투명(opaque) 토큰 — 클라이언트가 파싱·재조립하면 안 됨. 직접 클라이언트를 만들 때(7장) 커서 루프 누락이 흔한 버그</td>
+    </tr>
+    <tr>
+      <td><strong>Ping</strong></td>
+      <td>양방향 <code>ping</code> 요청으로 생존 확인</td>
+      <td>유휴 세션 정리 정책과 함께 설계 — 어느 쪽이 얼마나 자주 보낼지는 구현 재량</td>
+    </tr>
+  </table>
+
+  <div class="callout idea">
+    <span class="ct">타임아웃의 3중 구조</span>
+    <p>원격 MCP에서 "느린 도구"가 죽는 경로는 세 겹입니다 — ① 호스트의 도구 실행 타임아웃, ② 프록시/LB의 idle timeout, ③ 서버 자체의 요청 타임아웃. progress 통지는 ①을 리셋시키는 표준 수단이고(스펙이 이를 명시적으로 허용), ②는 인프라 설정, ③은 서버 구현 문제입니다. 장애 분석 시 어느 겹에서 끊겼는지부터 특정하세요.</p>
+  </div>
+</section>
+
+<!-- ============ 5 ============ -->
+<section id="structured">
+  <div class="sec-label">05 · STRUCTURED OUTPUT</div>
+  <h2>Structured Output과 Context 객체</h2>
+  <p class="lede">2025-06-18 스펙의 실질적 개선 — 도구가 "모델이 읽을 텍스트"와 "프로그램이 쓸 구조화 데이터"를 함께 반환할 수 있게 됐습니다.</p>
+
+  <h3>outputSchema와 structuredContent</h3>
+  <p>도구 정의에 <code class="inline">outputSchema</code>(JSON Schema)를 선언하면, 결과에 <code class="inline">structuredContent</code> 필드로 스키마를 따르는 JSON을 실을 수 있습니다. 기존 <code class="inline">content</code>(텍스트)는 하위 호환을 위해 함께 반환합니다. 의미가 큰 지점은 <strong>에이전트 파이프라인</strong>입니다 — 도구 A의 출력을 도구 B의 입력으로 넘기는 자동화에서, 모델이 자유 텍스트를 재파싱하는 대신 검증된 JSON을 그대로 전달할 수 있습니다.</p>
+
+  <div class="code">
+    <div class="bar"><span>FastMCP — 반환 타입 힌트로 outputSchema 자동 생성</span><span>python</span></div>
+    <pre><span class="kw">from</span> pydantic <span class="kw">import</span> BaseModel
+
+<span class="kw">class</span> LicenseFinding(BaseModel):
+    component: <span class="kw">str</span>
+    license_id: <span class="kw">str</span> | <span class="kw">None</span>       <span class="c"># SPDX id — 없으면 name 기반 추정</span>
+    copyleft: <span class="kw">bool</span>
+    evidence: <span class="kw">str</span>
+
+<span class="k">@mcp.tool()</span>
+<span class="kw">def</span> check_component_licenses(repository: <span class="kw">str</span>,
+                             component: <span class="kw">str</span>) -> <span class="kw">list</span>[LicenseFinding]:
+    <span class="s">"""컴포넌트의 라이선스를 SBOM 기준으로 판정합니다."""</span>
+    ...   <span class="c"># 반환된 Pydantic 모델 → structuredContent + outputSchema 자동 처리</span></pre>
+  </div>
+
+  <p>결과에 <code class="inline">resource_link</code> 타입을 담아 "전체 데이터는 이 리소스 URI에 있음"이라고 참조만 돌려주는 패턴도 이 버전에서 정식화됐습니다. Part 1의 원칙 3(토큰 예산)과 결합하면: <strong>요약은 content로, 원본은 resource link로</strong>가 큰 결과의 표준 처리법입니다.</p>
+
+  <h3>Context 객체 — 도구가 세션과 대화하는 창구</h3>
+  <p>FastMCP 도구 시그니처에 <code class="inline">ctx: Context</code>를 추가하면 SDK가 주입해줍니다. 지금까지 흩어져 나온 기능들이 이 객체 하나로 모입니다:</p>
+  <ul class="plain">
+    <li><code class="inline">ctx.report_progress(current, total)</code> — 4장의 progress 통지</li>
+    <li><code class="inline">ctx.info() / ctx.debug() / ctx.error()</code> — 4장의 프로토콜 로그 채널</li>
+    <li><code class="inline">ctx.read_resource(uri)</code> — 자기 서버의 리소스 재사용</li>
+    <li><code class="inline">ctx.session.create_message(...)</code> — 3장의 sampling</li>
+    <li><code class="inline">ctx.elicit(...)</code> — 3장의 elicitation</li>
+  </ul>
+  <p>Spring 개발자의 감각으로는, 도구 함수가 순수 함수가 아니라 <strong>세션 스코프 협력자를 주입받는 컴포넌트</strong>가 되는 지점입니다.</p>
+</section>
+
+<!-- ============ 6 ============ -->
+<section id="spring">
+  <div class="sec-label">06 · SPRING STACK</div>
+  <h2>Spring AI로 MCP 서버 만들기</h2>
+  <p class="lede">기존 Spring 서비스(IVAS 백엔드 같은)에 MCP 인터페이스를 붙이는 시나리오라면 Python을 새로 끼울 이유가 없습니다. Spring AI가 MCP 서버 부트스트랩을 스타터로 제공합니다.</p>
+
+  <div class="code">
+    <div class="bar"><span>build.gradle</span></div>
+    <pre>dependencies {
+    <span class="c">// stdio 또는 Streamable HTTP(WebMVC) 서버 전송 포함</span>
+    implementation <span class="s">'org.springframework.ai:spring-ai-starter-mcp-server-webmvc'</span>
+}</pre>
+  </div>
+
+  <div class="code">
+    <div class="bar"><span>ImportTools.java — @Tool 기반 도구 정의</span><span>java</span></div>
+    <pre><span class="k">@Service</span>
+<span class="kw">public class</span> ImportTools {
+
+    <span class="kw">private final</span> ImportReviewService reviewService;  <span class="c">// 기존 서비스 재사용</span>
+
+    <span class="k">@Tool</span>(description = <span class="s">"""
+        패키지의 반입 심사 상태를 조회합니다.
+        사용 시점: 사용자가 특정 패키지의 반입 가능 여부나 심사 진행 상황을 물을 때.
+        component 예시: 'lodash@4.17.21', 'org.springframework:spring-core:6.1.0'
+        """</span>)
+    <span class="kw">public</span> ImportStatus checkImportStatus(
+            <span class="k">@ToolParam</span>(description = <span class="s">"패키지 좌표 (name@version 또는 GAV)"</span>)
+            String component) {
+        <span class="kw">return</span> reviewService.findStatus(component);
+    }
+}
+
+<span class="c">// 등록 — 도구 콜백을 빈으로 노출하면 스타터가 MCP 서버에 연결</span>
+<span class="k">@Bean</span>
+<span class="kw">public</span> ToolCallbackProvider importTools(ImportTools tools) {
+    <span class="kw">return</span> MethodToolCallbackProvider.builder()
+            .toolObjects(tools).build();
+}</pre>
+  </div>
+
+  <div class="code">
+    <div class="bar"><span>application.yml</span></div>
+    <pre>spring:
+  ai:
+    mcp:
+      server:
+        name: ivas-import
+        version: 1.0.0
+        protocol: STREAMABLE      <span class="c"># Streamable HTTP — 기본 경로 /mcp</span></pre>
+  </div>
+
+  <p>구조적으로 보면 Python FastMCP와 완전히 대칭입니다 — <code class="inline">@Tool</code>의 description이 모델용 프롬프트, 메서드 시그니처가 inputSchema, 반환 객체 직렬화가 결과 content. 차이는 Spring의 강점이 그대로 얹힌다는 점입니다: 기존 서비스 빈 주입, Spring Security로 <code class="inline">/mcp</code> 엔드포인트 보호(2장의 Resource Server를 <code class="inline">spring-security-oauth2-resource-server</code>로 구현), 기존 관측성 스택 재사용.</p>
+
+  <div class="callout idea">
+    <span class="ct">아키텍처 선택 — 서비스 내장 vs 별도 게이트웨이</span>
+    <p>MCP 서버를 기존 애플리케이션 안에 내장하면 배포가 단순하지만 릴리스 주기가 묶이고 장애 격리가 안 됩니다. 반대로 별도 프로세스로 두고 내부 API를 호출하게 하면 MCP 계층을 독립적으로 진화시킬 수 있죠. 도구 몇 개로 시작할 땐 내장, 여러 시스템(Nexus + IVAS + Jira 프록시)을 묶는 단계가 되면 <strong>MCP 게이트웨이 분리</strong>가 정석입니다 — BFF 패턴의 판단 기준과 같습니다.</p>
+  </div>
+</section>
+
+<!-- ============ 7 ============ -->
+<section id="client">
+  <div class="sec-label">07 · BUILD A CLIENT</div>
+  <h2>클라이언트를 직접 만들어보기 — 에이전트 루프의 실체</h2>
+  <p class="lede">호스트를 한 번 직접 만들어보면 Part 1의 6장(전체 흐름)이 손에 잡힙니다. Claude Code가 하는 일의 뼈대는 아래 50줄이 전부입니다.</p>
+
+  <div class="code">
+    <div class="bar"><span>host.py — 최소 호스트: MCP 클라이언트 + LLM 루프</span><span>python</span></div>
+    <pre><span class="kw">from</span> mcp <span class="kw">import</span> ClientSession, StdioServerParameters
+<span class="kw">from</span> mcp.client.stdio <span class="kw">import</span> stdio_client
+<span class="kw">from</span> anthropic <span class="kw">import</span> Anthropic
+
+<span class="kw">async def</span> run(user_query: <span class="kw">str</span>):
+    params = StdioServerParameters(command=<span class="s">"uv"</span>, args=[<span class="s">"run"</span>, <span class="s">"server.py"</span>])
+    <span class="kw">async with</span> stdio_client(params) <span class="kw">as</span> (r, w), ClientSession(r, w) <span class="kw">as</span> s:
+        <span class="kw">await</span> s.initialize()                          <span class="c"># ① 핸드셰이크</span>
+
+        tools = (<span class="kw">await</span> s.list_tools()).tools          <span class="c"># ② 카탈로그 수집</span>
+        llm_tools = [{<span class="s">"name"</span>: t.name,                 <span class="c"># ③ MCP→LLM 스키마 변환</span>
+                      <span class="s">"description"</span>: t.description,
+                      <span class="s">"input_schema"</span>: t.inputSchema} <span class="kw">for</span> t <span class="kw">in</span> tools]
+
+        llm = Anthropic()
+        msgs = [{<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: user_query}]
+        <span class="kw">while True</span>:                                   <span class="c"># ④ 에이전트 루프</span>
+            resp = llm.messages.create(model=<span class="s">"claude-sonnet-4-6"</span>,
+                       max_tokens=<span class="n">2048</span>, tools=llm_tools, messages=msgs)
+            <span class="kw">if</span> resp.stop_reason != <span class="s">"tool_use"</span>:
+                <span class="kw">return</span> resp.content[<span class="n">0</span>].text            <span class="c"># 최종 답변</span>
+
+            msgs.append({<span class="s">"role"</span>: <span class="s">"assistant"</span>, <span class="s">"content"</span>: resp.content})
+            <span class="kw">for</span> block <span class="kw">in</span> resp.content:
+                <span class="kw">if</span> block.type == <span class="s">"tool_use"</span>:
+                    result = <span class="kw">await</span> s.call_tool(        <span class="c"># ⑤ MCP tools/call</span>
+                        block.name, arguments=block.input)
+                    msgs.append({<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: [{
+                        <span class="s">"type"</span>: <span class="s">"tool_result"</span>,
+                        <span class="s">"tool_use_id"</span>: block.id,
+                        <span class="s">"content"</span>: result.content[<span class="n">0</span>].text}]})  <span class="c"># ⑥ 복귀</span></pre>
+  </div>
+
+  <p>이 코드가 드러내는 것들:</p>
+  <ul class="plain">
+    <li>③이 바로 "function calling과 MCP의 접합부"입니다 — MCP 도구 정의를 LLM API의 tools 파라미터로 옮기는 단순 변환이며, 이 변환이 벤더별로 다르기에 호스트가 필요한 것</li>
+    <li>④의 while 루프가 "에이전트"의 실체 — 모델이 tool_use를 그만 낼 때까지 호출-실행-복귀 반복</li>
+    <li>이 최소 구현엔 <strong>승인 단계가 없습니다</strong>. 프로덕션 호스트라면 ⑤ 앞에 사용자 확인, 도구별 허용 정책, 결과 크기 제한이 들어가야 합니다 — Part 1 보안 장의 방어선들이 코드상 어디에 위치하는지가 명확해지는 지점</li>
+  </ul>
+</section>
+
+<!-- ============ 8 ============ -->
+<section id="testing">
+  <div class="sec-label">08 · TESTING</div>
+  <h2>테스트 전략 — Inspector 이후의 자동화</h2>
+  <p class="lede">Inspector는 수동 검증 도구입니다. CI에 넣을 자동 테스트는 계층별로 접근합니다.</p>
+
+  <ol class="steps">
+    <li><span class="st">L1 · 순수 로직 단위 테스트</span>
+      <p>도구 함수의 비즈니스 로직을 MCP와 무관하게 테스트. 도구 함수가 얇은 어댑터이고 실제 로직이 별도 서비스 계층에 있다면(6장의 Spring 예처럼) 기존 테스트 관행 그대로입니다.</p></li>
+    <li><span class="st">L2 · 프로토콜 통합 테스트 — in-memory 연결</span>
+      <p>SDK가 제공하는 인메모리 transport로 서버·클라이언트를 같은 프로세스에서 연결하면, 실제 <code class="inline">tools/list</code> → <code class="inline">tools/call</code> 왕복을 프로세스 spawn 없이 검증할 수 있습니다. 스키마 회귀(파라미터 이름 변경, 필수/옵션 변경)를 잡는 층입니다.</p></li>
+    <li><span class="st">L3 · 계약 스냅샷</span>
+      <p><code class="inline">tools/list</code> 응답 전체를 스냅샷으로 고정해두면, description이나 스키마의 의도치 않은 변경이 diff로 드러납니다. 도구 정의는 곧 모델과의 계약이므로, API 스펙 변경과 같은 무게로 리뷰해야 합니다.</p></li>
+    <li><span class="st">L4 · 모델 인 더 루프 평가 (선택)</span>
+      <p>"이 질문 세트에 대해 모델이 올바른 도구를 올바른 인자로 선택하는가"를 주기적으로 돌리는 평가. description 수정의 효과를 측정하는 유일한 방법이지만 비용이 들므로, 도구 선택 오류가 실제로 문제가 될 때 도입합니다.</p></li>
+  </ol>
+
+  <div class="code">
+    <div class="bar"><span>test_server.py — L2 예시</span><span>python</span></div>
+    <pre><span class="kw">import</span> pytest
+<span class="kw">from</span> mcp.shared.memory <span class="kw">import</span> create_connected_server_and_client_session
+<span class="kw">from</span> server <span class="kw">import</span> mcp
+
+<span class="k">@pytest.mark.anyio</span>
+<span class="kw">async def</span> test_search_assets_schema_and_call():
+    <span class="kw">async with</span> create_connected_server_and_client_session(
+            mcp._mcp_server) <span class="kw">as</span> client:
+        tools = (<span class="kw">await</span> client.list_tools()).tools
+        schema = {t.name: t.inputSchema <span class="kw">for</span> t <span class="kw">in</span> tools}
+        <span class="kw">assert</span> <span class="s">"repository"</span> <span class="kw">in</span> schema[<span class="s">"search_nexus_assets"</span>][<span class="s">"required"</span>]
+
+        result = <span class="kw">await</span> client.call_tool(<span class="s">"search_nexus_assets"</span>,
+                     {<span class="s">"repository"</span>: <span class="s">"npm-proxy"</span>, <span class="s">"keyword"</span>: <span class="s">"lodash"</span>})
+        <span class="kw">assert not</span> result.isError</pre>
+  </div>
+</section>
+
+<!-- ============ 9 ============ -->
+<section id="deploy">
+  <div class="sec-label">09 · DEPLOY & OPERATE</div>
+  <h2>배포와 운영 — 사내 공용 MCP 서버</h2>
+  <p class="lede">stdio 개인 도구를 팀 자산으로 승격시키는 마지막 단계입니다. 익숙한 인프라 관행이 대부분 그대로 적용되고, MCP 특유의 항목 몇 가지가 추가됩니다.</p>
+
+  <h3>컨테이너화</h3>
+  <div class="code">
+    <div class="bar"><span>Dockerfile — streamable-http 서버</span></div>
+    <pre>FROM python:3.12-slim
+WORKDIR /app
+COPY pyproject.toml uv.lock ./
+RUN pip install uv && uv sync --frozen --no-dev
+COPY server.py .
+USER 1000                                <span class="c"># 비루트 실행 — 최소 권한</span>
+EXPOSE 8000
+CMD ["uv", "run", "server.py"]           <span class="c"># mcp.run(transport="streamable-http")</span></pre>
+  </div>
+  <ul class="plain">
+    <li><strong>이미지 반입</strong> — 폐쇄망이면 베이스 이미지·의존성을 사내 Nexus proxy 경유로. 서버 자체의 SBOM을 뽑아 반입 심사에 첨부 (Part 1 보안 장의 심사 항목 그대로)</li>
+    <li><strong>수평 확장</strong> — 1장의 세션 문제: 인스턴스를 늘리려면 sticky session 또는 세션 상태 외부화. 초기엔 단일 인스턴스 + 재시작 시 클라이언트 재초기화 허용이 현실적</li>
+    <li><strong>설정 배포</strong> — 팀원들에게는 <code class="inline">claude mcp add --transport http ivas https://mcp.internal/mcp</code> 한 줄, 또는 저장소의 <code class="inline">.mcp.json</code>으로 공유</li>
+  </ul>
+
+  <h3>관측성 — 무엇을 재야 하는가</h3>
+  <table>
+    <tr><th>지표</th><th>이유</th></tr>
+    <tr><td>도구별 호출 수 · 지연 분포 · <code>isError</code> 비율</td><td>일반 API 지표와 동일 + isError는 "모델이 겪는 실패율"이라는 고유 의미</td></tr>
+    <tr><td>결과 크기(토큰/바이트) 분포</td><td>컨텍스트 폭발 조기 감지 — p99가 크면 요약/limit 설계 재검토 신호</td></tr>
+    <tr><td>세션 수명 · 활성 세션 수</td><td>세션 누수와 만료 정책 튜닝 근거</td></tr>
+    <tr><td>도구별 호출 <strong>사용자</strong> (인증 연동 시)</td><td>감사 추적 — "누가 언제 무슨 도구로 무엇을 했나"가 금융권 도입의 전제 조건</td></tr>
+  </table>
+
+  <div class="callout field">
+    <span class="ct">실무 노트 — 도구 정의도 릴리스 대상이다</span>
+    <p>코드 배포 없이 description 한 줄만 바꿔도 모델의 행동이 바뀝니다. 즉 <strong>도구 정의 변경 = 사용자에게 보이는 동작 변경</strong>이므로, 서버 버전 규칙에 포함시키고 변경 로그를 남기세요. 8장의 L3 계약 스냅샷이 이 원칙의 CI 강제 장치입니다.</p>
+  </div>
+</section>
+
+<!-- ============ 10 ============ -->
+<section id="summary2">
+  <div class="sec-label">10 · SUMMARY</div>
+  <h2>요약과 로드맵</h2>
+  <p class="lede">Part 1 + Part 2를 관통하는 성장 경로.</p>
+
+  <div class="sumgrid">
+    <div class="sumcard">
+      <h4>원격 세션</h4>
+      <p>단일 <code>/mcp</code> 엔드포인트, <code>Mcp-Session-Id</code>가 상태의 열쇠, SSE 스트림 + <code>Last-Event-ID</code> 재개. 프록시 버퍼링이 단골 장애 원인.</p>
+    </div>
+    <div class="sumcard">
+      <h4>인증</h4>
+      <p>MCP 서버 = OAuth 2.1 Resource Server. 토큰 발급은 IdP 몫, 서버는 audience 검증만. 토큰 passthrough 금지.</p>
+    </div>
+    <div class="sumcard">
+      <h4>역방향</h4>
+      <p>Sampling(지능 차용) · Elicitation(중간 질문) · Roots(경계 선언). 서버도 대화의 참여자가 될 수 있다.</p>
+    </div>
+    <div class="sumcard">
+      <h4>운용 메시지</h4>
+      <p>긴 작업엔 progress 필수, 취소는 협조적, 로그는 프로토콜 채널로, 목록은 커서 페이지네이션.</p>
+    </div>
+    <div class="sumcard">
+      <h4>구현 선택지</h4>
+      <p>Python FastMCP와 Spring AI <code>@Tool</code>은 대칭 구조. 기존 Spring 서비스 확장이면 Spring AI, 독립 도구면 FastMCP.</p>
+    </div>
+    <div class="sumcard">
+      <h4>프로덕션</h4>
+      <p>계층별 테스트(L1~L4), 계약 스냅샷, isError율·결과 크기 관측, 도구 정의의 버전 관리.</p>
+    </div>
+  </div>
+
+  <h3>실습 로드맵 — 지금 스택에서 밟아볼 순서</h3>
+  <ol class="steps">
+    <li><span class="st">홈랩에서 원격화 연습</span>
+      <p>Part 1의 nexus-mcp를 <code class="inline">streamable-http</code>로 전환해 Proxmox LXC에 배포하고, Nginx 뒤에 두어 1장의 SSE 프록시 이슈를 직접 재현·해결해봅니다.</p></li>
+    <li><span class="st">Spring AI 대칭 구현</span>
+      <p>같은 도구를 Spring AI <code class="inline">@Tool</code>로 다시 만들어 두 SDK의 대칭성을 확인 — IVAS에 붙일 때의 감각을 미리 확보합니다.</p></li>
+    <li><span class="st">최소 호스트 작성</span>
+      <p>7장의 50줄 호스트를 직접 돌려 에이전트 루프를 체화합니다. 승인 단계를 추가해보면 보안 설계가 코드로 이해됩니다.</p></li>
+    <li><span class="st">테스트·관측 얹기</span>
+      <p>L2 인메모리 테스트와 L3 스냅샷을 CI에 넣고, 도구별 지연·isError율 대시보드를 만듭니다. 여기까지 오면 팀 도입 제안이 가능한 상태입니다.</p></li>
+  </ol>
+</section>
+
+<footer>
+  MCP STUDY GUIDE · PART 2 / ADVANCED · MCP SPEC 2025-06-18 기준 · 2026-07
+</footer>
+
+</div>
+</body>
+</html>

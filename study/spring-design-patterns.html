@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spring 디자인 패턴 스터디</title>
+<style>
+  :root {
+    --ink: #17150f;
+    --paper: #f6f2e9;
+    --paper-2: #efe9db;
+    --line: #d6cdb8;
+    --brass: #a6803a;
+    --brass-soft: #c9a75f;
+    --auto: #2f6d5b;   /* framework / automatic */
+    --auto-bg: #e3ede6;
+    --hand: #9c4a2f;   /* hand-built */
+    --hand-bg: #f0e3dc;
+    --code-bg: #1c1a15;
+    --code-ink: #e8e2d2;
+    --dim: #6f6852;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Iowan Old Style', 'Palatino Linotype', 'Georgia', serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  code, pre, .mono {
+    font-family: 'SF Mono', 'JetBrains Mono', 'Menlo', ui-monospace, monospace;
+  }
+
+  /* ---- Header ---- */
+  header {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 64px 32px 40px;
+    border-bottom: 2px solid var(--ink);
+  }
+  .eyebrow {
+    font-family: 'SF Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--brass);
+    margin-bottom: 20px;
+  }
+  h1 {
+    font-size: clamp(38px, 7vw, 72px);
+    line-height: 1.02;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    max-width: 15ch;
+  }
+  h1 .thin { font-style: italic; font-weight: 400; color: var(--dim); }
+  .lede {
+    margin-top: 24px;
+    font-size: clamp(17px, 2.2vw, 20px);
+    max-width: 60ch;
+    color: #38342a;
+  }
+
+  /* ---- Legend / key ---- */
+  .legend {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 28px;
+  }
+  .key {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    max-width: 44ch;
+  }
+  .dot {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    margin-top: 6px;
+    flex-shrink: 0;
+  }
+  .dot.auto { background: var(--auto); }
+  .dot.hand { background: var(--hand); }
+  .key b { font-size: 15px; }
+  .key p { font-size: 14px; color: var(--dim); line-height: 1.45; }
+
+  /* ---- Section banners ---- */
+  .band {
+    max-width: 1100px;
+    margin: 48px auto 0;
+    padding: 0 32px;
+  }
+  .band-head {
+    display: flex;
+    align-items: baseline;
+    gap: 18px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--line);
+  }
+  .band-num {
+    font-family: 'SF Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 0.2em;
+    padding: 4px 10px;
+    border-radius: 3px;
+    color: #fff;
+  }
+  .band.a .band-num { background: var(--auto); }
+  .band.b .band-num { background: var(--hand); }
+  .band-head h2 {
+    font-size: clamp(24px, 4vw, 34px);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .band-head .sub {
+    margin-left: auto;
+    font-size: 14px;
+    color: var(--dim);
+    font-style: italic;
+    text-align: right;
+  }
+
+  /* ---- Pattern cards ---- */
+  .grid {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 8px 32px 0;
+  }
+  .card {
+    padding: 40px 0;
+    border-bottom: 1px solid var(--line);
+    display: grid;
+    grid-template-columns: 1fr 1.15fr;
+    gap: 40px;
+    align-items: start;
+  }
+  .card:last-child { border-bottom: none; }
+  .card-info { position: relative; }
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-family: 'SF Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 5px 11px;
+    border-radius: 100px;
+    margin-bottom: 16px;
+    font-weight: 500;
+  }
+  .tag.auto { background: var(--auto-bg); color: var(--auto); }
+  .tag.hand { background: var(--hand-bg); color: var(--hand); }
+  .tag .tdot { width: 7px; height: 7px; border-radius: 50%; }
+  .tag.auto .tdot { background: var(--auto); }
+  .tag.hand .tdot { background: var(--hand); }
+
+  .card h3 {
+    font-size: 27px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.1;
+  }
+  .card h3 .en {
+    display: block;
+    font-family: 'SF Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    color: var(--brass);
+    text-transform: uppercase;
+    margin-top: 8px;
+    font-weight: 500;
+  }
+  .card .desc { margin-top: 16px; font-size: 15.5px; color: #38342a; }
+  .card .where {
+    margin-top: 18px;
+    padding: 14px 16px;
+    background: var(--paper-2);
+    border-left: 3px solid var(--brass-soft);
+    font-size: 14px;
+  }
+  .card .where b {
+    display: block;
+    font-family: 'SF Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--brass);
+    margin-bottom: 6px;
+  }
+  .card .where code {
+    background: #e4dcc8;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 12.5px;
+  }
+  .interview {
+    margin-top: 18px;
+    font-size: 13.5px;
+    color: var(--hand);
+    display: flex;
+    gap: 9px;
+    align-items: flex-start;
+    line-height: 1.5;
+  }
+  .interview span:first-child {
+    font-family: 'SF Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    background: var(--hand-bg);
+    color: var(--hand);
+    padding: 3px 7px;
+    border-radius: 3px;
+    white-space: nowrap;
+    margin-top: 2px;
+  }
+
+  /* ---- Code blocks ---- */
+  .code-wrap {
+    background: var(--code-bg);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(23,21,15,0.12);
+  }
+  .code-bar {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 11px 16px;
+    background: #16140f;
+    border-bottom: 1px solid #2c2920;
+  }
+  .code-bar .fname {
+    margin-left: 6px;
+    font-family: 'SF Mono', monospace;
+    font-size: 12px;
+    color: #8f8871;
+    letter-spacing: 0.02em;
+  }
+  .bdot { width: 11px; height: 11px; border-radius: 50%; }
+  pre {
+    margin: 0;
+    padding: 18px 20px;
+    overflow-x: auto;
+    font-size: 12.8px;
+    line-height: 1.7;
+    color: var(--code-ink);
+  }
+  pre::-webkit-scrollbar { height: 8px; }
+  pre::-webkit-scrollbar-thumb { background: #3a362b; border-radius: 4px; }
+  .c-key { color: #d99a5b; }     /* keyword */
+  .c-ann { color: #c9a75f; }     /* annotation */
+  .c-typ { color: #7fbfa8; }     /* type */
+  .c-str { color: #b6c982; }     /* string */
+  .c-com { color: #6b6555; font-style: italic; } /* comment */
+  .c-mut { color: #a89f88; }     /* punctuation-ish dim */
+
+  /* ---- Interview footer ---- */
+  .closer {
+    max-width: 1100px;
+    margin: 64px auto 0;
+    padding: 48px 32px 80px;
+    border-top: 2px solid var(--ink);
+  }
+  .closer h2 {
+    font-size: clamp(26px, 4.5vw, 38px);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    max-width: 20ch;
+  }
+  .closer .frame {
+    margin-top: 28px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .step {
+    background: var(--paper);
+    padding: 22px 20px;
+  }
+  .step .n {
+    font-family: 'SF Mono', monospace;
+    font-size: 12px;
+    color: var(--brass);
+    letter-spacing: 0.1em;
+  }
+  .step h4 { font-size: 17px; margin: 8px 0 6px; font-weight: 600; }
+  .step p { font-size: 13.5px; color: var(--dim); line-height: 1.45; }
+  .script {
+    margin-top: 32px;
+    padding: 24px 26px;
+    background: var(--code-bg);
+    color: var(--code-ink);
+    border-radius: 8px;
+    font-size: 15px;
+    line-height: 1.7;
+    border-left: 4px solid var(--auto);
+  }
+  .script .who {
+    font-family: 'SF Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    color: var(--brass-soft);
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 10px;
+  }
+  .script em { color: var(--brass-soft); font-style: normal; }
+
+  footer {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 32px 60px;
+    font-size: 12.5px;
+    color: var(--dim);
+    font-family: 'SF Mono', monospace;
+    letter-spacing: 0.04em;
+  }
+
+  @media (max-width: 800px) {
+    .card { grid-template-columns: 1fr; gap: 24px; }
+    .closer .frame { grid-template-columns: 1fr 1fr; }
+    .band-head { flex-wrap: wrap; }
+    .band-head .sub { margin-left: 0; width: 100%; text-align: left; margin-top: 6px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">Backend Study · Design Patterns in Spring</div>
+  <h1>프레임워크가 대신 쓰는 패턴, <span class="thin">그리고 내가 직접 짜는 패턴</span></h1>
+  <p class="lede">Spring을 쓰면 이미 절반의 디자인 패턴은 컨테이너가 알아서 적용하고 있다. 나머지 절반은 애플리케이션 코드에서 직접 설계해야 하는 것들이다. 이 둘을 갈라서 보면, "패턴을 안다"가 아니라 "언제 왜 쓰는지 안다"로 넘어갈 수 있다.</p>
+</header>
+
+<section class="legend">
+  <div class="key">
+    <div class="dot auto"></div>
+    <div>
+      <b>알게 모르게 — 프레임워크가 적용</b>
+      <p>Spring 내부 구현이거나, 애노테이션 하나로 컨테이너가 대신 엮어준다. 원리를 알면 함정(self-invocation 등)을 피한다.</p>
+    </div>
+  </div>
+  <div class="key">
+    <div class="dot hand"></div>
+    <div>
+      <b>직접 설계 — 내 코드의 판단</b>
+      <p>인터페이스를 뽑고 구현체를 나누는 건 내 몫이다. 면접에서 "설계할 줄 안다"를 보여주는 지점.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CATEGORY A: FRAMEWORK ============ -->
+<div class="band a">
+  <div class="band-head">
+    <span class="band-num">SET A</span>
+    <h2>프레임워크가 알아서 쓰는 패턴</h2>
+    <span class="sub">Spring이 내부적으로 적용<br>애노테이션 = 패턴 스위치</span>
+  </div>
+</div>
+
+<div class="grid">
+
+  <!-- Singleton -->
+  <div class="card">
+    <div class="card-info">
+      <span class="tag auto"><span class="tdot"></span>Framework</span>
+      <h3>싱글톤<span class="en">Singleton</span></h3>
+      <p class="desc">Bean의 기본 스코프. 컨테이너가 타입당 인스턴스를 하나만 만들어 모든 주입 지점이 같은 객체를 공유한다. 그래서 Bean은 상태를 갖지 않게(stateless) 설계해야 한다.</p>
+      <div class="where">
+        <b>Spring 어디에</b>
+        <code>@Service</code>, <code>@Component</code>, <code>@Repository</code> 모두 기본이 싱글톤. <code>ApplicationContext</code>가 인스턴스 레지스트리 역할.
+      </div>
+      <div class="interview">
+        <span>함정</span>
+        <div>싱글톤 Bean에 인스턴스 필드로 상태를 두면 멀티스레드에서 공유돼 버그. 요청 상태는 메서드 파라미터나 <code>@Scope("prototype")</code>로.</div>
+      </div>
+    </div>
+    <div class="code-wrap">
+      <div class="code-bar">
+        <span class="bdot" style="background:#e06c5a"></span>
+        <span class="bdot" style="background:#e0b64f"></span>
+        <span class="bdot" style="background:#7fbfa8"></span>
+        <span class="fname">SbomParser.java</span>
+      </div>
+<pre><span class="c-com">// 컨테이너가 단 하나만 생성 → 모든 주입 지점이 동일 인스턴스</span>
+<span class="c-ann">@Service</span>
+<span class="c-key">public class</span> <span class="c-typ">SbomParser</span> {
+
+    <span class="c-com">// ⚠ 요청별 상태를 필드로 두지 말 것 (공유됨)</span>
+    <span class="c-key">public</span> <span class="c-typ">Sbom</span> parse(<span class="c-typ">byte</span>[] raw) {
+        <span class="c-com">// stateless: 파라미터로만 상태를 다룸</span>
+        <span class="c-key">return</span> <span class="c-typ">CycloneDx</span>.read(raw);
+    }
+}
+
+<span class="c-com">// 두 곳에 주입해도 == 로 같은 객체</span>
+<span class="c-ann">@Autowired</span> <span class="c-typ">SbomParser</span> a;
+<span class="c-ann">@Autowired</span> <span class="c-typ">SbomParser</span> b;   <span class="c-com">// a == b</span></pre>
+    </div>
+  </div>
+
+  <!-- Proxy -->
+  <div class="card">
+    <div class="card-info">
+      <span class="tag auto"><span class="tdot"></span>Framework</span>
+      <h3>프록시<span class="en">Proxy</span></h3>
+      <p class="desc">Spring AOP의 심장. 원본 Bean을 감싼 프록시 객체가 호출을 가로채 트랜잭션·캐시·비동기 같은 부가 로직을 앞뒤로 끼운다. 애노테이션이 곧 "여기 프록시 걸어라"는 신호.</p>
+      <div class="where">
+        <b>Spring 어디에</b>
+        <code>@Transactional</code>, <code>@Cacheable</code>, <code>@Async</code>, <code>@Retryable</code>. 인터페이스 있으면 JDK 동적 프록시, 없으면 CGLIB 서브클래싱.
+      </div>
+      <div class="interview">
+        <span>함정</span>
+        <div>같은 클래스 안에서 자기 메서드를 부르면(self-invocation) 프록시를 안 거쳐 <code>@Transactional</code>이 무시된다. 이 함정을 설명하면 원리를 아는 걸로 인정받는다.</div>
+      </div>
+    </div>
+    <div class="code-wrap">
+      <div class="code-bar">
+        <span class="bdot" style="background:#e06c5a"></span>
+        <span class="bdot" style="background:#e0b64f"></span>
+        <span class="bdot" style="background:#7fbfa8"></span>
+        <span class="fname">NexusApiService.java</span>
+      </div>
+<pre><span class="c-ann">@Service</span>
+<span class="c-key">public class</span> <span class="c-typ">NexusApiService</span> {
+
+    <span class="c-com">// 프록시가 캐시 조회 → 없으면 원본 실행 → 결과 저장</span>
+    <span class="c-ann">@Cacheable</span>(<span class="c-str">"assets"</span>)
+    <span class="c-ann">@Transactional</span>(readOnly = <span class="c-key">true</span>)
+    <span class="c-key">public</span> <span class="c-typ">Asset</span> findAsset(<span class="c-typ">String</span> id) {
+        <span class="c-key">return</span> repo.fetch(id);
+    }
+
+    <span class="c-key">public void</span> refresh(<span class="c-typ">String</span> id) {
+        <span class="c-com">// ⚠ self-invocation → 프록시 우회, 캐시 안 탐!</span>
+        findAsset(id);
+    }
+}</pre>
+    </div>
+  </div>
+
+  <!-- Template Method (framework side) -->
+  <div class="card">
+    <div class="card-info">
+      <span class="tag auto"><span class="tdot"></span>Framework</span>
+      <h3>템플릿 메서드<span class="en">Template Method</span></h3>
+      <p class="desc">골격 흐름은 상위가 고정하고, 변하는 단계만 하위/콜백에 위임한다. 이름부터 <code>Template</code>인 Spring 클래스들이 정확히 이 패턴 — 연결·예외처리·정리는 프레임워크가, 쿼리·매핑만 내가.</p>
+      <div class="where">
+        <b>Spring 어디에</b>
+        <code>JdbcTemplate</code>, <code>RestTemplate</code>, <code>TransactionTemplate</code>, <code>RedisTemplate</code>. 리소스 열고 닫는 반복을 프레임워크가 삼킨다.
+      </div>
+      <div class="interview">
+        <span>포인트</span>
+        <div>"보일러플레이트(연결/close/예외)를 프레임워크가 고정하고 나는 RowMapper 콜백만 넘긴다"고 말하면 패턴 이해가 드러난다.</div>
+      </div>
+    </div>
+    <div class="code-wrap">
+      <div class="code-bar">
+        <span class="bdot" style="background:#e06c5a"></span>
+        <span class="bdot" style="background:#e0b64f"></span>
+        <span class="bdot" style="background:#7fbfa8"></span>
+        <span class="fname">AssetDao.java</span>
+      </div>
+<pre><span class="c-com">// 연결·PreparedStatement·close·예외변환 = JdbcTemplate이 고정</span>
+<span class="c-com">// 변하는 부분(SQL + row 매핑)만 콜백으로 주입</span>
+<span class="c-typ">List</span>&lt;<span class="c-typ">Asset</span>&gt; assets = jdbc.query(
+    <span class="c-str">"SELECT id, name FROM asset WHERE repo = ?"</span>,
+    (rs, rowNum) -&gt; <span class="c-key">new</span> <span class="c-typ">Asset</span>(          <span class="c-com">// ← 내 몫</span>
+        rs.getString(<span class="c-str">"id"</span>),
+        rs.getString(<span class="c-str">"name"</span>)
+    ),
+    repoName
+);</pre>
+    </div>
+  </div>
+
+  <!-- Factory -->
+  <div class="card">
+    <div class="card-info">
+      <span class="tag auto"><span class="tdot"></span>Framework</span>
+      <h3>팩토리 메서드<span class="en">Factory Method</span></h3>
+      <p class="desc">객체 생성 책임을 별도 주체에 위임한다. Spring 컨테이너 자체가 거대한 팩토리 — <code>getBean()</code>이 팩토리 메서드다. <code>@Bean</code> 메서드도 "이 객체는 이렇게 만들어라"는 팩토리.</p>
+      <div class="where">
+        <b>Spring 어디에</b>
+        <code>BeanFactory</code>, <code>ApplicationContext#getBean()</code>, <code>@Bean</code> 메서드, <code>FactoryBean&lt;T&gt;</code> 인터페이스.
+      </div>
+      <div class="interview">
+        <span>연결</span>
+        <div>직접 설계할 때도 유용: 포맷(CycloneDX/SPDX)에 따라 구현체를 골라 만드는 팩토리로 <code>new</code> 분기를 한곳에 모은다.</div>
+      </div>
+    </div>
+    <div class="code-wrap">
+      <div class="code-bar">
+        <span class="bdot" style="background:#e06c5a"></span>
+        <span class="bdot" style="background:#e0b64f"></span>
+        <span class="bdot" style="background:#7fbfa8"></span>
+        <span class="fname">AppConfig.java</span>
+      </div>
+<pre><span class="c-ann">@Configuration</span>
+<span class="c-key">public class</span> <span class="c-typ">AppConfig</span> {
+
+    <span class="c-com">// @Bean 메서드 = "이 타입은 이렇게 생성하라"는 팩토리</span>
+    <span class="c-ann">@Bean</span>
+    <span class="c-key">public</span> <span class="c-typ">Validator</span> validator(<span class="c-typ">Props</span> p) {
+        <span class="c-key">return</span> <span class="c-key">new</span> <span class="c-typ">StrictValidator</span>(p.threshold());
+    }
+}
+
+<span class="c-com">// 컨테이너(팩토리)에서 꺼내 쓰기</span>
+<span class="c-typ">Validator</span> v = ctx.getBean(<span class="c-typ">Validator</span>.<span class="c-key">class</span>);</pre>
+    </div>
+  </div>
+
+  <!-- Chain of Responsibility -->
+  <div class="card">
+    <div class="card-info">
+      <span class="tag auto"><span class="tdot"></span>Framework</span>
+      <h3>책임 연쇄<span class="en">Chain of Responsibility</span></h3>
+      <p class="desc">요청을 처리기들의 사슬에 흘려보내고, 각 노드가 처리하거나 다음으로 넘긴다. Servlet Filter와 Spring Security의 필터 체인이 교과서적 구현.</p>
+      <div class="where">
+        <b>Spring 어디에</b>
+        <code>javax.servlet.Filter</code> 체인, Spring Security <code>FilterChainProxy</code>, <code>HandlerInterceptor</code>.
+      </div>
+      <div class="interview">
+        <span>포인트</span>
+        <div><code>chain.doFilter()</code>를 부르면 다음으로 넘어가고, 안 부르면 거기서 요청이 끊긴다 — 인증 실패 차단이 이 원리.</div>
+      </div>
+    </div>
+    <div class="code-wrap">
+      <div class="code-bar">
+        <span class="bdot" style="background:#e06c5a"></span>
+        <span class="bdot" style="background:#e0b64f"></span>
+        <span class="bdot" style="background:#7fbfa8"></span>
+        <span class="fname">ApiKeyFilter.java</span>
+      </div>
+<pre><span class="c-key">public class</span> <span class="c-typ">ApiKeyFilter</span> <span class="c-key">implements</span> <span class="c-typ">Filter</span> {
+
+    <span class="c-ann">@Override</span>
+    <span class="c-key">public void</span> doFilter(<span class="c-typ">ServletRequest</span> req,
+                         <span class="c-typ">ServletResponse</span> res,
+                         <span class="c-typ">FilterChain</span> chain) <span class="c-key">throws</span> <span class="c-typ">IOException</span>, <span class="c-typ">ServletException</span> {
+
+        <span class="c-key">if</span> (!hasValidKey(req)) {
+            reject(res);
+            <span class="c-key">return</span>;          <span class="c-com">// 사슬 끊음 → 다음 필터/컨트롤러 도달 못 함</span>
+        }
+        chain.doFilter(req, res); <span class="c-com">// 다음 처리기로 위임</span>
+    }
+}</pre>
+    </div>
+  </div>
+
+</div>
+
+<!-- ============ CATEGORY B: HAND-BUILT ============ -->
+<div class="band b">
+  <div class="band-head">
+    <span class="band-num">SET B</span>
+    <h2>내가 직접 설계하는 패턴</h2>
+    <span class="sub">인터페이스를 뽑고 구현체를 나누는 판단<br>= 면접에서 보여줄 지점</span>
+  </div>
+</div>
+
+<div class="grid">
+
+  <!-- Strategy -->
+  <div class="card">
+    <div class="card-info">
+      <span class="tag hand"><span class="tdot"></span>Hand-built</span>
+      <h3>전략<span class="en">Strategy</span></h3>
+      <p class="desc">교체 가능한 알고리즘을 인터페이스로 뽑고, 조건별로 구현체를 나눈다. <code>if-else</code>로 쌓이던 분기를 클래스로 분리 — 새 규칙이 생겨도 기존 코드는 안 건드린다(OCP). Spring에선 구현체를 <code>Map</code>으로 주입받아 키로 고른다.</p>
+      <div class="where">
+        <b>실무 적용</b>
+        Nexus 자산 <code>중복 제거</code> 로직을 <code>exceptList</code> 기반 / 해시 기반으로 나눠 전략화. 규칙 추가 = 구현체 1개 추가.
+      </div>
+      <div class="interview">
+        <span>면접</span>
+        <div>"조건마다 다르던 dedup을 전략 인터페이스로 뽑아 Map 주입으로 선택, OCP 지킴." 꼬리질문 → "상속(Template Method) 대신 조합을 택한 이유"까지 준비.</div>
+      </div>
+    </div>
+    <div class="code-wrap">
+      <div class="code-bar">
+        <span class="bdot" style="background:#e06c5a"></span>
+        <span class="bdot" style="background:#e0b64f"></span>
+        <span class="bdot" style="background:#7fbfa8"></span>
+        <span class="fname">DeduplicationStrategy.java</span>
+      </div>
+<pre><span class="c-com">// 1. "중복 제거"라는 행위를 인터페이스로 추상화</span>
+<span class="c-key">public interface</span> <span class="c-typ">DeduplicationStrategy</span> {
+    <span class="c-typ">List</span>&lt;<span class="c-typ">Asset</span>&gt; dedupe(<span class="c-typ">List</span>&lt;<span class="c-typ">Asset</span>&gt; assets);
+}
+
+<span class="c-com">// 2. 방식별 구현체 (Bean 이름 = 선택 키)</span>
+<span class="c-ann">@Component</span>(<span class="c-str">"exceptList"</span>)
+<span class="c-key">class</span> <span class="c-typ">ExceptListDedup</span> <span class="c-key">implements</span> <span class="c-typ">DeduplicationStrategy</span> { <span class="c-mut">... </span>}
+
+<span class="c-ann">@Component</span>(<span class="c-str">"hash"</span>)
+<span class="c-key">class</span> <span class="c-typ">HashDedup</span> <span class="c-key">implements</span> <span class="c-typ">DeduplicationStrategy</span> { <span class="c-mut">... </span>}
+
+<span class="c-com">// 3. 사용처는 Map으로 주입받아 키로 선택</span>
+<span class="c-ann">@Service</span>
+<span class="c-key">class</span> <span class="c-typ">AssetService</span> {
+    <span class="c-key">private final</span> <span class="c-typ">Map</span>&lt;<span class="c-typ">String</span>, <span class="c-typ">DeduplicationStrategy</span>&gt; strategies;
+
+    <span class="c-typ">AssetService</span>(<span class="c-typ">Map</span>&lt;<span class="c-typ">String</span>, <span class="c-typ">DeduplicationStrategy</span>&gt; s) {
+        <span class="c-key">this</span>.strategies = s;   <span class="c-com">// Spring이 Bean이름→구현체 Map 자동 구성</span>
+    }
+    <span class="c-typ">List</span>&lt;<span class="c-typ">Asset</span>&gt; process(<span class="c-typ">String</span> type, <span class="c-typ">List</span>&lt;<span class="c-typ">Asset</span>&gt; a) {
+        <span class="c-key">return</span> strategies.get(type).dedupe(a);
+    }
+}</pre>
+    </div>
+  </div>
+
+  <!-- Template Method (hand-built) -->
+  <div class="card">
+    <div class="card-info">
+      <span class="tag hand"><span class="tdot"></span>Hand-built</span>
+      <h3>템플릿 메서드<span class="en">Template Method · 내 코드</span></h3>
+      <p class="desc">여러 처리기가 흐름(검증→처리→알림)은 같고 중간만 다를 때, 공통 흐름을 상위 <code>final</code> 메서드로 고정하고 변하는 단계만 추상 메서드로 뺀다. 순서를 실수로 바꾸는 걸 컴파일 단계에서 막는다.</p>
+      <div class="where">
+        <b>실무 적용</b>
+        import 프로세서가 여러 종류인데 <code>검증 → 처리 → 결과알림</code> 순서는 동일, 실제 import 방식만 상이.
+      </div>
+      <div class="interview">
+        <span>면접</span>
+        <div>"흐름 순서를 <code>final</code>로 잠가 실수 방지." 단, 유연함이 더 필요하면 Strategy로 조합하는 게 낫다는 트레이드오프도 알아두기.</div>
+      </div>
+    </div>
+    <div class="code-wrap">
+      <div class="code-bar">
+        <span class="bdot" style="background:#e06c5a"></span>
+        <span class="bdot" style="background:#e0b64f"></span>
+        <span class="bdot" style="background:#7fbfa8"></span>
+        <span class="fname">AbstractImportProcessor.java</span>
+      </div>
+<pre><span class="c-key">public abstract class</span> <span class="c-typ">AbstractImportProcessor</span> {
+
+    <span class="c-com">// 흐름 고정 — 하위가 순서를 못 바꿈</span>
+    <span class="c-key">public final void</span> run(<span class="c-typ">ImportRequest</span> req) {
+        validate(req);
+        doImport(req);       <span class="c-com">// ← 변하는 단계</span>
+        notifyResult(req);
+    }
+
+    <span class="c-key">protected abstract void</span> doImport(<span class="c-typ">ImportRequest</span> req);
+
+    <span class="c-key">private void</span> validate(<span class="c-typ">ImportRequest</span> req) { <span class="c-com">/* 공통 */</span> }
+    <span class="c-key">private void</span> notifyResult(<span class="c-typ">ImportRequest</span> req) { <span class="c-com">/* 공통 */</span> }
+}
+
+<span class="c-key">class</span> <span class="c-typ">DockerImport</span> <span class="c-key">extends</span> <span class="c-typ">AbstractImportProcessor</span> {
+    <span class="c-ann">@Override</span> <span class="c-key">protected void</span> doImport(<span class="c-typ">ImportRequest</span> r) { <span class="c-mut">... </span>}
+}</pre>
+    </div>
+  </div>
+
+  <!-- Observer -->
+  <div class="card">
+    <div class="card-info">
+      <span class="tag hand"><span class="tdot"></span>Hand-built</span>
+      <h3>옵저버<span class="en">Observer</span></h3>
+      <p class="desc">이벤트를 발행하면 관심 있는 구독자들이 각자 반응한다. 발행자는 구독자를 모른다(느슨한 결합). Spring이 <code>ApplicationEventPublisher</code>를 제공하지만, 무슨 이벤트를 언제 쏘고 누가 들을지는 내 설계.</p>
+      <div class="where">
+        <b>실무 적용</b>
+        import 완료 시 <code>ImportCompletedEvent</code> 발행 → 대시보드 갱신·알림·통계 배치가 각자 구독. 서비스 간 직접 호출 제거.
+      </div>
+      <div class="interview">
+        <span>면접</span>
+        <div>"import 서비스가 대시보드를 직접 부르면 결합↑. 이벤트로 분리해 관심사 분리." 동기/비동기(<code>@Async</code>) 처리 차이도 짚기.</div>
+      </div>
+    </div>
+    <div class="code-wrap">
+      <div class="code-bar">
+        <span class="bdot" style="background:#e06c5a"></span>
+        <span class="bdot" style="background:#e0b64f"></span>
+        <span class="bdot" style="background:#7fbfa8"></span>
+        <span class="fname">ImportEvents.java</span>
+      </div>
+<pre><span class="c-com">// 발행 — 누가 듣는지 몰라도 됨</span>
+<span class="c-ann">@Service</span>
+<span class="c-key">class</span> <span class="c-typ">ImportService</span> {
+    <span class="c-key">private final</span> <span class="c-typ">ApplicationEventPublisher</span> publisher;
+
+    <span class="c-key">void</span> finish(<span class="c-typ">String</span> importId) {
+        <span class="c-com">// ... import 완료 처리</span>
+        publisher.publishEvent(<span class="c-key">new</span> <span class="c-typ">ImportCompletedEvent</span>(importId));
+    }
+}
+
+<span class="c-com">// 구독 — 관심 있는 쪽이 각자 반응</span>
+<span class="c-ann">@Component</span>
+<span class="c-key">class</span> <span class="c-typ">DashboardListener</span> {
+    <span class="c-ann">@EventListener</span>
+    <span class="c-key">void</span> on(<span class="c-typ">ImportCompletedEvent</span> e) {
+        dashboard.refresh(e.importId());
+    }
+}</pre>
+    </div>
+  </div>
+
+  <!-- Builder -->
+  <div class="card">
+    <div class="card-info">
+      <span class="tag hand"><span class="tdot"></span>Hand-built</span>
+      <h3>빌더<span class="en">Builder</span></h3>
+      <p class="desc">인자 많고 선택 필드가 뒤섞인 객체를, 이름 붙은 단계로 안전하게 조립한다. 텔레스코핑 생성자의 순서 실수·가독성 문제를 없애고 불변 객체를 만든다. Lombok <code>@Builder</code>로 흔히 쓰지만, 왜 필요한지가 핵심.</p>
+      <div class="where">
+        <b>실무 적용</b>
+        <code>Sbom</code>처럼 format·version·components·optional 필드가 많은 도메인 객체 생성. <code>UriComponentsBuilder</code>도 같은 패턴.
+      </div>
+      <div class="interview">
+        <span>면접</span>
+        <div>단독으론 약함. "선택 필드 많고 순서 실수 위험 → 불변으로." 꼬리질문 → "빌더 vs 정적 팩토리", "필수 필드 강제 방법"까지.</div>
+      </div>
+    </div>
+    <div class="code-wrap">
+      <div class="code-bar">
+        <span class="bdot" style="background:#e06c5a"></span>
+        <span class="bdot" style="background:#e0b64f"></span>
+        <span class="bdot" style="background:#7fbfa8"></span>
+        <span class="fname">Sbom.java</span>
+      </div>
+<pre><span class="c-ann">@Builder</span>
+<span class="c-key">public record</span> <span class="c-typ">Sbom</span>(
+    <span class="c-typ">String</span> format,
+    <span class="c-typ">String</span> version,
+    <span class="c-typ">List</span>&lt;<span class="c-typ">Component</span>&gt; components,
+    <span class="c-typ">String</span> serialNumber   <span class="c-com">// optional</span>
+) {}
+
+<span class="c-com">// 순서 무관 · 이름으로 명확 · 불변</span>
+<span class="c-typ">Sbom</span> sbom = <span class="c-typ">Sbom</span>.builder()
+    .format(<span class="c-str">"CycloneDX"</span>)
+    .version(<span class="c-str">"1.5"</span>)
+    .components(components)
+    .build();</pre>
+    </div>
+  </div>
+
+  <!-- Adapter -->
+  <div class="card">
+    <div class="card-info">
+      <span class="tag hand"><span class="tdot"></span>Hand-built</span>
+      <h3>어댑터<span class="en">Adapter</span></h3>
+      <p class="desc">호환되지 않는 두 인터페이스를 이어 붙인다. 외부 시스템의 응답 모양을 내 도메인 모델로 변환하는 계층이 대표적 — 외부 스펙 변화가 도메인까지 번지는 걸 막는 방벽.</p>
+      <div class="where">
+        <b>실무 적용</b>
+        Nexus REST 응답(<code>NexusAssetResponse</code>)을 내부 <code>Asset</code> 도메인으로 변환. 외부 API 바뀌어도 어댑터만 수정.
+      </div>
+      <div class="interview">
+        <span>면접</span>
+        <div>"외부 응답 스펙을 도메인에 직접 물리면 결합↑. 어댑터로 변환 지점을 한곳에 격리." 안티코럽션 레이어(ACL) 개념과 연결하면 강함.</div>
+      </div>
+    </div>
+    <div class="code-wrap">
+      <div class="code-bar">
+        <span class="bdot" style="background:#e06c5a"></span>
+        <span class="bdot" style="background:#e0b64f"></span>
+        <span class="bdot" style="background:#7fbfa8"></span>
+        <span class="fname">NexusAssetAdapter.java</span>
+      </div>
+<pre><span class="c-com">// 외부(Nexus) 표현 → 내부 도메인 표현</span>
+<span class="c-ann">@Component</span>
+<span class="c-key">public class</span> <span class="c-typ">NexusAssetAdapter</span> {
+
+    <span class="c-key">public</span> <span class="c-typ">Asset</span> toDomain(<span class="c-typ">NexusAssetResponse</span> res) {
+        <span class="c-key">return</span> <span class="c-typ">Asset</span>.builder()
+            .id(res.getId())
+            .name(res.getPath())              <span class="c-com">// 필드명 매핑</span>
+            .repo(res.getRepository())
+            .sha256(res.getChecksum().sha256()) <span class="c-com">// 구조 평탄화</span>
+            .build();
+    }
+}</pre>
+    </div>
+  </div>
+
+  <!-- Decorator -->
+  <div class="card">
+    <div class="card-info">
+      <span class="tag hand"><span class="tdot"></span>Hand-built</span>
+      <h3>데코레이터<span class="en">Decorator</span></h3>
+      <p class="desc">원본과 같은 인터페이스를 유지한 채 감싸서 기능을 덧입힌다. 상속 없이 로깅·검증·재시도 같은 부가 기능을 층층이 쌓을 수 있다. <code>BufferedReader</code>가 스트림을 감싸는 게 같은 원리.</p>
+      <div class="where">
+        <b>실무 적용</b>
+        <code>LicenseValidator</code>를 감싼 <code>LoggingValidator</code>로 검증 전후 로그 추가 — 원본 검증 로직은 그대로.
+      </div>
+      <div class="interview">
+        <span>면접</span>
+        <div>"기능 추가하려고 상속 트리 늘리는 대신 감싸서 합성." 프록시와 차이(데코는 기능 추가 의도, 프록시는 접근 제어)를 구분하면 좋음.</div>
+      </div>
+    </div>
+    <div class="code-wrap">
+      <div class="code-bar">
+        <span class="bdot" style="background:#e06c5a"></span>
+        <span class="bdot" style="background:#e0b64f"></span>
+        <span class="bdot" style="background:#7fbfa8"></span>
+        <span class="fname">LoggingValidator.java</span>
+      </div>
+<pre><span class="c-com">// 같은 인터페이스를 구현하면서 원본을 감쌈</span>
+<span class="c-key">public class</span> <span class="c-typ">LoggingValidator</span> <span class="c-key">implements</span> <span class="c-typ">LicenseValidator</span> {
+
+    <span class="c-key">private final</span> <span class="c-typ">LicenseValidator</span> delegate;
+
+    <span class="c-key">public</span> <span class="c-typ">LoggingValidator</span>(<span class="c-typ">LicenseValidator</span> delegate) {
+        <span class="c-key">this</span>.delegate = delegate;
+    }
+
+    <span class="c-ann">@Override</span>
+    <span class="c-key">public</span> <span class="c-typ">Result</span> validate(<span class="c-typ">Sbom</span> sbom) {
+        log.info(<span class="c-str">"validating {}"</span>, sbom.serialNumber());
+        <span class="c-typ">Result</span> r = delegate.validate(sbom);  <span class="c-com">// 원본 위임</span>
+        log.info(<span class="c-str">"result: {}"</span>, r.status());
+        <span class="c-key">return</span> r;                            <span class="c-com">// 부가기능 + 원본</span>
+    }
+}</pre>
+    </div>
+  </div>
+
+</div>
+
+<!-- ============ INTERVIEW CLOSER ============ -->
+<section class="closer">
+  <h2>면접에서 패턴을 물으면 — 답의 한 세트</h2>
+  <div class="frame">
+    <div class="step">
+      <div class="n">01</div>
+      <h4>문제 상황</h4>
+      <p>어떤 코드 냄새가 있었나. "조건마다 dedup 로직이 if-else로 쌓였다."</p>
+    </div>
+    <div class="step">
+      <div class="n">02</div>
+      <h4>대안 검토</h4>
+      <p>고려한 선택지들. "분기 유지 vs 전략 분리 vs 상속."</p>
+    </div>
+    <div class="step">
+      <div class="n">03</div>
+      <h4>선택 이유</h4>
+      <p>왜 이걸. "규칙 추가가 잦아 OCP가 중요 → Strategy."</p>
+    </div>
+    <div class="step">
+      <div class="n">04</div>
+      <h4>트레이드오프</h4>
+      <p>대가는. "구현체·Bean이 늘어 관리 포인트 증가."</p>
+    </div>
+  </div>
+
+  <div class="script">
+    <span class="who">모범 답변 · Strategy를 메인으로</span>
+    Nexus 자산 <em>중복 제거</em> 로직이 조건마다 달라서 <code>if-else</code>로 쌓이던 걸 <code>DeduplicationStrategy</code> 인터페이스로 분리했습니다. <code>exceptList</code> 기반 처리와 해시 기반을 다른 전략으로 두고 <em>Map으로 주입</em>받아 타입별로 선택하게 했어요. 새 규칙이 생겨도 기존 코드는 안 건드리고 구현체만 추가하면 돼서 <em>OCP</em>를 지킬 수 있었습니다. 빌더는 <code>Sbom</code>처럼 선택 필드가 많은 도메인 객체를 불변으로 안전하게 만들려고 곁들여 썼습니다.
+  </div>
+</section>
+
+<footer>
+  SET A — Singleton · Proxy · Template Method · Factory · Chain of Responsibility &nbsp;·&nbsp; 프레임워크가 적용<br>
+  SET B — Strategy · Template Method · Observer · Builder · Adapter · Decorator &nbsp;·&nbsp; 직접 설계<br>
+  Spring Design Patterns · Backend Study Sheet
+</footer>
+
+</body>
+</html>

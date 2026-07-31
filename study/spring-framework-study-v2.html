@@ -1,0 +1,1197 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>스프링 프레임워크 — 구조와 위상의 완전한 그림 (증보판)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#FBFBF8;
+  --ink:#1C2430;
+  --ink-soft:#4A5568;
+  --line:#D8DCE2;
+  --blue:#2B50C8;
+  --blue-soft:#EEF1FB;
+  --teal:#0E7A6E;
+  --teal-soft:#E8F4F2;
+  --red:#B23A2E;
+  --red-soft:#FBEFED;
+  --amber:#9A6B0F;
+  --amber-soft:#FBF4E4;
+  --mono:'IBM Plex Mono',monospace;
+  --sans:'IBM Plex Sans KR',-apple-system,'Apple SD Gothic Neo',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--sans);
+  background:var(--paper);
+  color:var(--ink);
+  line-height:1.75;
+  font-size:16px;
+}
+.wrap{max-width:820px;margin:0 auto;padding:0 24px}
+
+/* ===== header ===== */
+header{
+  border-bottom:2px solid var(--ink);
+  padding:56px 0 36px;
+  position:relative;
+}
+.doc-meta{
+  font-family:var(--mono);
+  font-size:12px;
+  color:var(--ink-soft);
+  letter-spacing:.08em;
+  display:flex;
+  justify-content:space-between;
+  margin-bottom:28px;
+}
+h1{
+  font-size:clamp(30px,5.5vw,44px);
+  font-weight:700;
+  line-height:1.25;
+  letter-spacing:-.02em;
+}
+h1 .sub{
+  display:block;
+  font-size:clamp(16px,2.5vw,19px);
+  font-weight:500;
+  color:var(--ink-soft);
+  margin-top:12px;
+  letter-spacing:0;
+}
+.thesis{
+  margin-top:28px;
+  padding:20px 22px;
+  border-left:4px solid var(--blue);
+  background:var(--blue-soft);
+  font-size:17px;
+  font-weight:500;
+  border-radius:0 6px 6px 0;
+}
+
+/* ===== legend ===== */
+.legend{
+  display:flex;
+  gap:20px;
+  flex-wrap:wrap;
+  margin:24px 0 0;
+  font-size:13px;
+  font-family:var(--mono);
+}
+.legend span{display:flex;align-items:center;gap:7px;color:var(--ink-soft)}
+.dot{width:11px;height:11px;border-radius:3px;display:inline-block}
+.dot.r{background:var(--red)}
+.dot.a{background:var(--amber)}
+.dot.n{background:var(--teal)}
+
+/* ===== TOC ===== */
+nav.toc{
+  margin:36px 0 0;
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:22px 26px;
+  background:#fff;
+}
+nav.toc h2{font-size:13px;font-family:var(--mono);letter-spacing:.12em;color:var(--ink-soft);margin-bottom:14px;font-weight:600}
+nav.toc ol{list-style:none;counter-reset:toc}
+nav.toc li{counter-increment:toc;margin:7px 0}
+nav.toc a{
+  color:var(--ink);text-decoration:none;font-weight:500;font-size:15px;
+  display:flex;gap:12px;align-items:baseline;
+}
+nav.toc a::before{
+  content:counter(toc,decimal-leading-zero);
+  font-family:var(--mono);font-size:12px;color:var(--blue);font-weight:600;
+}
+nav.toc a:hover{color:var(--blue)}
+nav.toc .new{
+  font-family:var(--mono);font-size:10px;font-weight:600;
+  background:var(--teal);color:#fff;
+  padding:1px 6px;border-radius:3px;margin-left:8px;
+  letter-spacing:.05em;
+}
+
+/* ===== sections ===== */
+section{padding:52px 0 8px;border-bottom:1px solid var(--line)}
+section:last-of-type{border-bottom:none}
+.sec-label{
+  font-family:var(--mono);
+  font-size:12px;
+  letter-spacing:.14em;
+  color:var(--blue);
+  font-weight:600;
+  margin-bottom:10px;
+}
+h2{font-size:26px;font-weight:700;letter-spacing:-.01em;margin-bottom:20px;line-height:1.35}
+h3{font-size:18px;font-weight:600;margin:32px 0 12px}
+p{margin:0 0 16px;color:var(--ink)}
+p.lead{font-size:17px;font-weight:500}
+strong{font-weight:600}
+em{font-style:normal;background:linear-gradient(transparent 62%, #D6E0FA 62%);padding:0 1px}
+ul.plain{margin:0 0 16px 4px;list-style:none}
+ul.plain li{padding-left:20px;position:relative;margin-bottom:8px}
+ul.plain li::before{content:"—";position:absolute;left:0;color:var(--blue);font-weight:600}
+
+/* ===== callouts ===== */
+.callout{
+  border-radius:8px;
+  padding:18px 20px 18px 56px;
+  margin:22px 0;
+  position:relative;
+  font-size:15px;
+}
+.callout::before{
+  font-family:var(--mono);
+  font-weight:600;
+  font-size:11px;
+  letter-spacing:.1em;
+  position:absolute;
+  top:-9px;
+  left:14px;
+  padding:2px 9px;
+  border-radius:4px;
+  color:#fff;
+}
+.callout .ic{
+  position:absolute;left:18px;top:20px;
+  width:24px;height:24px;
+  border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-weight:600;font-size:13px;
+  color:#fff;
+}
+.fix{background:var(--red-soft);border:1px solid #E5C3BE}
+.fix::before{content:"정정 CORRECTED";background:var(--red)}
+.fix .ic{background:var(--red)}
+.confuse{background:var(--amber-soft);border:1px solid #E4D3A8}
+.confuse::before{content:"헷갈렸던 지점";background:var(--amber)}
+.confuse .ic{background:var(--amber)}
+.callout p{margin-bottom:10px}
+.callout p:last-child{margin-bottom:0}
+.callout .was{color:var(--ink-soft);text-decoration:line-through;text-decoration-color:var(--red);text-decoration-thickness:1.5px}
+
+/* ===== diagrams ===== */
+.stack{
+  margin:26px 0;
+  border-radius:10px;
+  overflow:hidden;
+  border:1.5px solid var(--ink);
+}
+.layer{
+  padding:16px 20px;
+  border-bottom:1.5px solid var(--ink);
+  display:grid;
+  grid-template-columns:88px 1fr;
+  gap:16px;
+  align-items:start;
+  background:#fff;
+}
+.layer:last-child{border-bottom:none}
+.layer .tag{
+  font-family:var(--mono);
+  font-size:11px;
+  font-weight:600;
+  letter-spacing:.06em;
+  padding:3px 8px;
+  border-radius:4px;
+  text-align:center;
+  margin-top:3px;
+  white-space:nowrap;
+}
+.layer .name{font-weight:600;font-size:15px}
+.layer .desc{font-size:13.5px;color:var(--ink-soft);line-height:1.6;margin-top:3px}
+.layer.l-mod{background:var(--blue-soft)}
+.layer.l-mod .tag{background:var(--blue);color:#fff}
+.layer.l-mech{background:var(--teal-soft)}
+.layer.l-mech .tag{background:var(--teal);color:#fff}
+.layer.l-core{background:#fff}
+.layer.l-core .tag{background:var(--ink);color:#fff}
+.layer.l-env{background:#F1F2F4}
+.layer.l-env .tag{background:#8A93A0;color:#fff}
+
+pre.diagram{
+  font-family:var(--mono);
+  font-size:12.5px;
+  line-height:1.7;
+  background:var(--ink);
+  color:#E8EDF5;
+  border-radius:10px;
+  padding:22px 24px;
+  overflow-x:auto;
+  margin:22px 0;
+}
+pre.diagram .hl{color:#7FB3FF;font-weight:600}
+pre.diagram .dim{color:#8794A5}
+pre.diagram .rd{color:#FF9A8D}
+pre.diagram .gn{color:#6FD9C8}
+
+code{
+  font-family:var(--mono);
+  font-size:.88em;
+  background:#EEF0F3;
+  padding:2px 6px;
+  border-radius:4px;
+}
+
+/* ===== tables ===== */
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin:22px 0;
+  font-size:14.5px;
+  background:#fff;
+  border:1.5px solid var(--ink);
+  border-radius:8px;
+  overflow:hidden;
+}
+th{
+  font-family:var(--mono);
+  font-size:12px;
+  letter-spacing:.06em;
+  text-align:left;
+  background:var(--ink);
+  color:#fff;
+  padding:10px 14px;
+  font-weight:600;
+}
+td{padding:12px 14px;border-top:1px solid var(--line);vertical-align:top}
+tr td:first-child{font-weight:600;white-space:nowrap}
+table.wide td:first-child{white-space:normal}
+
+/* ===== axis cards ===== */
+.axes{display:grid;grid-template-columns:1fr;gap:14px;margin:22px 0}
+.axis{
+  border:1.5px solid var(--ink);
+  border-radius:10px;
+  background:#fff;
+  overflow:hidden;
+}
+.axis-head{
+  padding:12px 18px;
+  background:var(--ink);
+  color:#fff;
+  display:flex;
+  align-items:baseline;
+  gap:12px;
+}
+.axis-head .k{font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:#9FB4E8}
+.axis-head .t{font-weight:600;font-size:16px}
+.axis-body{padding:16px 18px;font-size:14.5px}
+.axis-body .row{display:grid;grid-template-columns:72px 1fr;gap:10px;margin-bottom:8px}
+.axis-body .row:last-child{margin-bottom:0}
+.axis-body .lab{
+  font-family:var(--mono);font-size:11px;font-weight:600;
+  color:var(--ink-soft);letter-spacing:.05em;padding-top:3px;
+}
+
+/* ===== dissect ===== */
+.dissect{
+  display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:22px 0;
+}
+.dis-card{border-radius:10px;padding:18px 20px;border:1.5px solid}
+.dis-card.psa{background:var(--blue-soft);border-color:var(--blue)}
+.dis-card.aop{background:var(--teal-soft);border-color:var(--teal)}
+.dis-card h4{font-size:15px;font-weight:700;margin-bottom:8px;display:flex;gap:8px;align-items:center}
+.dis-card h4 .chip{font-family:var(--mono);font-size:10px;padding:2px 7px;border-radius:4px;color:#fff;letter-spacing:.06em}
+.dis-card.psa .chip{background:var(--blue)}
+.dis-card.aop .chip{background:var(--teal)}
+.dis-card p{font-size:13.5px;margin-bottom:0;color:var(--ink)}
+
+/* ===== quiz ===== */
+.quiz{
+  border:1.5px dashed var(--ink);
+  border-radius:10px;
+  padding:22px 24px;
+  margin:26px 0;
+  background:#fff;
+}
+.quiz .q-label{font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--blue);font-weight:600;margin-bottom:8px}
+.quiz .q{font-weight:600;font-size:16px;margin-bottom:14px}
+details{margin-top:4px}
+summary{
+  cursor:pointer;
+  font-family:var(--mono);
+  font-size:13px;
+  font-weight:600;
+  color:var(--blue);
+  user-select:none;
+  list-style:none;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:6px 14px;
+  border:1px solid var(--blue);
+  border-radius:6px;
+}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"▸";transition:transform .2s}
+details[open] summary::after{transform:rotate(90deg)}
+details .ans{padding:16px 4px 4px;font-size:14.5px}
+details .ans p{margin-bottom:10px}
+
+/* ===== roadmap ===== */
+.roadmap{margin:22px 0;position:relative;padding-left:34px}
+.roadmap::before{
+  content:"";position:absolute;left:11px;top:8px;bottom:8px;
+  width:2px;background:var(--line);
+}
+.step{position:relative;margin-bottom:22px}
+.step::before{
+  content:attr(data-n);
+  position:absolute;left:-34px;top:0;
+  width:24px;height:24px;border-radius:50%;
+  background:var(--ink);color:#fff;
+  font-family:var(--mono);font-size:12px;font-weight:600;
+  display:flex;align-items:center;justify-content:center;
+}
+.step h4{font-size:15.5px;font-weight:600;margin-bottom:4px}
+.step p{font-size:14px;color:var(--ink-soft);margin-bottom:0}
+
+/* ===== footer ===== */
+footer{
+  padding:40px 0 64px;
+  font-family:var(--mono);
+  font-size:12px;
+  color:var(--ink-soft);
+}
+
+@media(max-width:640px){
+  .dissect{grid-template-columns:1fr}
+  .layer{grid-template-columns:1fr;gap:6px}
+  .layer .tag{justify-self:start}
+  .doc-meta{flex-direction:column;gap:4px}
+}
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  summary::after{transition:none}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="doc-meta">
+      <span>SPRING FRAMEWORK · CONCEPT STUDY</span>
+      <span>REV. 3 (증보판) — 2026.07</span>
+    </div>
+    <h1>스프링 프레임워크
+      <span class="sub">구조와 위상의 완전한 그림 — 서블릿·톰캣·소켓 편 증보</span>
+    </h1>
+    <div class="thesis">
+      스프링이란: <strong>POJO 기반 개발을 가능하게 하는 것</strong>을 목표로,
+      IoC 컨테이너를 코어에 두고 그 위에 목적별 모듈이 얹힌 프레임워크.
+      각 모듈은 자기 구성요소를 Bean으로 컨테이너에 맡기고,
+      컨테이너가 제공하는 DI·AOP 메커니즘을 공통으로 활용한다.
+    </div>
+    <div class="legend">
+      <span><span class="dot r"></span>정정 — 잘못 이해했다가 바로잡은 내용</span>
+      <span><span class="dot a"></span>헷갈렸던 지점 — 특히 주의해서 볼 부분</span>
+      <span><span class="dot n"></span>NEW — 이번 증보에서 추가된 장</span>
+    </div>
+    <nav class="toc">
+      <h2>CONTENTS</h2>
+      <ol>
+        <li><a href="#s1">전체 위상 구조 — 한 장의 지도</a></li>
+        <li><a href="#s2">서블릿과 톰캣 — ⓪층 해부<span class="new">NEW</span></a></li>
+        <li><a href="#s3">소켓 — 요청의 바닥까지<span class="new">NEW</span></a></li>
+        <li><a href="#s4">DispatcherServlet — 국경선과 전화번호부<span class="new">NEW</span></a></li>
+        <li><a href="#s5">WebMVC vs WebFlux — 톰캣 없이도 되나<span class="new">NEW</span></a></li>
+        <li><a href="#s5b">스레드·코어·커넥션 풀 — 숫자들의 근거<span class="new">NEW</span></a></li>
+        <li><a href="#s6">구조 vs 메커니즘 — 위치가 있는 것과 없는 것</a></li>
+        <li><a href="#s7">IoC vs DI — 원칙과 구현의 관계</a></li>
+        <li><a href="#s8">IoC의 두 차원 — 객체와 흐름</a></li>
+        <li><a href="#s9">AOP — 개념, 그리고 프록시라는 구현</a></li>
+        <li><a href="#s10">@Transactional 해부 — 두 축의 협력</a></li>
+        <li><a href="#s11">PSA의 진짜 위상 — 엔진이 아니라 설계 철학</a></li>
+        <li><a href="#s12">Spring Boot — 무엇을 자동화했나</a></li>
+        <li><a href="#s13">오답노트 — 정정 사항 총정리</a></li>
+        <li><a href="#s14">학습 로드맵</a></li>
+      </ol>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+<!-- ============ S1 ============ -->
+<section id="s1">
+  <div class="sec-label">01 — TOPOLOGY</div>
+  <h2>전체 위상 구조: 한 장의 지도</h2>
+  <p class="lead">스프링의 구성요소들은 같은 레벨이 아니다. 아래에서 위로: 실행 환경 → 코어 → 메커니즘 → 모듈 순으로 위상이 갈린다.</p>
+
+  <div class="stack">
+    <div class="layer l-mod">
+      <span class="tag">③ 모듈</span>
+      <div>
+        <div class="name">WebMVC · Security · Spring Data/Tx</div>
+        <div class="desc">코어를 <strong>사용하는</strong> 층. 각 모듈의 구성요소(Controller, 설정 객체 등)는 전부 Bean으로 등록되어 ①의 지배를 받는다. Security의 FilterChain만 예외적으로 DispatcherServlet 앞단의 서블릿 필터 레벨에서 동작.</div>
+      </div>
+    </div>
+    <div class="layer l-mech">
+      <span class="tag">② 메커니즘</span>
+      <div>
+        <div class="name">DI · AOP(프록시)</div>
+        <div class="desc">"어디에 있는 것"이 아니라 <strong>"어떻게 작동하는 것"</strong>. 특정 층에 속하지 않고 모든 층을 관통한다. DI는 모든 Bean 연결에, AOP는 Service의 @Transactional에도 Security의 @PreAuthorize에도 적용된다.</div>
+      </div>
+    </div>
+    <div class="layer l-core">
+      <span class="tag">① 코어</span>
+      <div>
+        <div class="name">IoC 컨테이너 (BeanFactory / ApplicationContext)</div>
+        <div class="desc">유일한 중심. Bean의 생명주기(생성 → 의존성 주입 → 초기화 → 소멸)를 관리한다. 나머지 전부가 이것에 의존.</div>
+      </div>
+    </div>
+    <div class="layer l-env">
+      <span class="tag">⓪ 환경</span>
+      <div>
+        <div class="name">실행 환경 — 교체 가능한 슬롯 (증보판에서 갱신)</div>
+        <div class="desc"><strong>스프링의 구성요소가 아님.</strong> 비웹이면 JVM만으로 충분. 서블릿 웹(WebMVC)이면 Tomcat/Jetty/Undertow 중 택1. 리액티브 웹(WebFlux)이면 Netty 등. → 상세는 02·05장</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout fix">
+    <span class="ic">✕</span>
+    <p><span class="was">"IoC 컨테이너 안에 서블릿 컨테이너가 있다"</span> → 포함 관계가 반대다. <strong>Tomcat이 가장 바깥</strong>이고 그 안에서 스프링 애플리케이션(IoC 컨테이너)이 구동된다. Spring Boot에서 Tomcat이 embedded로 들어오다 보니 "스프링 안에 있는 것"처럼 느껴지지만, 개념적으로는 Tomcat이 요청을 받아 스프링(DispatcherServlet)에게 넘겨주는 관계.</p>
+  </div>
+
+  <h3>요청이 흐르는 경로 (모듈들의 실제 배치)</h3>
+  <pre class="diagram">[클라이언트 요청]
+      │
+      ▼
+[Servlet Container (Tomcat)]          <span class="dim">← 스프링 외부</span>
+      │
+      ▼
+[Spring Security — FilterChain]       <span class="hl">← DispatcherServlet보다 먼저!</span>
+      │                                 <span class="dim">서블릿 필터 레벨 (AOP 아님)</span>
+      ▼
+[Spring WebMVC — DispatcherServlet]   <span class="dim">← Front Controller 패턴</span>
+      │   HandlerMapping → Controller → ViewResolver
+      ▼
+[Service Layer]                       <span class="gn">← @Transactional (AOP 프록시) 적용 지점</span>
+      │
+      ▼
+[Spring Data / JPA / MyBatis]
+      │
+      ▼
+[DataSource → DB]
+
+<span class="dim">──────────────────────────────────────────
+[IoC Container] 위 모든 컴포넌트(필터 제외)를
+Bean으로 등록·관리하는 기반</span></pre>
+
+  <p>핵심 문장으로 압축하면:</p>
+  <ul class="plain">
+    <li>모듈이 컨테이너 "안에서 동작"하는 게 아니라, <em>모듈들이 자기 부품을 Bean으로 컨테이너에 맡기는</em> 구조다.</li>
+    <li>컨테이너는 그릇이 아니라 <strong>모든 모듈이 공유하는 조립 공장</strong>에 가깝다 — 부품을 생성·연결(DI)·확장(AOP 프록시)해서 돌려준다.</li>
+  </ul>
+</section>
+
+<!-- ============ S2 (NEW) ============ -->
+<section id="s2">
+  <div class="sec-label">02 — SERVLET &amp; TOMCAT · NEW</div>
+  <h2>서블릿과 톰캣: ⓪층 해부</h2>
+  <p class="lead">서블릿은 자바 표준(Jakarta EE 스펙)이 정의한 <strong>"HTTP 요청을 처리하는 자바 객체의 규격"</strong>이다. 여기서 "규격"과 "처리"가 정확히 뭘 뜻하는지가 이 장의 전부다.</p>
+
+  <h3>등장인물은 둘: 데이터와 처리기</h3>
+
+  <div class="callout confuse">
+    <span class="ic">!</span>
+    <p><strong>"서블릿 = HTTP 요청이 변환된 DTO 클래스?"</strong> → 아니다. 서블릿은 데이터가 아니라 <strong>처리기(handler)</strong>다. 등장인물이 둘인데 하나로 합쳐서 생긴 혼동:</p>
+    <p>① <strong>데이터 역할</strong> — <code>HttpServletRequest</code> / <code>HttpServletResponse</code>. 톰캣이 raw HTTP 바이트를 파싱해 만들어주는, 요청 정보를 담은 객체 (DTO에 가까운 역할)<br>
+    ② <strong>처리기 역할</strong> — <code>Servlet</code>. 그 데이터 객체를 <em>인자로 받아서 일하는</em> 쪽</p>
+  </div>
+
+  <pre class="diagram">GET /users?id=3 HTTP/1.1        <span class="dim">← raw HTTP 바이트</span>
+Host: example.com
+      │
+      │ <span class="hl">톰캣이 파싱·변환 (①데이터 생성)</span>
+      ▼
+[HttpServletRequest]             req.getMethod() → "GET"
+      │                          req.getParameter("id") → "3"
+      │ <span class="hl">인자로 전달하며 호출</span>
+      ▼
+[Servlet.service(req, res)]      <span class="dim">← ②처리기. 스펙의 핵심 계약</span>
+      │
+      │ 응답을 채워넣음
+      ▼
+[HttpServletResponse] ──톰캣이 변환──► raw HTTP 응답 바이트</pre>
+
+  <p>"규격"이란 <strong>인터페이스로 정의된 계약(contract)</strong>이라는 뜻이다. 서블릿 스펙의 약속: <em>"HTTP를 처리하고 싶은 클래스는 Servlet 인터페이스를 구현해라. 그러면 어떤 컨테이너든(톰캣이든 Jetty든) 요청이 오면 service()를 호출해주고, 요청 데이터는 HttpServletRequest로 만들어 넘겨주겠다."</em> 스펙은 처리기의 규격(Servlet)과 데이터의 규격(HttpServletRequest/Response) <strong>양쪽을 모두 정의</strong>한다 — 톰캣을 Jetty로 바꿔도 동작하는 이유.</p>
+
+  <h3>톰캣이 정확히 하는 일 5가지</h3>
+  <p>톰캣 = 서블릿 컨테이너 스펙의 구현체. 분해하면:</p>
+  <ul class="plain">
+    <li><strong>네트워크 처리</strong> — 포트(8080)를 열고 TCP 연결 수락, HTTP 프로토콜 파싱 (청크 인코딩, keep-alive, 멀티파트, TLS...)</li>
+    <li><strong>객체 변환</strong> — raw HTTP 바이트 ↔ HttpServletRequest/Response 객체</li>
+    <li><strong>서블릿 생명주기 관리</strong> — init() → service() → destroy()</li>
+    <li><strong>스레드 관리</strong> — 요청마다 스레드 풀에서 스레드 배정 (Thread-per-Request 모델 → 05장)</li>
+    <li><strong>필터 체인 실행</strong> — 서블릿 도달 전 Filter들을 순서대로 통과 (Spring Security가 꽂히는 지점)</li>
+  </ul>
+
+  <p>여기서 아름다운 대칭 하나: <strong>톰캣은 "서블릿의 IoC 컨테이너"다.</strong> 서블릿의 생성·호출·소멸을 개발자 대신 톰캣이 제어한다. 스프링 IoC 컨테이너가 Bean에게 하는 일을, 톰캣은 서블릿에게 한다. 같은 원칙(IoC), 다른 대상.</p>
+
+  <div class="quiz">
+    <div class="q-label">CHECKPOINT — 제어의 주체</div>
+    <div class="q"><code>service()</code>를 호출하는 주체는 누구인가?</div>
+    <details>
+      <summary>정답 보기</summary>
+      <div class="ans">
+        <p><strong>톰캣(서블릿 컨테이너)이다.</strong> 개발자 코드가 서블릿을 호출하는 게 아니라, 컨테이너가 요청을 받아 적절한 서블릿의 service()를 호출한다 — 제어가 프레임워크 쪽에 있다. 그래서 "톰캣은 서블릿의 IoC 컨테이너"라는 문장이 성립한다.</p>
+      </div>
+    </details>
+  </div>
+
+  <h3>부록: JSP — "톰캣이 대신 짜주는 서블릿"</h3>
+  <p>JSP는 HTML 안에 자바를 심는 템플릿 기술인데, 정체는 <strong>서블릿을 자동 생성하는 문법 설탕</strong>이다. 톰캣 안의 Jasper 엔진이 <code>users.jsp</code> → <code>users_jsp.java</code>(HttpServlet의 자손, 내용물은 out.println 코드) → <code>.class</code>로 변환·컴파일한다. 첫 요청 때 이 비용이 발생해 첫 페이지가 유독 느렸고, 이게 "옛날 톰캣이 무거웠던" 원인 중 하나. 지금은 Thymeleaf(서블릿 컨테이너 비종속)와 REST+프론트엔드 구조에 밀려 레거시가 됐지만, <em>"자바 웹의 모든 길은 서블릿으로 통한다"</em>는 것을 보여주는 사례로 기억할 가치가 있다 — Controller도 (DispatcherServlet을 통해) 서블릿 위에서 돌고, JSP도 서블릿으로 컴파일된다.</p>
+
+  <h3>부록 2: "톰캣이 무겁다"는 착시</h3>
+  <div class="callout fix">
+    <span class="ic">✕</span>
+    <p><span class="was">"톰캣이 무거워서 부팅이 오래 걸린다"</span> → 범인이 다르다. 톰캣 기동 자체는 보통 1초 미만(커넥터 열고 스레드 풀 만드는 정도). <strong>부팅 시간 대부분은 스프링 컨텍스트 초기화</strong> — 클래스패스 스캔, Auto-Configuration 조건 평가, Bean 수백 개 생성+DI+프록시 생성, JPA 메타모델 구축. 로그에서 <code>Tomcat initialized</code>와 <code>Tomcat started</code> 사이의 긴 공백이 전부 스프링(조립 공장)의 시간이다.</p>
+    <p>착시의 원인: (a) 독립 톰캣 시대(war 배포, web.xml, JSP 컴파일)의 "육중한 WAS" 인상이 각인됨 (b) embedded 시대엔 부팅 로그 처음/끝에 Tomcat이 찍혀 사이의 스프링 시간까지 톰캣 몫으로 보임. 검증: <code>spring.main.lazy-initialization=true</code>로 부팅이 확 빨라지면 범인은 Bean 생성이다.</p>
+  </div>
+
+  <p>단, 이 "무거운 부팅"은 결함이 아니라 트레이드오프다. 부팅 때 모든 걸 미리 하는 대가로 <strong>런타임이 빠르고 예측 가능</strong>해지며(조회만 하면 됨), 설정 오류가 배포 전에 터진다. 이 비용이 치명적인 환경(서버리스)을 위한 해법이 GraalVM Native Image, CRaC 등이다.</p>
+</section>
+
+<!-- ============ S3 (NEW) ============ -->
+<section id="s3">
+  <div class="sec-label">03 — SOCKET · NEW</div>
+  <h2>소켓: 요청의 바닥까지</h2>
+  <p class="lead"><strong>소켓 = 운영체제가 프로그램에게 제공하는 네트워크 통신의 끝점(endpoint).</strong> "톰캣이 소켓을 직접 만진다"의 의미를 이해하면 요청 한 개의 일생이 바닥까지 닫힌다.</p>
+
+  <p>네트워크의 실체는 랜카드로 들어오는 패킷인데, 프로그램이 직접 다룰 수 없다. OS가 TCP/IP 처리를 해주고 프로그램에게 <em>"여기에 쓰면 상대에게 가고, 여기서 읽으면 상대가 보낸 게 나오는" 창구</em>를 열어준다 — 그게 소켓이다. 파일에 비유하면 정확하다 (리눅스에서 소켓은 실제로 파일 디스크립터다):</p>
+
+  <pre class="diagram">파일:  open()   → read()/write()  → close()
+소켓:  socket() → recv()/send()   → close()
+<span class="dim">"네트워크 연결을 파일처럼 읽고 쓴다"
+하나의 TCP 연결 = (내 IP:포트 ↔ 상대 IP:포트) 쌍, 연결마다 소켓 하나</span></pre>
+
+  <h3>"소켓을 직접 만진다" = 이 코드를 담당한다</h3>
+  <pre class="diagram"><span class="dim">// 톰캣이 내부에서 하는 일을 날것으로 쓰면</span>
+ServerSocket server = new ServerSocket(8080);  <span class="gn">// ① 8080에 문 열기</span>
+
+while (true) {
+    Socket socket = server.accept();            <span class="gn">// ② 연결 수락, 소켓 획득</span>
+    InputStream in = socket.getInputStream();   <span class="gn">// ③ 바이트 읽기</span>
+    <span class="dim">// "GET /users HTTP/1.1\r\nHost: ..." ← 생 문자열, 직접 파싱해야 함</span>
+    OutputStream out = socket.getOutputStream();<span class="gn">// ④ 응답 직접 조립</span>
+    out.write("HTTP/1.1 200 OK\r\n...".getBytes());
+}</pre>
+
+  <p>이 ①~④(bind/listen, accept, 바이트 I/O)를 담당하는 것이 "소켓을 만지는" 일이고, 톰캣/Netty가 그 담당자다. 층으로 그리면:</p>
+
+  <pre class="diagram">[OS 커널]      TCP/IP 스택, 패킷 처리
+   ↕ <span class="dim">소켓 API</span>
+[톰캣/Netty]   <span class="hl">소켓을 만짐</span>: accept, 바이트 읽기, HTTP 파싱, 객체 조립
+   ↕ <span class="dim">HttpServletRequest / ServerHttpRequest</span>
+[스프링]       소켓의 존재를 모름. 완성된 객체만 받음
+   ↕
+[Controller]   req.getParameter("id") — <span class="dim">소켓? 그게 뭔데</span></pre>
+
+  <p><strong>스프링과 우리가 짜는 코드는 소켓을 한 번도 안 만진다.</strong> <code>@RequestParam String id</code>가 어느 소켓에서 어떤 바이트로 왔는지 몰라도 되는 이유 — 톰캣이 그 사이를 전부 흡수했기 때문이다. "톰캣이 별거 안 하는 것 같다"고 느꼈다면, 역설적으로 톰캣이 이 밑바닥을 잘 숨겼다는 증거다.</p>
+
+  <p>그리고 이 소켓 관점에서 보면 05장의 스레드 모델 차이도 물리적으로 설명된다: WebMVC(톰캣)는 <em>accept()한 소켓마다 스레드 하나를 전담 배정</em>, WebFlux(Netty)는 <em>소켓들을 논블로킹으로 열어두고 소수 스레드가 "읽을 데이터 생긴 소켓 있어?"를 순회(multiplexing)</em>. 두 스택의 차이는 결국 "소켓을 스레드에 어떻게 묶느냐"다.</p>
+
+  <pre class="diagram"><span class="dim">요청 한 개의 일생 (수직 단면 전체):</span>
+전기 신호 → [OS: TCP/IP] → 소켓 → [톰캣: HTTP 파싱]
+→ HttpServletRequest → [필터 체인] → [DispatcherServlet]
+→ HandlerMapping/Adapter → [Controller POJO] → 응답</pre>
+</section>
+
+<!-- ============ S4 (NEW) ============ -->
+<section id="s4">
+  <div class="sec-label">04 — DISPATCHERSERVLET · NEW</div>
+  <h2>DispatcherServlet: 국경선과 전화번호부</h2>
+  <p class="lead">스프링에서 서블릿 인터페이스의 구현체는 <strong>DispatcherServlet 단 하나</strong>다. 톰캣 입장에서 보면 그냥 서블릿 하나 — 하지만 스프링 입장에선 서블릿 세계와 POJO 세계 사이의 국경선이다.</p>
+
+  <div class="callout fix">
+    <span class="ic">✕</span>
+    <p><span class="was">"서블릿 인터페이스의 구현체가 Controller"</span> → Controller는 서블릿과 <strong>아무 상속 관계가 없는 평범한 Bean(POJO)</strong>이다. Servlet을 구현하지도, HttpServlet을 상속하지도 않고, 메서드 시그니처도 service()가 아닌 내 마음대로 만든 것. 스프링의 서블릿 구현체는 DispatcherServlet 하나뿐이며, 요청을 서블릿 세계에서 POJO 세계로 <em>번역</em>해서 Controller에 넘긴다.</p>
+  </div>
+
+  <pre class="diagram"><span class="dim">톰캣의 세계 (서블릿 스펙)</span>
+──────────────────────────────
+raw HTTP → HttpServletRequest 생성 → servlet.service() 호출
+              │
+              ▼
+   [DispatcherServlet]   <span class="hl">← 유일한 서블릿 구현체. 여기가 국경선</span>
+──────────────────────────────
+<span class="dim">스프링의 세계 (서블릿 스펙 바깥)</span>
+              │
+              ▼
+   HandlerMapping: "이 URL은 UserController.users() 담당"
+              │
+              ▼
+   HandlerAdapter: HttpServletRequest를 분해해
+                   users(Model m)의 파라미터에 맞게 변환 후 호출
+              │
+              ▼
+   [UserController]      <span class="gn">← 그냥 Bean. 서블릿 아님</span></pre>
+
+  <h3>왜 이렇게 설계했나 — POJO 해방</h3>
+  <p>Controller가 서블릿이었다면: URL마다 서블릿 클래스 작성 + web.xml 등록, 모든 메서드가 <code>(HttpServletRequest, HttpServletResponse)</code> 시그니처로 고정, 파라미터 파싱·변환·응답 조립을 매번 반복. 스프링의 답: <strong>"서블릿은 문지기 하나(Front Controller)만 세우고, 진짜 로직은 서블릿 스펙에서 해방된 POJO에게."</strong> 그 결과 Controller는 —</p>
+  <ul class="plain">
+    <li>톰캣 없이 단위 테스트 가능 (<code>new UserController()</code>로 그냥 생성)</li>
+    <li>메서드 시그니처를 자유롭게 설계 (<code>@PathVariable Long id</code>, <code>@RequestBody UserDto</code>...)</li>
+    <li>Bean이므로 DI를 받고 AOP 프록시도 적용됨</li>
+  </ul>
+  <p>이것이 01장의 존재 이유(POJO 기반 개발)가 WebMVC에서 실현된 모습이다.</p>
+
+  <h3>담당자를 어떻게 찾나: 부팅 시 전화번호부 구축</h3>
+  <p>매 요청마다 찾아다니는 게 아니라, <strong>시작 시점에 레지스트리를 만들어두고 요청 시엔 조회만</strong> 한다.</p>
+
+  <pre class="diagram"><span class="hl">[부팅 시 — RequestMappingHandlerMapping]</span>
+① IoC 컨테이너에 "Bean 전부 줘" 
+② @Controller/@RestController Bean 선별
+③ 리플렉션으로 @GetMapping 등 수집
+④ 맵 구축:
+   { GET  /users      } → UserController.list()
+   { GET  /users/{id} } → UserController.detail()
+   { POST /orders     } → OrderController.create()
+   <span class="dim">값 = HandlerMethod (Bean 참조 + Method)</span>
+
+<span class="hl">[요청 시 — DispatcherServlet.doDispatch()]</span>
+① HandlerMapping 조회: "GET /users/3 담당자?" → detail()
+② HandlerAdapter 실행 위임:
+   파라미터 분석 → req에서 "3" 추출 → Long 변환 → detail(3L) 호출
+③ 반환값 처리:
+   @RestController → HttpMessageConverter (객체→JSON)
+   뷰 이름 → ViewResolver (JSP/Thymeleaf 등)</pre>
+
+  <p>Mapping(찾기)과 Adapter(실행)가 분리된 이유: 핸들러 형태가 @Controller 하나가 아니기 때문(<code>HttpRequestHandler</code>, 함수형 라우팅 등). DispatcherServlet은 인터페이스에만 의존하므로 새 스타일이 추가돼도 코드가 안 바뀐다 (OCP, 어댑터 패턴).</p>
+
+  <p>얻어갈 통찰: <strong>"@GetMapping만 붙이면 연결되는 마법"의 정체 = 부팅 시 리플렉션 스캔 + 런타임 조회.</strong> 이 패턴(부팅 시 메타데이터 수집 → 런타임엔 조회만)은 BeanDefinition 등록, AOP 포인트컷 매칭 캐싱 등 스프링 전반에서 반복된다. 그리고 이게 02장 "부팅이 무거운 이유"의 정체이기도 하다.</p>
+</section>
+
+<!-- ============ S5 (NEW) ============ -->
+<section id="s5">
+  <div class="sec-label">05 — WEBMVC VS WEBFLUX · NEW</div>
+  <h2>WebMVC vs WebFlux: 톰캣 없이도 되나</h2>
+  <p class="lead">"톰캣 없이 웹 스프링을 띄우면 동작 못 하나?" — <strong>"톰캣 없이"와 "서블릿 컨테이너 없이"는 다른 말</strong>이고, 답은 웹 스택에 따라 갈린다.</p>
+
+  <h3>세 겹의 "교체 가능"</h3>
+  <pre class="diagram">겹1: 스프링 자체가 웹 없이 돈다
+     <span class="dim">new AnnotationConfigApplicationContext(...) — 배치/CLI에서 IoC·DI·AOP 완전 동작
+     (Spring Batch가 대표 사례. 진짜 필수 기반은 JVM뿐)</span>
+겹2: 웹을 해도 서블릿 없이 될 수 있다
+     <span class="dim">WebFlux는 서블릿 스펙을 안 씀</span>
+겹3: 서블릿을 써도 톰캣 없이 된다
+     <span class="dim">Tomcat / Jetty / Undertow — 서블릿 스펙 구현체 슬롯 (의존성 교체만으로 전환)</span></pre>
+
+  <div class="callout confuse">
+    <span class="ic">!</span>
+    <p><strong>WebMVC는 서블릿 컨테이너가 필수다</strong> — DispatcherServlet은 이름 그대로 서블릿이라, service()를 호출해줄 컨테이너가 없으면 아무도 깨워주지 않는다. 단 그게 톰캣일 필요는 없다. <strong>WebFlux는 서블릿 컨테이너 자체가 불필요</strong> — 자체 추상화(HttpHandler)로 Netty 위에서 돈다. 코어(①)와 메커니즘(②)은 "웹"이라는 개념 자체를 모르므로, 어느 웹 스택을 꽂느냐는 ③층의 선택 문제다.</p>
+  </div>
+
+  <h3>"WebFlux는 raw HTTP를 처리할 수 있어?" — 질문 교정</h3>
+  <div class="callout fix">
+    <span class="ic">✕</span>
+    <p>WebFlux도 raw HTTP를 직접 파싱하지 않는다. <strong>파싱은 Netty가 한다.</strong> 구조가 WebMVC와 대칭이다:</p>
+  </div>
+
+  <pre class="diagram">WebMVC:   [Tomcat]  raw HTTP 파싱 → HttpServletRequest → DispatcherServlet(서블릿)
+WebFlux:  [Netty]   raw HTTP 파싱 → ServerHttpRequest  → HttpHandler(서블릿 아님)
+<span class="dim">"누가 밑바닥을 담당하나"만 다를 뿐, 스프링 모듈이 소켓을 만지는 건 둘 다 아니다.
+진짜 차이는 파싱이 아니라 → 스레드 모델</span></pre>
+
+  <h3>핵심 차이: 요청을 스레드에 어떻게 배정하나</h3>
+  <pre class="diagram"><span class="hl">WebMVC — Thread-per-Request (1요청 = 1스레드 전담)</span>
+요청 A ──→ [스레드 1] ████░░░░░░████   <span class="dim">░ = DB 응답 대기, 스레드는 잠듦</span>
+요청 B ──→ [스레드 2] ████░░░░░░████
+요청 C ──→ [스레드 3] ████░░░░░░████
+           <span class="rd">스레드 풀(기본 200)이 바닥나면 요청 D는 줄 서서 대기</span>
+
+<span class="hl">WebFlux — Event Loop (소수 스레드가 이벤트 단위 순환)</span>
+요청 수만 개 ──→ [이벤트 루프 스레드 4~8개]
+    <span class="dim">"A의 DB 호출 걸어놓고 → B 처리 → C 처리 → A 응답 왔네? 이어서"
+    CPU 코어 수만큼의 스레드가 기다리지 않고 일함</span></pre>
+
+  <p>WebMVC의 문제는 <em>대기 시간에도 스레드가 점유된다</em>는 것. WebFlux는 I/O를 걸어놓고 즉시 다음 이벤트로 넘어가 적은 스레드로 수만 동시 연결을 감당한다. 단, 공짜가 아니다 — <strong>전 구간이 논블로킹이어야 하고</strong> 코드 스타일이 리액티브 스트림(Mono/Flux)으로 바뀐다.</p>
+
+  <table class="wide">
+    <thead><tr><th></th><th>WebMVC</th><th>WebFlux</th></tr></thead>
+    <tbody>
+      <tr><td>주 목적</td><td>생산성·단순함</td><td>적은 자원으로 대규모 동시성</td></tr>
+      <tr><td>적합한 곳</td><td>일반 업무 시스템, CRUD, 동시 사용자 수천 이하</td><td>동시 연결 수만 이상 (게이트웨이·스트리밍·채팅), I/O 대기가 지배적인 중계 계층</td></tr>
+      <tr><td>치명적 약점</td><td>대기 중 스레드 낭비 → 초대규모 동시성 한계</td><td>블로킹 하나가 이벤트 루프 전체를 마비 (JDBC 사용 불가), 디버깅 난이도, 러닝커브</td></tr>
+      <tr><td>생태계</td><td>JPA 포함 사실상 전부 호환</td><td>R2DBC 등 논블로킹 드라이버 필요</td></tr>
+    </tbody>
+  </table>
+
+  <p><strong>기본값은 WebMVC.</strong> 안정성·생태계·팀 이해도가 중요한 일반 업무/금융 시스템은 전형적 WebMVC 영역이고, WebFlux는 "스레드 풀로 감당 안 되는 동시 연결"이라는 구체적 문제가 증명됐을 때 꺼내는 도구다 (대표 사례: Spring Cloud Gateway).</p>
+
+  <h3>정리: 실행 환경 결정표</h3>
+  <table>
+    <thead><tr><th>상황</th><th>필요한 것</th></tr></thead>
+    <tbody>
+      <tr><td>웹이 아님 (배치 등)</td><td>JVM만 있으면 됨</td></tr>
+      <tr><td>WebMVC</td><td>서블릿 컨테이너 1개 필수 — Tomcat/Jetty/Undertow 교체 가능</td></tr>
+      <tr><td>WebFlux</td><td>서블릿 컨테이너 불필요 — Netty 등</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============ S5B (NEW) ============ -->
+<section id="s5b">
+  <div class="sec-label">06 — THREADS, CORES &amp; POOLS · NEW</div>
+  <h2>스레드·코어·커넥션 풀: 숫자들의 근거</h2>
+  <p class="lead">CPU 코어 하나는 <strong>한 순간에 스레드 하나만</strong> 실행한다. 코어 8개면 "진짜 동시"는 8개뿐 — 그런데 톰캣 기본 스레드 풀은 200개다. 이 간극을 이해하면 05장의 스레드 모델이 물리적으로 닫힌다.</p>
+
+  <h3>왜 코어 8개에 스레드 200개인가 — 대부분 자고 있어서</h3>
+  <pre class="diagram">요청 하나의 처리 시간 (예: 총 100ms)
+CPU 계산    ██                    <span class="dim">~10ms  (JSON 파싱, 로직)</span>
+I/O 대기    ░░░░░░░░░░░░░░░░░░    <span class="dim">~90ms  (DB 응답, 외부 API 대기)</span>
+
+<span class="hl">I/O 대기 중인 스레드는 CPU를 전혀 안 쓴다</span> — OS가 재워두고(blocked)
+코어를 다른 스레드에게 준다. 그래서:
+· 스레드 200개가 있어도 그 순간 CPU를 쓰는 건 10~20개
+· 나머지는 DB 응답을 기다리며 수면 중
+<span class="gn">→ 스레드 200개는 "동시에 계산하려고"가 아니라
+  "기다리는 동안 자리(예약석)를 지키려고" 있는 것</span></pre>
+
+  <h3>적정 스레드 수 = 대기/계산 비율이 결정</h3>
+  <pre class="diagram"><span class="dim">고전 어림 공식 (Brian Goetz, Java Concurrency in Practice):</span>
+적정 스레드 수 ≈ 코어 수 × (1 + 대기시간/계산시간)
+
+예: 8코어, 계산 10ms + 대기 90ms
+  → 8 × (1 + 90/10) = 80개</pre>
+  <ul class="plain">
+    <li><strong>CPU 집약 작업</strong>(암호화, 이미지 처리) — 대기가 없으니 코어 수 ± α가 최적. 더 늘리면 context switching 비용만 증가</li>
+    <li><strong>I/O 집약 작업</strong>(전형적 웹/DB) — 대기 비율만큼 곱해 늘림. 톰캣 기본 200은 "웹은 I/O 대기가 지배적"이라는 가정의 반영이며, <em>기본값이지 최적값이 아니다</em></li>
+  </ul>
+
+  <h3>스레드를 무한정 늘릴 수 없는 이유</h3>
+  <ul class="plain">
+    <li><strong>메모리</strong> — 스레드당 스택 약 1MB(-Xss 기본). 1만 개면 스택만 ~10GB</li>
+    <li><strong>Context switching</strong> — 교체마다 레지스터 저장/복원, CPU 캐시 오염. 과도하면 "일하는 시간보다 갈아끼우는 시간"이 커짐</li>
+    <li><strong>커널 자원</strong> — 자바 스레드는 OS 스레드와 1:1이라 생성·관리가 커널 부담</li>
+  </ul>
+
+  <p>이것이 05장 WebFlux의 물리적 근거다. 동시 연결 수만 개를 Thread-per-Request로 받으면 비용이 폭발하므로, WebFlux는 <em>대기 자체를 없애</em> 스레드를 코어 수 근처로 줄였다:</p>
+  <pre class="diagram">WebMVC:   스레드 200개 (대부분 수면 중)   <span class="dim">← 대기를 스레드 점유로 견딤</span>
+WebFlux:  이벤트 루프 = 코어 수 × 2 (Netty 기본)  <span class="dim">← 대기 자체를 없앰</span>
+<span class="gn">절대 기다리지 않는 스레드라면 코어 수만큼만 있어도 CPU를 100% 쓴다
+— 잠자는 스레드가 없으니 예약석 200개가 필요 없다</span>
+
+제3의 해법 — <span class="hl">가상 스레드 (Virtual Thread, Java 21+)</span>:
+OS 스레드 1:1 제약을 깨고 JVM이 수십만 경량 스레드를 소수 OS 스레드에 얹음.
+"블로킹 코드를 그대로 쓰면서 WebFlux급 동시성"이 목표.
+Boot 3.2+: spring.threads.virtual.enabled=true
+<span class="dim">→ Thread-per-Request의 한계 자체를 지우는 방향이라 MVC vs Flux 구도를 흔드는 중</span></pre>
+
+  <h3>커넥션 풀과의 관계 — 그리고 숨은 가정 하나</h3>
+
+  <div class="callout confuse">
+    <span class="ic">!</span>
+    <p><strong>"스레드 200 vs 커넥션 20이면 180개가 커넥션을 기다리며 잠든다"</strong> — 이 문장엔 <em>"모든 요청이 DB를 쓰고, 200개가 동시에 몰린 최악 순간"</em>이라는 숨은 가정이 있다. 실제 트래픽은 정적 리소스·헬스체크·캐시 히트·외부 API 위주 요청이 섞여 있으므로, 정확한 병목 조건은:</p>
+    <p style="text-align:center;font-weight:600">"스레드 수 &gt; 커넥션 풀"이 아니라 <strong>"동시에 커넥션을 원하는 스레드 수 &gt; 커넥션 풀"</strong></p>
+    <p>DB 사용 요청이 30%라면 200스레드 만석이어도 커넥션 경쟁자는 ~60개다. 다만 CRUD 중심 업무 시스템은 의미 있는 요청 대부분이 DB를 거치므로 이 가정이 근사적으로 성립하는 경우가 많고, 진짜 무서운 건 평시가 아니라 <em>스파이크 순간</em>(트래픽 급증, 슬로우 쿼리가 커넥션을 오래 점유)이다 — 풀 산정은 평균이 아니라 이 순간을 위한 것.</p>
+  </div>
+
+  <pre class="diagram"><span class="dim">커넥션 풀 산정 — 스레드 공식과 대칭 (가정이 명시적 변수로 들어감):</span>
+필요 커넥션 ≈ 동시 활성 스레드 수
+             × DB 사용 요청 비율
+             × (처리시간 중 커넥션 점유 시간 비율)
+
+예: 100 × 0.5 × 0.4 = ~20개</pre>
+
+  <p><strong>풀 크기 확장보다 점유 시간 단축이 더 큰 레버</strong>인 경우가 많다:</p>
+  <ul class="plain">
+    <li><code>@Transactional</code> 범위를 좁게 — 트랜잭션이 열린 동안 커넥션을 물고 있으므로, <em>트랜잭션 안에서 외부 API 호출</em>이 최악의 패턴 (커넥션을 잡은 채 수백 ms 대기)</li>
+    <li>OSIV(Open Session In View) 끄기 — 켜져 있으면 뷰 렌더링까지 점유가 늘어질 수 있음</li>
+    <li>슬로우 쿼리 개선이 풀 확장보다 우선</li>
+  </ul>
+
+  <p>HikariCP 제작자의 유명한 주장도 이 맥락이다 — "풀은 생각보다 작게, <code>코어 수 × 2 + 디스크 수</code> 정도면 충분한 경우가 많다." DB 서버의 코어도 유한하므로 커넥션이 많다고 처리량이 늘지 않는다. <em>코어-스레드 관계가 DB 쪽에서 한 번 더 반복되는 것.</em></p>
+
+  <p>한 문장 정리: <strong>스레드가 코어보다 훨씬 많은 이유는 대부분이 대기 중 잠들어 있어서고, 적정 수는 대기/계산 비율이 결정한다. 스레드 풀·커넥션 풀·트랜잭션 범위는 한 세트로 산정해야 하며, 모든 어림 공식은 가정 위에 서 있으므로 가정을 명시하는 순간 진짜 이해가 된다.</strong></p>
+</section>
+
+<!-- ============ S6 ============ -->
+<section id="s6">
+  <div class="sec-label">07 — STRUCTURE VS MECHANISM</div>
+  <h2>구조 vs 메커니즘: 위치가 있는 것과 없는 것</h2>
+  <p class="lead">계층 다이어그램에 DI와 AOP를 하나의 "층"으로 그리면 혼란이 생긴다. 이 둘은 위치가 아니라 작동 방식이기 때문이다.</p>
+
+  <table>
+    <thead><tr><th>구분</th><th>성격</th><th>예시</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>구조 (계층)</td>
+        <td>모듈이 실제로 <strong>위치하는 곳</strong>. 요청이 통과하는 물리적 순서가 있다.</td>
+        <td>FilterChain → DispatcherServlet → Service → Data 접근 계층</td>
+      </tr>
+      <tr>
+        <td>메커니즘 (기능)</td>
+        <td>특정 층에 속하지 않는 <strong>작동 방식</strong>. 여러 계층을 관통한다.</td>
+        <td>DI(모든 Bean 연결), AOP 프록시(@Transactional, @PreAuthorize, @Cacheable)</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout confuse">
+    <span class="ic">!</span>
+    <p><strong>Spring Security는 AOP가 아니다.</strong> Security의 본체는 DispatcherServlet보다 먼저 실행되는 <em>서블릿 필터 체인</em>이다 — 02장에서 본 톰캣의 "필터 체인 실행"에 꽂히는 것. 다만 <code>@PreAuthorize</code> 같은 메서드 단위 인가는 예외적으로 AOP 프록시 방식을 쓴다 — 하나의 모듈 안에서도 구조(필터)와 메커니즘(프록시)이 함께 쓰이는 사례.</p>
+  </div>
+</section>
+
+<!-- ============ S7 ============ -->
+<section id="s7">
+  <div class="sec-label">08 — IOC VS DI</div>
+  <h2>IoC vs DI: 원칙과 구현의 관계</h2>
+  <p class="lead"><strong>IoC(제어의 역전)는 원칙이고, DI(의존성 주입)는 그 원칙을 실현하는 구체적 방법 중 하나다.</strong> 상하 관계다.</p>
+
+  <h3>IoC — 무엇이 "역전"되는가</h3>
+  <p>"제어"란 프로그램의 흐름을 누가 주도하느냐다. 전통 방식에서는 코드가 <code>new PaymentService()</code>처럼 "언제, 어떤 구현체를, 어떻게" 만들지 스스로 결정했다. IoC는 이 결정권을 개발자 코드에서 <em>프레임워크(컨테이너)로 넘기는 것</em>. "필요한 객체는 네가 만들어서 줘, 나는 받아서 쓰기만 할게."</p>
+
+  <h3>DI — IoC를 실현하는 기법</h3>
+  <p>외부에서 만들어진 객체를 생성자·필드·setter로 <strong>주입</strong>받는 방식. 스프링의 주력 수단이며, 공식 권장은 생성자 주입(불변성 보장, 순환참조 조기 발견, 테스트 용이성).</p>
+
+  <div class="callout confuse">
+    <span class="ic">!</span>
+    <p><strong>왜 굳이 둘을 구분하나?</strong> IoC를 구현하는 방법이 DI만 있는 게 아니기 때문이다. DL(Dependency Lookup, <code>getBean()</code>으로 직접 요청), 템플릿 메서드/콜백도 전부 "제어가 프레임워크로 넘어갔다"는 점에서 IoC다. 그래서 "IoC/DI"라고 붙여 쓰는 관행은 <em>하나의 축을 개념(IoC)과 대표 구현(DI)으로 함께 부르는 것</em>이다.</p>
+  </div>
+
+  <div class="callout fix">
+    <span class="ic">✕</span>
+    <p><span class="was">"AOP는 개념이고 DI는 그것을 구현하는 방식"</span> → 개념이 섞인 것. <strong>DI가 구현하는 것은 AOP가 아니라 IoC다.</strong> AOP는 IoC↔DI 쌍과 별개의 독립된 축이며, AOP의 구현은 프록시다. (→ 09장)</p>
+  </div>
+
+  <p>그리고 02장에서 발견한 대칭을 여기 다시 연결하면: 이 원칙은 스프링만의 것이 아니다. <strong>톰캣도 서블릿에 대해 IoC를 수행한다</strong> (생성·호출·소멸을 컨테이너가 제어). IoC는 프레임워크라는 것의 보편 원리다.</p>
+</section>
+
+<!-- ============ S8 ============ -->
+<section id="s8">
+  <div class="sec-label">09 — TWO DIMENSIONS OF IOC</div>
+  <h2>IoC의 두 차원: 객체와 흐름</h2>
+  <p class="lead">"스프링에 템플릿 메서드가 있다면 IoC 컨테이너는 DI 말고 다른 방식으로도 구현된 건가?" — 아니다. 여기서 <strong>"IoC 컨테이너"와 "IoC 원칙"의 범위를 분리</strong>해야 한다.</p>
+
+  <table>
+    <thead><tr><th>차원</th><th>역전되는 것</th><th>실현 수단</th><th>담당</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>객체 차원</td>
+        <td>객체의 생성·연결·생명주기</td>
+        <td>DI (주력), DL (보조)</td>
+        <td><strong>IoC 컨테이너</strong></td>
+      </tr>
+      <tr>
+        <td>흐름 차원</td>
+        <td>코드의 실행 흐름·호출 시점</td>
+        <td>템플릿 메서드, 콜백</td>
+        <td>JdbcTemplate, RestTemplate 등 개별 클래스</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p><code>jdbcTemplate.query(sql, rowMapper)</code>에서 커넥션 획득 → SQL 실행 → 예외 변환 → 자원 반납이라는 흐름 전체를 JdbcTemplate이 쥐고 있고, 내 코드(RowMapper)는 프레임워크가 정한 시점에 <em>호출당한다</em>. "Don't call us, we'll call you" — 헐리우드 원칙. 이건 컨테이너 없이 <code>new JdbcTemplate()</code>으로 써도 성립하는, 컨테이너와 무관한 별개 차원의 IoC다.</p>
+
+  <p><strong>결론:</strong> IoC 컨테이너 자체는 DI(+DL)로 구현된 게 맞다. 템플릿 메서드는 컨테이너의 구현 방식이 아니라, 스프링이 컨테이너 바깥에서도 IoC 원칙을 적용한 또 다른 사례다. (덧붙이면 04장의 서블릿 <code>service()</code>도 흐름 차원 IoC의 사례 — 톰캣이 정한 시점에 호출당하는 콜백이다.)</p>
+</section>
+
+<!-- ============ S9 ============ -->
+<section id="s9">
+  <div class="sec-label">10 — AOP</div>
+  <h2>AOP: 개념, 그리고 프록시라는 구현</h2>
+  <p class="lead">트랜잭션·로깅·보안 같은 <strong>횡단 관심사(cross-cutting concern)를 핵심 로직에서 분리</strong>한다는 원칙이 AOP. 스프링에서 그 구현은 <strong>동적 프록시</strong>다.</p>
+
+  <h3>각 축의 개념-구현 대응표</h3>
+  <div class="axes">
+    <div class="axis">
+      <div class="axis-head"><span class="k">AXIS 1</span><span class="t">IoC — 객체 제어권을 프레임워크에 넘긴다</span></div>
+      <div class="axis-body">
+        <div class="row"><span class="lab">구현</span><span>DI (주력) · DL · 템플릿/콜백</span></div>
+      </div>
+    </div>
+    <div class="axis">
+      <div class="axis-head"><span class="k">AXIS 2</span><span class="t">AOP — 횡단 관심사를 핵심 로직에서 분리한다</span></div>
+      <div class="axis-body">
+        <div class="row"><span class="lab">구현</span><span>동적 프록시 — 인터페이스가 있으면 JDK Dynamic Proxy, 없으면 CGLIB</span></div>
+        <div class="row"><span class="lab">개입 지점</span><span>BeanPostProcessor(AnnotationAwareAspectJAutoProxyCreator)가 Bean 초기화 시점에 원본을 프록시로 교체</span></div>
+      </div>
+    </div>
+  </div>
+
+  <p>두 축은 서로 별개지만 서로를 <em>이용</em>한다 — AOP의 프록시 교체는 IoC 컨테이너의 Bean 생성 과정에 끼어들어 작동한다. 다만 <strong>의존한다고 해서 상하 관계인 건 아니다.</strong> AOP가 IoC 컨테이너를 이용하지만 AOP가 IoC의 구현인 건 아니다.</p>
+
+  <pre class="diagram"><span class="dim">Bean 생성 과정에 AOP가 끼어드는 시점:</span>
+
+Bean 인스턴스화 → 의존성 주입(DI)
+   → postProcessBeforeInitialization
+   → 초기화 콜백
+   → <span class="hl">postProcessAfterInitialization</span>
+        <span class="gn">└─ 여기서 원본 Bean → 프록시로 교체!</span>
+   → 컨테이너가 프록시를 반환
+
+<span class="dim">그래서 우리가 주입받는 @Transactional Bean은
+사실 원본이 아니라 프록시다.</span></pre>
+
+  <div class="quiz">
+    <div class="q-label">CHECKPOINT — 프록시 구조 이해 확인</div>
+    <div class="q">같은 클래스 안에서 <code>this.order()</code>로 내부 호출하면 <code>@Transactional</code>이 적용될까?</div>
+    <details>
+      <summary>정답 보기</summary>
+      <div class="ans">
+        <p><strong>적용되지 않는다.</strong> 트랜잭션은 프록시가 메서드 호출을 가로채면서 시작되는데, <code>this.order()</code>는 프록시를 거치지 않고 원본 객체의 메서드를 직접 부르는 것이기 때문이다.</p>
+        <p>외부에서 들어오는 호출: <code>클라이언트 → [프록시: tx.begin] → 원본.order() → [프록시: tx.commit]</code></p>
+        <p>내부 호출: <code>원본.method() → this.order()</code> — 프록시가 개입할 틈이 없다.</p>
+        <p>이것이 "스프링 AOP는 프록시 기반이라 자기 호출(self-invocation)에는 어드바이스가 적용되지 않는다"는 대표적 한계이며, 프록시 구조를 이해했는지 확인하는 단골 포인트다.</p>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- ============ S10 ============ -->
+<section id="s10">
+  <div class="sec-label">11 — @TRANSACTIONAL DISSECTED</div>
+  <h2>@Transactional 해부: 두 축의 협력</h2>
+  <p class="lead">"@Transactional은 AOP 아니야?" — 맞다, AOP로 <strong>동작</strong>한다. 동시에 기술 추상화의 대표 사례이기도 하다. 모순이 아니라 <strong>하나의 기능을 두 축이 나눠 담당</strong>하는 것.</p>
+
+  <div class="dissect">
+    <div class="dis-card psa">
+      <h4><span class="chip">추상화</span>무엇을 감췄나</h4>
+      <p><code>@Transactional</code> 어노테이션과 그 뒤의 <code>PlatformTransactionManager</code> 인터페이스. 밑에서 JDBC를 쓰면 DataSourceTransactionManager, JPA면 JpaTransactionManager가 실제 커밋/롤백을 수행한다. <strong>기술을 바꿔도 내 코드는 그대로</strong> — 기술 종속성 제거.</p>
+    </div>
+    <div class="dis-card aop">
+      <h4><span class="chip">AOP</span>어떻게 끼어드나</h4>
+      <p>그 트랜잭션 로직을 내 메서드 앞뒤에 붙이는 <strong>전달 수단</strong>이 프록시다. BeanPostProcessor가 초기화 시점에 Bean을 프록시로 교체해뒀기 때문에, 트랜잭션 코드를 한 줄도 안 썼는데 적용된다.</p>
+    </div>
+  </div>
+
+  <pre class="diagram">클라이언트 → [프록시] tx.begin()
+                  → [진짜 order()]
+              tx.commit() <span class="dim">or</span> rollback()
+
+<span class="dim">비유: 추상화는 "표준 콘센트 규격",
+AOP는 "그 콘센트까지 전기를 배달하는 배선".
+@Transactional은 콘센트에 꽂는 플러그.</span></pre>
+
+  <p>이 패턴 — <strong>추상화된 어노테이션 + AOP 프록시 전달</strong> — 은 <code>@Cacheable</code>, <code>@Async</code>, <code>@PreAuthorize</code>에서도 동일하게 반복된다. 이 구조가 보이기 시작하면 스프링 어노테이션 대부분의 동작 원리를 한 번에 꿰게 된다.</p>
+</section>
+
+<!-- ============ S11 ============ -->
+<section id="s11">
+  <div class="sec-label">12 — PSA IN ITS PLACE</div>
+  <h2>PSA의 진짜 위상: 엔진이 아니라 설계 철학</h2>
+  <p class="lead">결론부터: <strong>PSA는 IoC·AOP와 같은 위상이 아니다.</strong> 대화 초반에 "3대 축"으로 나란히 놓았던 것을 여기서 최종 교정한다.</p>
+
+  <div class="callout fix">
+    <span class="ic">✕</span>
+    <p><span class="was">"스프링의 3대 요소는 IoC/DI, AOP, PSA (공식 분류처럼 단정)"</span> → PSA는 <strong>스프링 공식 문서의 표준 용어가 아니다.</strong> 공식 레퍼런스는 IoC Container, AOP, Transaction Abstraction 식으로 기능을 나열할 뿐이다. "PSA"라는 묶음은 한국 스프링 교육 생태계(토비의 스프링 등)에서 정착된 <em>교육용 정리 방식</em>이다. 다만 개념 자체 — 기술을 갈아끼워도 코드가 안 변하는 추상화 계층 — 는 실재하는 중요한 설계 특징이 맞다. 이름표가 비공식일 뿐.</p>
+  </div>
+
+  <h3>위상을 가르는 세 가지 기준</h3>
+  <table>
+    <thead><tr><th>기준</th><th>IoC / AOP</th><th>PSA</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>없으면 무너지나?</td>
+        <td>컨테이너가 없으면 스프링이 아니고, AOP가 없으면 선언적 프로그래밍 모델(@Transactional 등)이 통째로 붕괴</td>
+        <td>없어도 스프링은 스프링. 각 기술을 직접 다루면 불편해질 뿐</td>
+      </tr>
+      <tr>
+        <td>고유 엔진이 있나?</td>
+        <td>있음 — Bean 생명주기 엔진, 프록시 생성·어드바이스 체인</td>
+        <td>없음 — 인터페이스+구현체(전략 패턴)일 뿐, 동작은 AOP 프록시에 얹혀 이뤄짐</td>
+      </tr>
+      <tr>
+        <td>위에 뭔가 세워지나?</td>
+        <td>모듈 전체가 이 위에 세워짐</td>
+        <td>PSA 자체가 IoC/AOP 위에 세워진 결과물</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p><strong>IoC, AOP = 엔진(메커니즘). PSA = 그 엔진으로 만들어낸 설계 철학의 산물</strong>(좋은 인터페이스 설계 + 전략 패턴). 층이 다르다. 공부 전략으로 번역하면 — IoC/AOP는 내부 동작·확장점·한계까지 파야 하고, PSA는 트랜잭션 추상화를 공부할 때 "이런 추상화 설계 패턴을 스프링 전반에서 반복하는구나" 하고 <em>관점 하나 얻고 지나가면 끝</em>인 10분짜리 개념이다.</p>
+
+  <p>참고로 이 관점은 실행 환경에서도 확인된다 — 05장의 "톰캣↔Jetty 교체, WebMVC↔WebFlux 교체가 코드에 영향 없음"이 바로 이 추상화 설계 철학이 ⓪층에 적용된 모습이다. 스프링은 "서블릿 스펙"에 의존하지 "톰캣"에 의존하지 않는다.</p>
+
+  <h3>같은 지원 메커니즘 층에 있는 것들</h3>
+  <p>교육용 3축에서 빠지곤 하지만 실제로 존재하는, 코어가 제공하는 지원 메커니즘들 — 순서대로 정복할 필요 없이 코어 공부 중 마주칠 때마다 하나씩 줍는 방식이 효율적이다:</p>
+  <ul class="plain">
+    <li><strong>이벤트</strong> (ApplicationEvent, @EventListener) — Bean 간 결합도를 낮추는 발행/구독</li>
+    <li><strong>Environment / Resource 추상화</strong> — 프로파일·프로퍼티 통합, 파일/클래스패스/URL 동일 취급</li>
+    <li><strong>@Profile / @Conditional</strong> — 환경별 조건부 Bean 구성. Boot의 Auto-Configuration이 이 위에 세워짐</li>
+    <li><strong>ConversionService / Validator</strong> — 타입 변환·데이터 바인딩의 기반</li>
+    <li><strong>SpEL</strong> — <code>@Value("#{...}")</code> 등의 표현식 엔진</li>
+  </ul>
+</section>
+
+<!-- ============ S12 ============ -->
+<section id="s12">
+  <div class="sec-label">13 — SPRING BOOT</div>
+  <h2>Spring Boot: 무엇을 자동화했나</h2>
+  <p class="lead">부트는 스프링을 "대체"하거나 "새 기능을 추가"한 게 아니라, <strong>스프링을 쓰기 위한 준비 과정을 자동화</strong>한 것이다.</p>
+
+  <table>
+    <thead><tr><th>확장 영역</th><th>프레임워크만 쓸 때</th><th>Boot가 해주는 것</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>설정</td>
+        <td>DataSource, 트랜잭션 매니저, DispatcherServlet 전부 수동 설정</td>
+        <td><strong>Auto-Configuration</strong> — 클래스패스를 보고 "JPA 있네? 이렇게 설정해줄게" (내부는 @Conditional 메커니즘)</td>
+      </tr>
+      <tr>
+        <td>의존성</td>
+        <td>라이브러리 버전 조합을 직접 관리 (충돌 지옥)</td>
+        <td><strong>Starter</strong> — spring-boot-starter-web 하나로 궁합 맞는 조합을 통째로</td>
+      </tr>
+      <tr>
+        <td>실행</td>
+        <td>war를 만들어 외부 Tomcat에 배포</td>
+        <td><strong>Embedded Tomcat</strong> — java -jar로 즉시 실행 (Jetty/Undertow로 의존성 교체 가능 → 05장)</td>
+      </tr>
+      <tr>
+        <td>운영</td>
+        <td>헬스체크·메트릭 직접 구축</td>
+        <td><strong>Actuator</strong> — 기본 제공 (부팅 시간 분석용 /startup 엔드포인트도 여기)</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <pre class="diagram">[Spring Boot]       <span class="dim">= 실행·설정 자동화 껍데기</span>
+   └─ [Spring Framework]  <span class="dim">= 실제 일하는 본체 (Core + 모듈들)</span>
+
+<span class="dim">비유: 프레임워크가 "부품이 다 들어있는 조립식 PC 세트"라면,
+부트는 "조립·OS 설치까지 끝낸, 전원만 누르면 되는 완제품 PC".
+안에 든 부품은 동일하다.</span></pre>
+
+  <p>그래서 <code>@Transactional</code>을 쓰면 그건 프레임워크(AOP + 트랜잭션 추상화)의 기능이고, 그게 별 설정 없이 바로 작동하는 건 Boot(Auto-Configuration) 덕분 — 이렇게 역할이 나뉜다. 이 둘을 섞어 말하지 않는 것이 정확한 이해의 지표다.</p>
+</section>
+
+<!-- ============ S13 ============ -->
+<section id="s13">
+  <div class="sec-label">14 — ERRATA</div>
+  <h2>오답노트: 정정 사항 총정리</h2>
+  <p class="lead">대화 중 잘못 이해했거나 헷갈렸던 지점의 최종 정리. 8번부터가 서블릿·톰캣 편에서 추가된 항목이다.</p>
+
+  <table class="wide">
+    <thead><tr><th>#</th><th>틀린/헷갈린 이해</th><th>바른 이해</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>1</td>
+        <td>서블릿 컨테이너가 IoC 컨테이너 안에 있다</td>
+        <td>반대. Tomcat(서블릿 컨테이너)이 가장 바깥이고, 스프링은 그 위에 올라타는 프레임워크. Tomcat은 스프링의 구성요소가 아니다.</td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td>AOP는 개념, DI는 그 구현</td>
+        <td>DI가 구현하는 것은 <strong>IoC</strong>. AOP는 별개의 축이며 AOP의 구현은 <strong>동적 프록시</strong>(JDK Proxy / CGLIB).</td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td>템플릿 메서드가 있으니 IoC 컨테이너는 DI 외의 방식으로도 구현된 것</td>
+        <td>컨테이너 자체는 DI(+DL)로 구현. 템플릿/콜백은 컨테이너와 무관한 <strong>흐름 차원</strong>의 IoC — 원칙의 또 다른 적용 사례.</td>
+      </tr>
+      <tr>
+        <td>4</td>
+        <td>@Transactional은 AOP다 (단일 소속)</td>
+        <td>둘 다다. 겉모습(인터페이스)은 기술 추상화, 전달 방식은 AOP 프록시. 하나의 기능을 두 축이 협력해 만든다.</td>
+      </tr>
+      <tr>
+        <td>5</td>
+        <td>IoC/DI, AOP, PSA가 공식 3대 요소</td>
+        <td>PSA는 공식 용어가 아닌 교육용 정리(한국 생태계에서 정착). 논쟁의 여지 없는 코어는 <strong>IoC 컨테이너와 AOP 두 개</strong>. PSA는 그 엔진으로 만든 설계 철학의 산물로, 지원 메커니즘 층에서 관점으로 익히면 충분.</td>
+      </tr>
+      <tr>
+        <td>6</td>
+        <td>모듈이 컨테이너 안에서 동작한다</td>
+        <td>모듈이 자기 부품을 Bean으로 컨테이너에 <strong>맡기는</strong> 구조. 컨테이너는 그릇이 아니라 공유 조립 공장.</td>
+      </tr>
+      <tr>
+        <td>7</td>
+        <td>Spring Security도 AOP로 동작</td>
+        <td>본체는 <strong>서블릿 필터 체인</strong>(DispatcherServlet 앞단). @PreAuthorize 같은 메서드 보안만 예외적으로 AOP 프록시 사용.</td>
+      </tr>
+      <tr>
+        <td>8</td>
+        <td>서블릿 = HTTP 요청이 변환되는 DTO 클래스</td>
+        <td>서블릿은 데이터가 아니라 <strong>처리기(handler)의 규격</strong>. 요청 데이터가 담기는 객체는 별도의 <code>HttpServletRequest</code>이며, 서블릿은 그것을 인자로 받아 일한다.</td>
+      </tr>
+      <tr>
+        <td>9</td>
+        <td>서블릿 인터페이스의 구현체가 Controller</td>
+        <td>스프링의 서블릿 구현체는 <strong>DispatcherServlet 단 하나</strong>. Controller는 서블릿과 상속 관계가 없는 POJO Bean이고, HandlerAdapter가 서블릿 세계 → POJO 세계로 번역해서 호출해준다.</td>
+      </tr>
+      <tr>
+        <td>10</td>
+        <td>톰캣이 무거워서 부팅이 느리다</td>
+        <td>톰캣 기동은 보통 1초 미만. 부팅 시간의 진범은 <strong>스프링 컨텍스트 초기화</strong>(스캔, Bean 생성, DI, 프록시, JPA 메타모델). 다만 이는 런타임 안정성을 위한 트레이드오프.</td>
+      </tr>
+      <tr>
+        <td>11</td>
+        <td>톰캣 없으면 웹 스프링은 동작 불가</td>
+        <td>세 겹으로 갈린다: 비웹이면 JVM만으로 충분 / WebMVC면 서블릿 컨테이너 필요하되 Tomcat↔Jetty↔Undertow 교체 가능 / WebFlux면 서블릿 컨테이너 자체가 불필요(Netty).</td>
+      </tr>
+      <tr>
+        <td>12</td>
+        <td>WebFlux는 raw HTTP를 직접 처리한다</td>
+        <td>파싱은 <strong>Netty</strong>가 한다 (WebMVC에서 톰캣이 하듯). 두 스택의 진짜 차이는 파싱이 아니라 <strong>스레드 모델</strong> — Thread-per-Request vs Event Loop, 즉 "소켓을 스레드에 어떻게 묶느냐".</td>
+      </tr>
+      <tr>
+        <td>13</td>
+        <td>"스레드 200 &gt; 커넥션 20이면 180개가 커넥션 대기로 잠든다" (무조건)</td>
+        <td>"전 요청이 DB를 쓴다"는 <strong>숨은 가정</strong>이 있는 문장. 정확한 병목 조건은 <strong>"동시에 커넥션을 원하는 스레드 수 &gt; 커넥션 풀"</strong>이며, DB 사용 비율·점유 시간 비율이 명시적 변수로 들어가야 한다. 단 CRUD 중심 시스템에선 근사적으로 성립.</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============ S14 ============ -->
+<section id="s14">
+  <div class="sec-label">15 — ROADMAP</div>
+  <h2>학습 로드맵</h2>
+  <p class="lead">위상 정리에서 도출된 학습 순서. ⓪층(실행 환경)은 이번 증보로 완료 — 이제 코어 두 엔진으로.</p>
+
+  <div class="roadmap">
+    <div class="step" data-n="✓">
+      <h4>⓪층: 실행 환경 — 완료</h4>
+      <p>소켓 → 톰캣(서블릿 컨테이너) → 서블릿 스펙 → DispatcherServlet 국경선 → WebMVC/WebFlux 갈래까지. 요청 한 개의 일생이 바닥까지 닫혔다.</p>
+    </div>
+    <div class="step" data-n="1">
+      <h4>IoC 컨테이너 내부</h4>
+      <p>BeanDefinition 로딩 → 인스턴스화 → 의존성 주입 → 초기화까지의 생명주기. 확장점(BeanPostProcessor, BeanFactoryPostProcessor)이 핵심. "부팅이 오래 걸리던 그 시간에 벌어지는 일"의 정체.</p>
+    </div>
+    <div class="step" data-n="2">
+      <h4>AOP 프록시 메커니즘</h4>
+      <p>1번의 BeanPostProcessor를 알면 자연스럽게 연결. JDK Dynamic Proxy vs CGLIB, 그리고 self-invocation 같은 프록시의 한계까지.</p>
+    </div>
+    <div class="step" data-n="3">
+      <h4>지원 메커니즘 (필요할 때 줍기)</h4>
+      <p>트랜잭션 추상화를 이때 만나면 "프록시 + 추상화 조합"이 저절로 보인다. 이벤트, @Conditional, SpEL 등은 코어 공부 중 마주칠 때마다 하나씩.</p>
+    </div>
+    <div class="step" data-n="4">
+      <h4>모듈 (WebMVC → Security → Data)</h4>
+      <p>WebMVC의 HandlerMapping/Adapter 뼈대는 이미 04장에서 선행 학습됨. ArgumentResolver·HttpMessageConverter 등 세부를 채우고, Security 필터 체인 내부로.</p>
+    </div>
+  </div>
+
+  <p>마지막으로, 이 문서 전체를 한 문장으로:</p>
+  <div class="thesis">
+    <strong>POJO로 개발하게 해주는 것</strong>이 스프링의 목적이고, 그 수단이
+    IoC 컨테이너(→DI)와 AOP(→프록시)라는 두 엔진이며, 그 엔진으로 트랜잭션 추상화 같은
+    지원 메커니즘들을 빚어냈고, 그 위에 WebMVC·Security·Data 모듈이 얹힌다.
+    이 전체는 교체 가능한 실행 환경 위에서 돈다 — 소켓을 만지는 밑바닥(톰캣/Netty)이
+    raw HTTP를 객체로 바꿔주면, DispatcherServlet이라는 국경선에서 스프링의 POJO 세계가 시작된다.
+    Boot는 이 조립 공장의 초기 세팅을 자동화한 껍데기다.
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap" style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:0 24px">
+    <span>SPRING FRAMEWORK CONCEPT STUDY — REV. 3</span>
+    <span>ERRATA 13건 · CHECKPOINT 2문항 · NEW 5개 장</span>
+  </div>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,1195 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Linux 권한 심화 스터디</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+
+  :root {
+    --bg: #0d1117;
+    --bg2: #161b22;
+    --bg3: #1c2333;
+    --border: #30363d;
+    --green: #3fb950;
+    --green-dim: #1a4a2a;
+    --blue: #58a6ff;
+    --blue-dim: #1a2f4a;
+    --orange: #d29922;
+    --orange-dim: #3a2a00;
+    --red: #f85149;
+    --red-dim: #3a0d0d;
+    --purple: #bc8cff;
+    --cyan: #79c0ff;
+    --text: #c9d1d9;
+    --text-dim: #8b949e;
+    --text-bright: #f0f6fc;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Noto Sans KR', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.75;
+    display: flex;
+    min-height: 100vh;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: 220px;
+    flex-shrink: 0;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    padding: 28px 0 40px;
+  }
+  .sidebar-logo {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-bright);
+    padding: 0 20px 20px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
+  }
+  .sidebar-logo span { color: var(--green); }
+  .nav-group {
+    margin-bottom: 8px;
+  }
+  .nav-group-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+    padding: 4px 20px;
+    margin-bottom: 4px;
+  }
+  .nav-item {
+    display: block;
+    font-size: 13px;
+    color: var(--text-dim);
+    text-decoration: none;
+    padding: 5px 20px;
+    border-left: 2px solid transparent;
+    transition: all 0.15s;
+  }
+  .nav-item:hover, .nav-item.active {
+    color: var(--text-bright);
+    border-left-color: var(--blue);
+    background: var(--blue-dim);
+  }
+
+  /* ── Main ── */
+  .main {
+    flex: 1;
+    min-width: 0;
+    padding: 48px 56px 100px;
+    max-width: 880px;
+  }
+
+  /* ── Page title ── */
+  .page-title {
+    margin-bottom: 48px;
+  }
+  .page-title .badge-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .badge {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    padding: 2px 10px;
+    border-radius: 4px;
+    border: 1px solid;
+  }
+  .badge-red { color: var(--red); border-color: var(--red); background: var(--red-dim); }
+  .badge-blue { color: var(--blue); border-color: var(--blue); background: var(--blue-dim); }
+  .badge-green { color: var(--green); border-color: var(--green); background: var(--green-dim); }
+  .page-title h1 {
+    font-family: var(--mono);
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text-bright);
+    line-height: 1.2;
+  }
+  .page-title h1 span { color: var(--green); }
+  .page-title .subtitle {
+    margin-top: 10px;
+    font-size: 14px;
+    color: var(--text-dim);
+  }
+
+  /* ── Section ── */
+  .section {
+    margin-bottom: 64px;
+    scroll-margin-top: 32px;
+  }
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 24px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    padding: 3px 10px;
+    border-radius: 4px;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+  }
+  .section-title h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-bright);
+  }
+  .section-title h2 em {
+    font-style: normal;
+    color: var(--blue);
+  }
+
+  /* ── Incident ── */
+  .incident {
+    background: var(--red-dim);
+    border: 1px solid #5a1d1d;
+    border-left: 4px solid var(--red);
+    border-radius: 8px;
+    padding: 24px 28px;
+    margin-bottom: 28px;
+  }
+  .incident .inc-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--red);
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+  }
+  .incident h3 {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-bright);
+    margin-bottom: 10px;
+  }
+  .incident p { font-size: 14px; }
+  .fact-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 14px;
+  }
+  .fact {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 14px;
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+  .fact .k { color: var(--text-dim); margin-right: 6px; }
+  .fact .v-bad { color: var(--red); }
+  .fact .v-ok { color: var(--green); }
+  .fact .v { color: var(--cyan); }
+
+  /* ── Prose ── */
+  .prose {
+    font-size: 14px;
+    color: var(--text);
+    margin-bottom: 16px;
+    line-height: 1.8;
+  }
+  .prose strong { color: var(--text-bright); }
+  .prose code {
+    font-family: var(--mono);
+    font-size: 12px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    padding: 1px 6px;
+    border-radius: 3px;
+    color: var(--orange);
+  }
+
+  /* ── Code block ── */
+  .code-block {
+    background: #010409;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 14px 0;
+    font-family: var(--mono);
+  }
+  .code-header {
+    background: var(--bg3);
+    border-bottom: 1px solid var(--border);
+    padding: 7px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .code-header .lang { font-size: 10px; color: var(--text-dim); letter-spacing: 0.06em; }
+  .code-header .desc { font-size: 11px; color: var(--orange); }
+  .code-body {
+    padding: 18px 22px;
+    font-size: 13px;
+    line-height: 2;
+    overflow-x: auto;
+  }
+  .c { color: #6e7681; } /* comment */
+  .cmd { color: var(--blue); }
+  .arg { color: var(--green); }
+  .path { color: var(--orange); }
+  .out { color: var(--cyan); }
+  .hl { background: #1c3a2a; border-radius: 3px; padding: 1px 4px; }
+  .err { color: var(--red); }
+
+  /* ── Permission visual ── */
+  .perm-visual {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 22px 24px;
+    margin: 14px 0;
+    font-family: var(--mono);
+    font-size: 13px;
+    overflow-x: auto;
+  }
+  .perm-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 8px 0;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+  }
+  .perm-row .row-label {
+    font-size: 12px;
+    color: var(--text-dim);
+    width: 160px;
+    flex-shrink: 0;
+  }
+  .bit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px; height: 26px;
+    border-radius: 4px;
+    font-weight: 700;
+    font-size: 13px;
+    border: 1px solid;
+  }
+  .bit-on   { background: #0d2818; color: var(--green); border-color: #2a5a3a; }
+  .bit-off  { background: var(--bg3); color: #444d56; border-color: var(--border); }
+  .bit-sp   { background: #1a1040; color: var(--purple); border-color: #5a3fa0; }
+  .bit-sg   { background: #0d2818; color: var(--green); border-color: var(--green); font-size: 14px; }
+  .bit-type { background: var(--blue-dim); color: var(--blue); border-color: #2a4a7a; }
+  .sep { color: var(--border); margin: 0 4px; font-size: 16px; }
+  .bit-group-label {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin: 0 6px;
+  }
+  .bit-note {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-left: 10px;
+  }
+  .bit-note.good { color: var(--green); }
+  .bit-note.bad  { color: var(--red); }
+
+  /* ── Q&A style callout ── */
+  .qa-block {
+    margin: 20px 0;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .qa-q {
+    background: var(--bg3);
+    padding: 12px 18px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-bright);
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .qa-q .q-badge {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--orange);
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .qa-a {
+    background: var(--bg2);
+    padding: 14px 18px;
+    font-size: 14px;
+    color: var(--text);
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .qa-a .a-badge {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--blue);
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .qa-a strong { color: var(--text-bright); }
+
+  /* ── Callout ── */
+  .callout {
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 14px 0;
+    display: flex;
+    gap: 12px;
+    font-size: 14px;
+    line-height: 1.7;
+  }
+  .callout.info    { background: var(--blue-dim); border: 1px solid #2a4a7a; }
+  .callout.warn    { background: var(--orange-dim); border: 1px solid #5a4000; }
+  .callout.success { background: var(--green-dim); border: 1px solid #2a5a3a; }
+  .callout.danger  { background: var(--red-dim); border: 1px solid #5a1d1d; }
+  .callout .icon   { flex-shrink: 0; font-size: 16px; margin-top: 1px; }
+  .callout strong  { color: var(--text-bright); }
+
+  /* ── Table ── */
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin: 16px 0;
+  }
+  .data-table th {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    padding: 9px 14px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--blue);
+    text-align: left;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+  }
+  .data-table td {
+    border: 1px solid var(--border);
+    padding: 9px 14px;
+    vertical-align: top;
+  }
+  .data-table tr:nth-child(odd)  td { background: var(--bg); }
+  .data-table tr:nth-child(even) td { background: var(--bg2); }
+  .data-table .mono { font-family: var(--mono); font-size: 12px; color: var(--purple); }
+  .data-table .good { color: var(--green); }
+  .data-table .warn { color: var(--orange); }
+  .data-table .bad  { color: var(--red); }
+
+  /* ── Flow ── */
+  .flow {
+    display: flex;
+    align-items: stretch;
+    margin: 16px 0;
+    overflow-x: auto;
+    gap: 0;
+  }
+  .flow-box {
+    flex: 1;
+    min-width: 120px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    padding: 14px 12px;
+    text-align: center;
+  }
+  .flow-box:first-child { border-radius: 8px 0 0 8px; }
+  .flow-box:last-child  { border-radius: 0 8px 8px 0; }
+  .flow-box + .flow-box { border-left: none; }
+  .flow-box.highlight { border-top: 3px solid var(--green); }
+  .flow-box .f-icon  { font-size: 20px; margin-bottom: 6px; }
+  .flow-box .f-title { font-family: var(--mono); font-size: 12px; color: var(--text-bright); margin-bottom: 4px; font-weight: 600; }
+  .flow-box .f-desc  { font-size: 12px; color: var(--text-dim); line-height: 1.5; }
+  .flow-arr { align-self: center; color: var(--blue); font-size: 18px; padding: 0 6px; flex-shrink: 0; }
+
+  /* ── Steps ── */
+  .steps { counter-reset: s; margin: 16px 0; }
+  .step {
+    counter-increment: s;
+    position: relative;
+    padding: 18px 20px 18px 62px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 10px;
+  }
+  .step::before {
+    content: counter(s);
+    position: absolute;
+    left: 18px; top: 16px;
+    font-family: var(--mono);
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--blue);
+    opacity: 0.3;
+    line-height: 1;
+  }
+  .step h4 { font-size: 14px; font-weight: 700; color: var(--text-bright); margin-bottom: 6px; }
+  .step p  { font-size: 13px; color: var(--text); }
+
+  /* ── Verify grid ── */
+  .verify-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin: 16px 0;
+  }
+  .verify-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-top: 3px solid var(--green);
+    border-radius: 6px;
+    padding: 14px;
+  }
+  .verify-card .vc-title { font-family: var(--mono); font-size: 11px; color: var(--green); font-weight: 600; margin-bottom: 8px; }
+  .verify-card .vc-cmd   { font-family: var(--mono); font-size: 11px; color: var(--cyan); background: var(--bg3); padding: 6px 8px; border-radius: 4px; margin-bottom: 8px; word-break: break-all; line-height: 1.6; }
+  .verify-card .vc-note  { font-size: 12px; color: var(--text-dim); }
+
+  /* ── Divider ── */
+  .divider { border: none; border-top: 1px solid var(--border); margin: 40px 0; }
+
+  @media (max-width: 800px) {
+    .sidebar { display: none; }
+    .main { padding: 28px 20px 60px; }
+    .verify-grid { grid-template-columns: 1fr; }
+    .flow { flex-direction: column; }
+    .flow-box { border-radius: 8px !important; border-left: 1px solid var(--border) !important; margin-bottom: 8px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ── Sidebar ── -->
+<nav class="sidebar">
+  <div class="sidebar-logo"><span>#</span> Linux 권한 스터디</div>
+  <div class="nav-group">
+    <div class="nav-group-title">INCIDENT</div>
+    <a class="nav-item" href="#incident">사건 개요</a>
+    <a class="nav-item" href="#rootcause">원인 분석</a>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-title">CONCEPT</div>
+    <a class="nav-item" href="#permission-basic">파일 권한 기초</a>
+    <a class="nav-item" href="#special-bits">특수 비트</a>
+    <a class="nav-item" href="#setgid">setgid 상세</a>
+    <a class="nav-item" href="#umask">umask</a>
+    <a class="nav-item" href="#acl">ACL</a>
+    <a class="nav-item" href="#docker">Docker 권한</a>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-title">ACTION</div>
+    <a class="nav-item" href="#action">임시 조치</a>
+    <a class="nav-item" href="#verify">검증</a>
+    <a class="nav-item" href="#permanent">영구 조치</a>
+    <a class="nav-item" href="#cheatsheet">치트시트</a>
+  </div>
+</nav>
+
+<!-- ── Main ── -->
+<main class="main">
+
+  <div class="page-title">
+    <div class="badge-row">
+      <span class="badge badge-red">INCIDENT</span>
+      <span class="badge badge-blue">STUDY</span>
+      <span class="badge badge-green">2026-05-28</span>
+    </div>
+    <h1>Linux 권한 심화<br><span>setgid &amp; ACL &amp; umask</span></h1>
+    <div class="subtitle">빌드서버 excepList 쓰기 권한 이슈로 배우는 Linux 파일 권한 심화</div>
+  </div>
+
+  <!-- ── 사건 개요 ── -->
+  <div class="section" id="incident">
+    <div class="section-title">
+      <span class="section-tag">INCIDENT</span>
+      <h2>사건 개요</h2>
+    </div>
+    <div class="incident">
+      <div class="inc-label">▸ PROBLEM</div>
+      <h3>빌드서버 excepList 파일 쓰기 권한 오류</h3>
+      <p>빌드서버 <code style="font-family:var(--mono);color:var(--orange);font-size:12px">/data/product/oss-buildserver/work/except_list/</code> 경로에서
+      읽기는 되지만 쓰기 불가 오류가 지속 발생. 다운로드 파일 누적 이슈로 이어질 수 있어 조치 필요.
+      사내 발견 후 산업은행에서도 동일 이슈 확인.</p>
+      <div class="fact-row">
+        <div class="fact"><span class="k">디렉터리 소유</span><span class="v">labrador:appgrp</span></div>
+        <div class="fact"><span class="k">txt 파일 소유</span><span class="v-bad">root:root</span></div>
+        <div class="fact"><span class="k">실행 계정</span><span class="v">labrador</span></div>
+        <div class="fact"><span class="k">조치</span><span class="v-ok">setgid + ACL</span></div>
+        <div class="fact"><span class="k">결과</span><span class="v-ok">검증 3가지 정상</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 파일 권한 기초 ── -->
+  <div class="section" id="permission-basic">
+    <div class="section-title">
+      <span class="section-tag">CONCEPT 01</span>
+      <h2>파일 권한 기초 — <em>owner / group / others</em></h2>
+    </div>
+
+    <p class="prose">
+      리눅스의 모든 파일과 디렉터리는 <strong>딱 3가지 대상</strong>에 대해 권한을 가집니다.
+    </p>
+
+    <div class="perm-visual">
+      <div style="font-size:12px;color:var(--text-dim);margin-bottom:14px;">// ls -l 출력 구조</div>
+      <div class="perm-row">
+        <span class="row-label">전체 구조</span>
+        <span class="bit bit-type">d</span>
+        <span class="bit bit-on">r</span><span class="bit bit-on">w</span><span class="bit bit-on">x</span>
+        <span class="bit-group-label">owner</span>
+        <span class="bit bit-on">r</span><span class="bit bit-on">w</span><span class="bit bit-on">x</span>
+        <span class="bit-group-label">group</span>
+        <span class="bit bit-on">r</span><span class="bit bit-off">-</span><span class="bit bit-off">-</span>
+        <span class="bit-group-label">others</span>
+        <span style="margin-left:12px;font-size:12px;color:var(--text-dim)">labrador  appgrp  except_list/</span>
+      </div>
+      <div style="margin-top:14px;border-top:1px solid var(--border);padding-top:14px;">
+        <div class="perm-row">
+          <span class="row-label" style="color:var(--blue)">d — 파일 타입</span>
+          <span style="font-size:13px;color:var(--text)">
+            <span style="color:var(--blue)">d</span> = directory &nbsp;|&nbsp;
+            <span style="color:var(--blue)">-</span> = 일반파일 &nbsp;|&nbsp;
+            <span style="color:var(--blue)">l</span> = 심볼릭링크
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <table class="data-table">
+      <thead><tr><th>대상</th><th>설명</th><th>이번 사례</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="mono">owner</td>
+          <td>파일 소유자 본인</td>
+          <td><span class="good">root</span> (txt 파일 소유자)</td>
+        </tr>
+        <tr>
+          <td class="mono">group</td>
+          <td>파일의 소유 그룹에 속한 사용자들</td>
+          <td><span class="bad">root 그룹</span> (labrador 미포함)</td>
+        </tr>
+        <tr>
+          <td class="mono">others</td>
+          <td>owner도 group도 아닌 나머지 모든 사용자</td>
+          <td><span class="bad">labrador 해당 → 읽기만</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="qa-block">
+      <div class="qa-q"><span class="q-badge">Q</span>others 권한이라는 게 뭐야?</div>
+      <div class="qa-a"><span class="a-badge">A</span>
+        파일의 owner도 아니고 group 멤버도 아닌 <strong>나머지 모든 사람</strong>에게 적용되는 권한입니다.
+        이번 사례에서 txt 파일이 root:root 소유라서 labrador는 others로 분류됐고, others 권한이 r-- (읽기만)이어서 쓰기가 불가했습니다.
+      </div>
+    </div>
+
+    <div class="qa-block">
+      <div class="qa-q"><span class="q-badge">Q</span>x 와 - 차이가 뭐야?</div>
+      <div class="qa-a"><span class="a-badge">A</span>
+        <strong>파일:</strong> x = 실행 가능 (스크립트, 바이너리), - = 실행 불가<br>
+        <strong>디렉터리:</strong> x = 디렉터리 안으로 cd 진입 가능, - = 진입 불가<br><br>
+        디렉터리에서 r만 있으면 ls 목록은 보이지만 cd 불가. x만 있으면 cd는 되지만 ls 불가. r+x 둘 다 있어야 정상 사용 가능합니다.
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 특수 비트 ── -->
+  <div class="section" id="special-bits">
+    <div class="section-title">
+      <span class="section-tag">CONCEPT 02</span>
+      <h2>권한 비트 전체 구조 — <em>12비트</em></h2>
+    </div>
+
+    <p class="prose">기본 9비트(owner/group/others) 앞에 <strong>특수 비트 3개</strong>가 붙어 총 12비트가 됩니다.
+    단, 특수 비트는 별도 자리가 없고 <strong>기존 x 자리를 빌려서</strong> s, t 로 표시합니다.</p>
+
+    <div class="perm-visual">
+      <div style="font-size:12px;color:var(--text-dim);margin-bottom:14px;">// 12비트 전체 구조</div>
+      <div class="perm-row">
+        <span class="row-label">비트 구성</span>
+        <span class="bit bit-type">d</span>
+        <span class="bit-group-label">타입</span>
+        <span class="sep">|</span>
+        <span class="bit bit-sp">s</span>
+        <span class="bit bit-sg">s</span>
+        <span class="bit bit-sp">t</span>
+        <span class="bit-group-label">특수</span>
+        <span class="sep">|</span>
+        <span class="bit bit-on">r</span><span class="bit bit-on">w</span><span class="bit bit-on">x</span>
+        <span class="bit-group-label">owner</span>
+        <span class="sep">|</span>
+        <span class="bit bit-on">r</span><span class="bit bit-on">w</span><span class="bit bit-sg">s</span>
+        <span class="bit-group-label">group+<span style="color:var(--green)">setgid</span></span>
+        <span class="sep">|</span>
+        <span class="bit bit-on">r</span><span class="bit bit-off">-</span><span class="bit bit-on">x</span>
+        <span class="bit-group-label">others</span>
+      </div>
+      <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px;font-size:12px;line-height:2;color:var(--text-dim);">
+        <div><span style="color:var(--purple)">setuid (u+s)</span> — 실행 파일: 실행 중에 소유자 권한으로 동작. 예) passwd 명령어</div>
+        <div><span style="color:var(--green)">setgid (g+s)</span> — 디렉터리: 하위 파일 그룹 자동 상속 ← <span style="color:var(--orange)">이번 사례</span></div>
+        <div><span style="color:var(--cyan)">sticky  (o+t)</span> — 디렉터리: 파일 소유자만 삭제 가능. 예) /tmp</div>
+      </div>
+    </div>
+
+    <div class="qa-block">
+      <div class="qa-q"><span class="q-badge">Q</span>특수비트는 sst인데 왜 맨앞에 d가 붙어?</div>
+      <div class="qa-a"><span class="a-badge">A</span>
+        <strong>d는 특수비트가 아니라 파일 타입</strong>을 나타내는 별도 자리입니다.
+        <code style="font-family:var(--mono);font-size:12px">d = directory, - = 일반파일, l = 심볼릭링크</code>
+        구조는 [타입 1자리] + [owner 3자리] + [group 3자리] + [others 3자리] = 총 10자리가 ls에 표시됩니다.
+        특수비트는 이 10자리 안에서 x 자리를 빌려 s/t로 표시됩니다.
+      </div>
+    </div>
+  </div>
+
+  <!-- ── setgid ── -->
+  <div class="section" id="setgid">
+    <div class="section-title">
+      <span class="section-tag">CONCEPT 03</span>
+      <h2><em>setgid</em> — 그룹 상속 비트 상세</h2>
+    </div>
+
+    <p class="prose">디렉터리에 setgid가 설정되면 그 안에 새로 생성되는 파일의 그룹이
+    <strong>만든 사람의 GID가 아니라 디렉터리의 그룹으로 자동 상속</strong>됩니다.</p>
+
+    <div class="perm-visual">
+      <div style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">// setgid 유무에 따른 파일 생성 결과</div>
+      <div class="perm-row">
+        <span class="row-label">setgid OFF</span>
+        <span style="color:var(--text-dim);font-size:12px;">root가 파일 생성</span>
+        <span style="margin:0 10px;color:var(--blue)">→</span>
+        <span style="color:var(--red)">root:root</span>
+        <span class="bit-note bad">← labrador는 others → 쓰기 불가</span>
+      </div>
+      <div class="perm-row" style="margin-top:6px;">
+        <span class="row-label">setgid ON</span>
+        <span style="color:var(--text-dim);font-size:12px;">root가 파일 생성</span>
+        <span style="margin:0 10px;color:var(--blue)">→</span>
+        <span style="color:var(--green)">root:appgrp</span>
+        <span class="bit-note good">← 디렉터리 그룹 상속 → labrador 쓰기 가능</span>
+      </div>
+    </div>
+
+    <div class="perm-visual" style="margin-top:14px;">
+      <div style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">// ls 출력에서 s 표시 위치와 의미</div>
+      <div class="perm-row">
+        <span class="row-label" style="color:var(--green)">소문자 s</span>
+        <span style="font-family:var(--mono);color:var(--cyan)">drwxrw<span style="color:var(--green);font-size:15px;font-weight:700">s</span>r-x</span>
+        <span class="bit-note good">= setgid ON + group execute ON → 정상</span>
+      </div>
+      <div class="perm-row" style="margin-top:6px;">
+        <span class="row-label" style="color:var(--orange)">대문자 S</span>
+        <span style="font-family:var(--mono);color:var(--cyan)">drwxrw<span style="color:var(--orange);font-size:15px;font-weight:700">S</span>r-x</span>
+        <span class="bit-note" style="color:var(--orange)">= setgid ON + group execute OFF → 실무에서 실수 신호</span>
+      </div>
+    </div>
+
+    <div class="qa-block">
+      <div class="qa-q"><span class="q-badge">Q</span>대문자 S 되면 뭐가 달라?</div>
+      <div class="qa-a"><span class="a-badge">A</span>
+        setgid 기능 자체는 똑같이 작동합니다. 차이는 <strong>group execute(x) 유무</strong>뿐입니다.
+        대문자 S면 appgrp 멤버가 디렉터리 안으로 cd 진입 자체가 불가합니다.
+        setgid는 작동하지만 진입을 못 하니 의미가 없습니다. 실무에서 S가 보이면 x를 실수로 뺀 것일 가능성이 높습니다.
+      </div>
+    </div>
+
+    <div class="qa-block">
+      <div class="qa-q"><span class="q-badge">Q</span>의미가 없으면 왜 S가 있어? 그냥 g+rw- 하면 되는 거 아냐?</div>
+      <div class="qa-a"><span class="a-badge">A</span>
+        맞는 지적입니다. S는 <strong>설정 순서가 달랐을 때 생기는 흔적</strong>입니다.
+        setgid를 먼저 걸고(<code style="font-family:var(--mono);font-size:12px">chmod g+s</code>) 나중에 x만 따로 제거(<code style="font-family:var(--mono);font-size:12px">chmod g-x</code>)하면 생깁니다.
+        리눅스가 setgid 비트와 x 비트를 각각 독립적으로 관리하기 때문입니다.
+        처음부터 g+rw만 주고 setgid를 안 걸면 S 자체가 생기지 않습니다.
+      </div>
+    </div>
+
+    <div class="qa-block">
+      <div class="qa-q"><span class="q-badge">Q</span>setgid를 끄면 어떻게 돼?</div>
+      <div class="qa-a"><span class="a-badge">A</span>
+        <strong>그룹 자동 상속이 사라집니다.</strong> 이후 root가 파일을 만들면 다시 root:root가 됩니다.
+        단, 이미 만들어진 파일에는 영향 없습니다. setgid는 파일 생성 시점에만 작동하기 때문입니다.
+      </div>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header"><span class="lang">BASH</span><span class="desc">setgid 설정 명령어</span></div>
+      <div class="code-body">
+<span class="c"># setgid 설정 (g+rwxs: group에 rwx + setgid)</span>
+<span class="cmd">sudo chmod</span> <span class="arg">g+rwxs</span> <span class="path">/path/to/except_list</span>
+
+<span class="c"># 8진수 표현: 2=setgid, 7=rwx owner, 7=rwx group, 5=r-x others</span>
+<span class="cmd">sudo chmod</span> <span class="arg">2775</span> <span class="path">/path/to/except_list</span>
+
+<span class="c"># 확인</span>
+<span class="cmd">ls -ld</span> <span class="path">/path/to/except_list</span>
+<span class="out">drwxrwsr-x 2 labrador appgrp 4096 May 28 17:00 except_list</span>
+<span class="c">#               ↑ 's' (소문자) = setgid ON + group x ON</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── umask ── -->
+  <div class="section" id="umask">
+    <div class="section-title">
+      <span class="section-tag">CONCEPT 04</span>
+      <h2><em>umask</em> — 권한 자동 차감 마스크</h2>
+    </div>
+
+    <p class="prose">
+      umask는 <strong>파일 생성 시 권한을 자동으로 빼는 마스크</strong>입니다.
+      리눅스에서 파일을 만드는 <strong>모든 프로세스</strong>가 umask를 적용합니다. 도커 컨테이너도 예외가 없습니다.
+    </p>
+
+    <div class="perm-visual">
+      <div style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">// umask 022 계산 예시</div>
+      <div class="perm-row">
+        <span class="row-label">기본 권한</span>
+        <span style="font-family:var(--mono);color:var(--cyan)">666</span>
+        <span style="margin:0 8px;color:var(--text-dim);font-size:12px">(rw-rw-rw-)</span>
+        <span style="color:var(--text-dim);font-size:12px">← 파일 생성 시 기본값</span>
+      </div>
+      <div class="perm-row">
+        <span class="row-label">umask</span>
+        <span style="font-family:var(--mono);color:var(--red)">022</span>
+        <span style="margin:0 8px;color:var(--text-dim);font-size:12px">(----w--w-)</span>
+        <span style="color:var(--red);font-size:12px">← group w, others w 제거</span>
+      </div>
+      <div style="border-top:1px solid var(--border);margin:8px 0;"></div>
+      <div class="perm-row">
+        <span class="row-label" style="color:var(--green)">실제 권한</span>
+        <span style="font-family:var(--mono);color:var(--green)">644</span>
+        <span style="margin:0 8px;color:var(--text-dim);font-size:12px">(rw-r--r--)</span>
+        <span style="color:var(--green);font-size:12px">← group 쓰기 제거됨</span>
+      </div>
+      <div style="margin-top:14px;border-top:1px solid var(--border);padding-top:12px;font-size:12px;color:var(--text-dim);">
+        umask 022 자리별 의미: <span style="color:var(--cyan)">0</span>=owner 아무것도 안 뺌 &nbsp;|&nbsp; <span style="color:var(--red)">2</span>=group에서 w 제거 &nbsp;|&nbsp; <span style="color:var(--red)">2</span>=others에서 w 제거
+      </div>
+    </div>
+
+    <div class="qa-block">
+      <div class="qa-q"><span class="q-badge">Q</span>umask는 누가 설정해?</div>
+      <div class="qa-a"><span class="a-badge">A</span>
+        여러 단계에서 설정되며 하위가 상위를 덮어씁니다.<br>
+        <code style="font-family:var(--mono);font-size:12px">/etc/profile</code> (시스템 전체 기본값) →
+        <code style="font-family:var(--mono);font-size:12px">~/.bashrc</code> (사용자별) →
+        <code style="font-family:var(--mono);font-size:12px">Dockerfile / 컨테이너 런타임</code> (컨테이너)<br>
+        022가 기본값인 이유는 <strong>보안상 group/others 쓰기를 막는 게 일반적인 관행</strong>이기 때문입니다.
+      </div>
+    </div>
+
+    <div class="qa-block">
+      <div class="qa-q"><span class="q-badge">Q</span>도커가 파일을 쓸 때 늘 umask 적용해서 생성한다는 거지?</div>
+      <div class="qa-a"><span class="a-badge">A</span>
+        네 맞습니다. 도커뿐 아니라 <strong>리눅스에서 파일을 생성하는 모든 프로세스</strong>가 umask를 적용합니다.
+        이번 사례는 두 가지 문제가 겹쳤습니다.<br>
+        ① 컨테이너가 root로 실행 → 파일 소유가 root:root<br>
+        ② umask 022 적용 → group w 제거<br>
+        그래서 setgid 하나만으론 부족하고 default ACL까지 같이 써야 했습니다.
+      </div>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header"><span class="lang">BASH</span><span class="desc">umask 확인</span></div>
+      <div class="code-body">
+<span class="cmd">umask</span>          <span class="out">0022</span>     <span class="c"># 숫자로 출력</span>
+<span class="cmd">umask -S</span>       <span class="out">u=rwx,g=rx,o=rx</span>   <span class="c"># 문자로 출력</span>
+      </div>
+    </div>
+
+    <div class="callout warn">
+      <span class="icon">⚠</span>
+      <div>
+        <strong>setgid만으로 부족한 이유</strong><br>
+        setgid는 그룹 이름(appgrp)을 맞춰주지만, 파일 권한(rwx)은 umask가 결정합니다.
+        umask 022라면 group w가 제거되어 그룹이 맞아도 쓰기가 불가합니다.
+        <strong>default ACL이 umask를 우회하여 group:rwx를 강제 보장</strong>합니다.
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ACL ── -->
+  <div class="section" id="acl">
+    <div class="section-title">
+      <span class="section-tag">CONCEPT 05</span>
+      <h2><em>ACL</em> — Access Control List</h2>
+    </div>
+
+    <div class="qa-block">
+      <div class="qa-q"><span class="q-badge">Q</span>ACL은 무슨 목적으로 만들어진 명령어야?</div>
+      <div class="qa-a"><span class="a-badge">A</span>
+        기본 Linux 권한(owner/group/others 3단계)이 <strong>너무 단순해서 생긴 한계를 해결</strong>하려고 만들어졌습니다.
+        예를 들어 특정 사람 한 명에게만 읽기 권한을 주고 싶어도, 기본 권한으로는 방법이 없습니다.
+        그 사람을 group에 넣으면 group 전체와 동일해지고, others를 열면 모든 사람에게 열립니다.
+        ACL은 <strong>누구에게든 개별적으로 권한을 설정</strong>할 수 있습니다.
+      </div>
+    </div>
+
+    <div class="qa-block">
+      <div class="qa-q"><span class="q-badge">Q</span>ACL은 리눅스에 있는 기본 명령어야?</div>
+      <div class="qa-a"><span class="a-badge">A</span>
+        ACL 기능 자체는 커널에 내장되어 있습니다. 다만 <strong>setfacl/getfacl 명령어는 acl 패키지 설치 필요</strong>합니다.
+        ext4, xfs 파일시스템은 ACL을 기본 지원하며, 실무 서버 환경에서는 대부분 이미 설치되어 있습니다.
+      </div>
+    </div>
+
+    <table class="data-table">
+      <thead><tr><th>구분</th><th>기본 Linux 권한</th><th>ACL</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="mono">대상 지정</td>
+          <td>owner, group, others 3가지만</td>
+          <td class="good">임의의 user, group 여러 개 가능</td>
+        </tr>
+        <tr>
+          <td class="mono">유연성</td>
+          <td class="warn">그룹 변경 필요</td>
+          <td class="good">파일 소유 변경 없이 권한 추가</td>
+        </tr>
+        <tr>
+          <td class="mono">신규 파일 상속</td>
+          <td class="bad">상속 없음</td>
+          <td class="good">default ACL로 자동 상속</td>
+        </tr>
+        <tr>
+          <td class="mono">확인 명령어</td>
+          <td><code style="font-family:var(--mono);font-size:12px;color:var(--cyan)">ls -l</code></td>
+          <td><code style="font-family:var(--mono);font-size:12px;color:var(--cyan)">getfacl</code></td>
+        </tr>
+        <tr>
+          <td class="mono">표시</td>
+          <td>-rwxrwxr-x</td>
+          <td>-rwxrwxr-x<span style="color:var(--orange);font-weight:700">+</span> (끝에 + 표시)</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="flow">
+      <div class="flow-box">
+        <div class="f-icon">📁</div>
+        <div class="f-title">기본 권한</div>
+        <div class="f-desc">owner/group/others 3단계만</div>
+      </div>
+      <div class="flow-arr">→</div>
+      <div class="flow-box" style="border-top:3px solid var(--blue)">
+        <div class="f-icon">📋</div>
+        <div class="f-title">ACL 추가</div>
+        <div class="f-desc">특정 user/group에 별도 rwx 지정</div>
+      </div>
+      <div class="flow-arr">→</div>
+      <div class="flow-box">
+        <div class="f-icon">⚙️</div>
+        <div class="f-title">Default ACL</div>
+        <div class="f-desc">신규 파일에 규칙 자동 적용 (umask 우회)</div>
+      </div>
+      <div class="flow-arr">→</div>
+      <div class="flow-box highlight">
+        <div class="f-icon">✅</div>
+        <div class="f-title">결과</div>
+        <div class="f-desc">root가 만든 파일도 labrador 쓰기 가능</div>
+      </div>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header"><span class="lang">BASH</span><span class="desc">ACL 설정 및 확인</span></div>
+      <div class="code-body">
+<span class="c"># default ACL 설정 (-d: default, -m: modify)</span>
+<span class="c"># 이후 생성되는 모든 파일에 group rwx 자동 부여</span>
+<span class="cmd">sudo setfacl</span> <span class="arg">-d -m g::rwx</span> <span class="path">/path/to/except_list</span>
+
+<span class="c"># ACL 확인</span>
+<span class="cmd">getfacl</span> <span class="path">/path/to/except_list</span>
+<span class="out"># file: except_list</span>
+<span class="out"># owner: labrador</span>
+<span class="out"># group: appgrp</span>
+<span class="out"># flags: -s-         ← setgid 활성화됨</span>
+<span class="out">user::rwx</span>
+<span class="out">group::rwx</span>
+<span class="out">other::r-x</span>
+<span class="out">default:user::rwx</span>
+<span class="out"><span class="hl">default:group::rwx  ← 신규 파일에도 group rwx 자동 적용</span></span>
+<span class="out">default:other::r-x</span>
+
+<span class="c"># ACL 있는 파일은 ls -l 끝에 '+' 표시</span>
+<span class="out">-rw-rw-r--<span style="color:var(--orange);font-weight:700">+</span>  1 root appgrp 1234 May 28 excepList_20260528.txt</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Docker ── -->
+  <div class="section" id="docker">
+    <div class="section-title">
+      <span class="section-tag">CONCEPT 06</span>
+      <h2><em>Docker</em> 컨테이너와 파일 권한</h2>
+    </div>
+
+    <div class="qa-block">
+      <div class="qa-q"><span class="q-badge">Q</span>labrador 유저가 docker compose up으로 실행했는데 왜 유저가 root야?</div>
+      <div class="qa-a"><span class="a-badge">A</span>
+        <strong>컨테이너를 실행하는 사람</strong>과 <strong>컨테이너 안에서 동작하는 유저</strong>는 별개입니다.
+        labrador가 docker compose up을 실행하면 도커 데몬(root 권한)이 컨테이너를 시작하고,
+        컨테이너 내부는 독립된 환경입니다. Dockerfile에 USER 지정이 없으면 기본으로 root로 실행됩니다.
+      </div>
+    </div>
+
+    <div class="perm-visual">
+      <div style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">// 컨테이너 실행 흐름</div>
+      <div style="font-size:13px;line-height:2.2;">
+        <span style="color:var(--text-dim)">호스트:</span>
+        <span style="color:var(--cyan);margin-left:8px;">labrador</span>
+        <span style="color:var(--text-dim);margin:0 8px;">가</span>
+        <span style="color:var(--cyan)">docker compose up</span>
+        <span style="color:var(--blue);margin:0 8px;">→</span>
+        <span style="color:var(--text-dim)">도커 데몬(root)이 컨테이너 시작</span>
+        <br>
+        <span style="color:var(--text-dim)">컨테이너:</span>
+        <span style="color:var(--text-dim);margin-left:8px;">Dockerfile에 USER 없음</span>
+        <span style="color:var(--blue);margin:0 8px;">→</span>
+        <span style="color:var(--red)">컨테이너 내부 프로세스 = root</span>
+        <br>
+        <span style="color:var(--text-dim)">파일 생성:</span>
+        <span style="color:var(--text-dim);margin-left:8px;">root가 파일 생성 + umask 022</span>
+        <span style="color:var(--blue);margin:0 8px;">→</span>
+        <span style="color:var(--red)">root:root, group w 없음</span>
+      </div>
+    </div>
+
+    <div class="callout info">
+      <span class="icon">ℹ</span>
+      <div>
+        <strong>비유:</strong> labrador가 가게 문을 열었다고(docker compose up) 가게 안 직원이 labrador인 건 아닙니다.
+        직원이 누군지는 고용 계약서(Dockerfile의 USER 지시어)에 달려있습니다.
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 원인 분석 ── -->
+  <div class="section" id="rootcause">
+    <div class="section-title">
+      <span class="section-tag">ROOT CAUSE</span>
+      <h2>원인 분석 — <em>두 가지가 겹침</em></h2>
+    </div>
+
+    <div class="perm-visual">
+      <div style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">// 문제 상황 권한 분석</div>
+      <div class="perm-row">
+        <span class="row-label">디렉터리</span>
+        <span class="bit bit-on">r</span><span class="bit bit-on">w</span><span class="bit bit-on">x</span>
+        <span class="bit-group-label">owner(labrador)</span>
+        <span class="bit bit-on">r</span><span class="bit bit-on">w</span><span class="bit bit-on">x</span>
+        <span class="bit-group-label">group(appgrp)</span>
+        <span class="bit bit-on">r</span><span class="bit bit-off">-</span><span class="bit bit-on">x</span>
+        <span class="bit-group-label">others</span>
+      </div>
+      <div class="perm-row" style="margin-top:6px;">
+        <span class="row-label" style="color:var(--red)">txt 파일 ❌</span>
+        <span class="bit bit-on">r</span><span class="bit bit-on">w</span><span class="bit bit-off">-</span>
+        <span class="bit-group-label">owner(<span style="color:var(--red)">root</span>)</span>
+        <span class="bit bit-on">r</span><span class="bit bit-off">-</span><span class="bit bit-off">-</span>
+        <span class="bit-group-label">group(<span style="color:var(--red)">root</span>)</span>
+        <span class="bit bit-on">r</span><span class="bit bit-off">-</span><span class="bit bit-off">-</span>
+        <span class="bit-group-label">others</span>
+        <span class="bit-note bad">← labrador는 others → 읽기만</span>
+      </div>
+    </div>
+
+    <div class="callout danger">
+      <span class="icon">⚠</span>
+      <div>
+        <strong>원인 1:</strong> 컨테이너가 root로 실행 → 파일 소유가 root:root (setgid 없어서 그룹 상속 안 됨)<br>
+        <strong>원인 2:</strong> umask 022 → group w 제거<br>
+        두 원인이 겹쳐서 labrador는 others로 분류되어 읽기만 가능한 상태.
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 임시 조치 ── -->
+  <div class="section" id="action">
+    <div class="section-title">
+      <span class="section-tag">ACTION</span>
+      <h2>임시 조치 절차</h2>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <h4>labrador 계정이 appgrp 멤버인지 확인</h4>
+        <p>이 전제가 충족되어야 그룹 권한이 적용됩니다.</p>
+        <div class="code-block" style="margin-top:10px;">
+          <div class="code-body" style="padding:12px 18px;">
+            <span class="cmd">id</span> <span class="arg">labrador</span> <span class="arg">| grep -o appgrp</span>
+            <span class="c">  # 출력에 'appgrp' 이 있어야 함</span>
+          </div>
+        </div>
+      </div>
+      <div class="step">
+        <h4>디렉터리에 setgid + default ACL 부여</h4>
+        <p>이후 컨테이너(root)가 생성하는 신규 파일도 자동으로 group=appgrp, g+rw가 됩니다.</p>
+        <div class="code-block" style="margin-top:10px;">
+          <div class="code-body" style="padding:12px 18px;">
+<span class="cmd">sudo chmod</span> <span class="arg">g+rwxs</span> <span class="path">/path/to/except_list</span>
+<span class="cmd">sudo setfacl</span> <span class="arg">-d -m g::rwx</span> <span class="path">/path/to/except_list</span>
+          </div>
+        </div>
+      </div>
+      <div class="step">
+        <h4>기존 root:root 파일 일괄 보정</h4>
+        <p>이미 쌓인 파일들은 setgid/ACL 설정 이전 생성이므로 별도로 정리합니다.</p>
+        <div class="code-block" style="margin-top:10px;">
+          <div class="code-body" style="padding:12px 18px;">
+<span class="cmd">sudo chgrp</span> <span class="arg">-R appgrp</span> <span class="path">/path/to/except_list</span>
+<span class="cmd">sudo chmod</span> <span class="arg">g+rw</span> <span class="path">/path/to/except_list/*.txt</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 검증 ── -->
+  <div class="section" id="verify">
+    <div class="section-title">
+      <span class="section-tag">VERIFY</span>
+      <h2>3단계 검증 — <em>동환님 확인 완료 ✅</em></h2>
+    </div>
+
+    <div class="verify-grid">
+      <div class="verify-card">
+        <div class="vc-title">A. AccessDenied 중단 확인</div>
+        <div class="vc-cmd">grep AccessDenied /data/log/downloader/$(date +%Y-%m-%d)_downloader.log | tail -1</div>
+        <div class="vc-note">마지막 에러 시각이 조치 시점 이전이면 성공</div>
+      </div>
+      <div class="verify-card">
+        <div class="vc-title">B. 신규 파일 그룹 확인</div>
+        <div class="vc-cmd">ls -la /path/to/except_list | head</div>
+        <div class="vc-note">새로 떨어진 파일이 root:appgrp이면 정상</div>
+      </div>
+      <div class="verify-card">
+        <div class="vc-title">C. ACL 규칙 확인</div>
+        <div class="vc-cmd">getfacl /path/to/except_list | head</div>
+        <div class="vc-note">"default:group::rwx" 줄이 보이면 정상</div>
+      </div>
+    </div>
+
+    <div class="callout success">
+      <span class="icon">✓</span>
+      <div><strong>검증 3가지 모두 정상 확인</strong> — 2026-05-28 17:26 (동환님)</div>
+    </div>
+  </div>
+
+  <!-- ── 영구 조치 ── -->
+  <div class="section" id="permanent">
+    <div class="section-title">
+      <span class="section-tag">NEXT</span>
+      <h2>영구 조치 방향</h2>
+    </div>
+
+    <div class="callout warn">
+      <span class="icon">⚠</span>
+      <div>
+        임시 조치는 디렉터리 수준에서 권한을 보정한 것입니다.
+        <strong>근본 원인은 Docker Compose에서 컨테이너가 root로 파일을 생성하는 것</strong>이므로
+        아래 방향으로 영구 조치가 필요합니다.
+      </div>
+    </div>
+
+    <table class="data-table">
+      <thead><tr><th>방법</th><th>내용</th><th>적용 위치</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="good" style="font-weight:600">방법 1 (권장)</td>
+          <td>docker-compose.yml에 <code style="font-family:var(--mono);font-size:12px;color:var(--cyan)">user: "labrador"</code> 또는 uid:gid 지정</td>
+          <td>docker-compose.yml</td>
+        </tr>
+        <tr>
+          <td>방법 2</td>
+          <td>Dockerfile에서 <code style="font-family:var(--mono);font-size:12px;color:var(--cyan)">USER labrador</code> 지시어로 실행 계정 고정</td>
+          <td>Dockerfile</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── 치트시트 ── -->
+  <div class="section" id="cheatsheet">
+    <div class="section-title">
+      <span class="section-tag">CHEATSHEET</span>
+      <h2>명령어 치트시트</h2>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header"><span class="lang">BASH</span><span class="desc">파일 권한 확인</span></div>
+      <div class="code-body">
+<span class="cmd">ls -la</span> <span class="path">&lt;dir&gt;</span>          <span class="c"># 권한 + 소유자 확인</span>
+<span class="cmd">stat -c '%U:%G'</span> <span class="path">&lt;file&gt;</span>  <span class="c"># user:group 출력</span>
+<span class="cmd">id</span> <span class="arg">&lt;username&gt;</span>           <span class="c"># 사용자의 uid/gid/groups 확인</span>
+      </div>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header"><span class="lang">BASH</span><span class="desc">setgid</span></div>
+      <div class="code-body">
+<span class="cmd">chmod</span> <span class="arg">g+s</span>  <span class="path">&lt;dir&gt;</span>    <span class="c"># setgid 설정</span>
+<span class="cmd">chmod</span> <span class="arg">g-s</span>  <span class="path">&lt;dir&gt;</span>    <span class="c"># setgid 제거</span>
+<span class="cmd">chmod</span> <span class="arg">2775</span> <span class="path">&lt;dir&gt;</span>    <span class="c"># 8진수 (2=setgid)</span>
+<span class="c"># 's' = setgid ON + group x ON</span>
+<span class="c"># 'S' = setgid ON + group x OFF (실수 신호)</span>
+      </div>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header"><span class="lang">BASH</span><span class="desc">ACL</span></div>
+      <div class="code-body">
+<span class="cmd">getfacl</span> <span class="path">&lt;file&gt;</span>                        <span class="c"># ACL 조회</span>
+<span class="cmd">setfacl</span> <span class="arg">-m u:username:rw</span> <span class="path">&lt;file&gt;</span>   <span class="c"># 특정 사용자에게 ACL 추가</span>
+<span class="cmd">setfacl</span> <span class="arg">-m g:groupname:rw</span> <span class="path">&lt;file&gt;</span>  <span class="c"># 특정 그룹에게 ACL 추가</span>
+<span class="cmd">setfacl</span> <span class="arg">-d -m g:appgrp:rwx</span> <span class="path">&lt;dir&gt;</span> <span class="c"># default ACL (신규 파일 자동 상속)</span>
+<span class="cmd">setfacl</span> <span class="arg">-x u:username</span> <span class="path">&lt;file&gt;</span>       <span class="c"># 특정 항목 제거</span>
+<span class="cmd">setfacl</span> <span class="arg">-b</span> <span class="path">&lt;file&gt;</span>                   <span class="c"># 모든 ACL 제거</span>
+<span class="cmd">setfacl</span> <span class="arg">-R -m g:appgrp:rw</span> <span class="path">&lt;dir&gt;</span>  <span class="c"># 재귀 적용</span>
+      </div>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header"><span class="lang">BASH</span><span class="desc">umask</span></div>
+      <div class="code-body">
+<span class="cmd">umask</span>           <span class="c"># 현재 umask 확인 (숫자)</span>
+<span class="cmd">umask -S</span>        <span class="c"># 현재 umask 확인 (문자)</span>
+<span class="cmd">umask</span> <span class="arg">002</span>       <span class="c"># 임시 변경 (group w 허용)</span>
+      </div>
+    </div>
+
+  </div>
+
+</main>
+
+</body>
+</html>

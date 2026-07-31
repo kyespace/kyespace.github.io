@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Docker & OS 스터디 가이드</title>
+<style>
+  :root {
+    --bg: #f5f0e8;
+    --surface: #faf7f2;
+    --surface2: #ede8df;
+    --border: #d6cfc4;
+    --accent: #5b8fa8;
+    --accent2: #3d6e88;
+    --accent-dim: #5b8fa820;
+    --green: #3a7d5c;
+    --yellow: #b07d2e;
+    --red: #c0392b;
+    --purple: #7b5ea7;
+    --text: #2c2420;
+    --text-dim: #7a6e65;
+    --mono: 'JetBrains Mono','Fira Code','Cascadia Code',monospace;
+    --sans: 'Pretendard','Apple SD Gothic Neo','Noto Sans KR',system-ui,sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 15px; line-height: 1.7; }
+
+  /* ── NAV BAR ── */
+  .navbar {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--surface);
+    border-bottom: 2px solid var(--border);
+    display: flex; align-items: center;
+    padding: 0 32px; gap: 0;
+    box-shadow: 0 2px 8px #2c242010;
+  }
+  .nav-brand {
+    font-family: var(--mono); font-size: 12px; font-weight: 700;
+    color: var(--accent2); letter-spacing: 1px;
+    padding: 16px 20px 16px 0;
+    border-right: 1px solid var(--border);
+    margin-right: 8px; white-space: nowrap;
+  }
+  .nav-tab {
+    padding: 18px 20px; font-size: 13px; font-weight: 600;
+    color: var(--text-dim); cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s; user-select: none; white-space: nowrap;
+  }
+  .nav-tab:hover { color: var(--accent); }
+  .nav-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .nav-badge {
+    display: inline-block; font-family: var(--mono); font-size: 9px;
+    background: var(--accent-dim); color: var(--accent2);
+    border: 1px solid var(--accent2); border-radius: 4px;
+    padding: 1px 5px; margin-left: 6px; vertical-align: middle;
+  }
+
+  /* ── PAGE ── */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* ── HEADER ── */
+  .page-header {
+    background: linear-gradient(135deg, #ede8df 0%, #e4ddd0 50%, #ede8df 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 48px 40px 40px;
+    text-align: center; position: relative; overflow: hidden;
+  }
+  .page-header::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(ellipse 700px 260px at 50% 100%, #5b8fa812, transparent);
+  }
+  .header-tag {
+    display: inline-block; font-family: var(--mono); font-size: 10px;
+    color: var(--accent); letter-spacing: 3px; text-transform: uppercase;
+    border: 1px solid var(--accent2); padding: 3px 12px;
+    border-radius: 100px; margin-bottom: 16px;
+  }
+  .page-header h1 { font-size: clamp(22px, 3.5vw, 36px); font-weight: 800; letter-spacing: -0.5px; line-height: 1.2; margin-bottom: 10px; }
+  .page-header h1 span { color: var(--accent); }
+  .page-header p { color: var(--text-dim); font-size: 14px; max-width: 520px; margin: 0 auto; }
+
+  /* ── CONTAINER ── */
+  .container { max-width: 960px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ── TOC ── */
+  .toc { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin: 36px 0; }
+  .toc-title { font-size: 11px; font-family: var(--mono); color: var(--accent); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 14px; }
+  .toc ol { list-style: none; counter-reset: toc; display: grid; grid-template-columns: 1fr 1fr; gap: 6px 24px; }
+  @media(max-width:600px){ .toc ol { grid-template-columns: 1fr; } }
+  .toc li { counter-increment: toc; }
+  .toc a { color: var(--text-dim); text-decoration: none; font-size: 13.5px; display: flex; align-items: center; gap: 8px; transition: color 0.2s; }
+  .toc a::before { content: counter(toc,decimal-leading-zero); font-family: var(--mono); font-size: 10px; color: var(--accent2); min-width: 20px; }
+  .toc a:hover { color: var(--accent); }
+
+  /* ── SECTION ── */
+  section { margin: 52px 0; scroll-margin-top: 70px; }
+  .section-label { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+  .section-num { font-family: var(--mono); font-size: 10px; color: var(--accent); background: var(--accent-dim); border: 1px solid var(--accent2); padding: 3px 10px; border-radius: 6px; }
+  section h2 { font-size: 21px; font-weight: 700; }
+  section h3 { font-size: 15px; font-weight: 600; color: var(--accent2); margin: 26px 0 10px; }
+  section p { color: var(--text-dim); margin-bottom: 12px; }
+  section p strong { color: var(--text); }
+  .divider { border: none; border-top: 1px solid var(--border); margin: 44px 0; }
+
+  /* ── COMPARE GRID ── */
+  .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 20px 0; }
+  @media(max-width:640px){ .compare-grid { grid-template-columns: 1fr; } }
+  .compare-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 20px; }
+  .compare-card.vm { border-top: 3px solid var(--yellow); }
+  .compare-card.docker { border-top: 3px solid var(--accent); }
+  .compare-card.ok { border-top: 3px solid var(--green); }
+  .compare-card.warn { border-top: 3px solid var(--red); }
+  .card-title { font-weight: 700; font-size: 14px; margin-bottom: 12px; }
+  .compare-card.vm .card-title { color: var(--yellow); }
+  .compare-card.docker .card-title { color: var(--accent); }
+  .compare-card.ok .card-title { color: var(--green); }
+  .compare-card.warn .card-title { color: var(--red); }
+  .compare-card ul { list-style: none; }
+  .compare-card li { font-size: 13px; color: var(--text-dim); padding: 5px 0; border-bottom: 1px solid var(--border); display: flex; gap: 8px; }
+  .compare-card li:last-child { border-bottom: none; }
+  .compare-card li::before { content: '→'; flex-shrink: 0; }
+
+  /* ── ARCH DIAGRAM ── */
+  .arch-diagram { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin: 20px 0; font-family: var(--mono); font-size: 12px; line-height: 1.9; overflow-x: auto; }
+  .arch-box { border: 1px solid var(--border); border-radius: 8px; padding: 10px 16px; margin: 6px 0; text-align: center; font-size: 12px; }
+  .arch-box.app    { background: #e8f3ed; border-color: var(--green);  color: var(--green); }
+  .arch-box.runtime{ background: #e8f0f5; border-color: var(--accent); color: var(--accent); }
+  .arch-box.kernel { background: #ede8f5; border-color: var(--purple); color: var(--purple); }
+  .arch-box.hw     { background: #f5ede8; border-color: var(--yellow); color: var(--yellow); }
+  .arch-box.hyper  { background: #f5e8e8; border-color: var(--red);    color: var(--red); }
+  .arch-box.guestos{ background: var(--surface2); border-color: var(--text-dim); color: var(--text-dim); }
+  .arch-row { display: grid; gap: 10px; margin: 6px 0; }
+  .arch-row.col2 { grid-template-columns: 1fr 1fr; }
+  .arch-row.col3 { grid-template-columns: 1fr 1fr 1fr; }
+  .arch-arrow { text-align: center; color: var(--text-dim); font-size: 14px; margin: 4px 0; }
+  .arch-label { font-size: 10px; color: var(--text-dim); letter-spacing: 1px; text-transform: uppercase; text-align: center; margin-bottom: 10px; }
+
+  /* ── LAYER STACK ── */
+  .layer-stack { margin: 20px 0; }
+  .layer { display: flex; align-items: stretch; margin-bottom: 4px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); transition: border-color 0.2s; }
+  .layer:hover { border-color: var(--accent2); }
+  .layer-num { background: var(--surface2); font-family: var(--mono); font-size: 10px; color: var(--text-dim); padding: 12px 12px; display: flex; align-items: center; min-width: 54px; justify-content: center; border-right: 1px solid var(--border); flex-shrink: 0; flex-direction: column; gap: 2px; }
+  .layer-content { flex: 1; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+  .layer-name { font-weight: 600; font-size: 13.5px; }
+  .layer-desc { font-size: 12px; color: var(--text-dim); }
+  .layer-badge { font-family: var(--mono); font-size: 10px; padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
+  .badge-rw     { background: #e8f3ed; color: var(--green);  border: 1px solid var(--green); }
+  .badge-ro     { background: #e8f0f5; color: var(--accent); border: 1px solid var(--accent2); }
+  .badge-base   { background: #f5ede8; color: var(--yellow); border: 1px solid var(--yellow); }
+  .badge-cached { background: #ede8f5; color: var(--purple); border: 1px solid var(--purple); }
+  .layer.l0 { background: linear-gradient(90deg, var(--bg), #e8f3ed30); }
+  .layer.l1, .layer.l2, .layer.l3 { background: var(--surface); }
+  .layer.l4 { background: var(--surface2); }
+
+  /* ── CACHE FLOW ── */
+  .cache-flow { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 22px; margin: 20px 0; }
+  .cache-step { display: flex; gap: 12px; margin-bottom: 14px; align-items: flex-start; }
+  .cache-step:last-child { margin-bottom: 0; }
+  .cache-icon { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
+  .icon-hit  { background: #e8f3ed; }
+  .icon-miss { background: #f5e8e8; }
+  .icon-info { background: #e8f0f5; }
+  .cache-text strong { font-size: 13.5px; display: block; margin-bottom: 2px; }
+  .cache-text span { font-size: 12.5px; color: var(--text-dim); }
+
+  /* ── CODE BLOCK ── */
+  .code-block { background: #2c2420; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin: 14px 0; }
+  .code-header { background: #3a302a; padding: 7px 14px; font-family: var(--mono); font-size: 10px; color: #b0a89e; border-bottom: 1px solid #4a3e38; display: flex; align-items: center; gap: 7px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .dot-r { background: #c0392b; } .dot-y { background: #b07d2e; } .dot-g { background: #3a7d5c; }
+  pre { padding: 18px; overflow-x: auto; font-family: var(--mono); font-size: 12px; line-height: 1.8; color: #e8ddd5; }
+  .c-comment { color: #9a8a80; }
+  .c-keyword  { color: #c9a0dc; }
+  .c-string   { color: #7ecfa0; }
+  .c-cmd      { color: #7ab8d4; }
+  .c-hit      { color: #7ecfa0; }
+  .c-miss     { color: #d4a84b; }
+
+  /* ── DAEMON DIAGRAM ── */
+  .daemon-diagram { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin: 20px 0; }
+  .daemon-row { display: flex; gap: 10px; align-items: center; justify-content: center; flex-wrap: wrap; margin: 10px 0; }
+  .daemon-node { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 18px; text-align: center; min-width: 110px; }
+  .daemon-node .node-title { font-weight: 700; font-size: 13px; margin-bottom: 3px; }
+  .daemon-node .node-sub { font-family: var(--mono); font-size: 10px; color: var(--text-dim); }
+  .daemon-node.client { border-color: var(--green); } .daemon-node.client .node-title { color: var(--green); }
+  .daemon-node.daemon { border-color: var(--accent); border-width: 2px; } .daemon-node.daemon .node-title { color: var(--accent); }
+  .daemon-node.target { border-color: var(--yellow); } .daemon-node.target .node-title { color: var(--yellow); }
+  .daemon-arrow { font-size: 16px; color: var(--text-dim); }
+  .daemon-label { font-size: 10px; color: var(--text-dim); font-family: var(--mono); text-align: center; margin-top: 4px; }
+
+  /* ── INFO CARDS ── */
+  .info-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin: 20px 0; }
+  .info-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 18px; }
+  .info-card-title { font-weight: 700; font-size: 13.5px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+  .info-card ul { list-style: none; }
+  .info-card li { font-size: 12.5px; color: var(--text-dim); padding: 4px 0; border-bottom: 1px solid var(--border); display: flex; gap: 8px; }
+  .info-card li:last-child { border-bottom: none; }
+  .info-card li::before { content: '▸'; flex-shrink: 0; }
+
+  /* ── TABLE ── */
+  .summary-table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 13px; }
+  .summary-table th { background: var(--surface2); color: var(--accent2); font-family: var(--mono); font-size: 10px; letter-spacing: 1px; text-transform: uppercase; padding: 11px 14px; text-align: left; border: 1px solid var(--border); }
+  .summary-table td { padding: 10px 14px; border: 1px solid var(--border); color: var(--text-dim); vertical-align: top; }
+  .summary-table tr:hover td { background: var(--surface); }
+  .summary-table td:first-child { font-weight: 600; color: var(--text); }
+
+  /* ── CALLOUT ── */
+  .callout { border-left: 3px solid var(--accent); background: var(--accent-dim); padding: 13px 18px; border-radius: 0 8px 8px 0; margin: 18px 0; font-size: 13px; }
+  .callout.warn { border-color: var(--yellow); background: #b07d2e12; }
+  .callout.ok   { border-color: var(--green);  background: #3a7d5c12; }
+  .callout strong { display: block; margin-bottom: 4px; font-size: 12px; letter-spacing: 0.5px; }
+
+  /* ── KEY TERMS ── */
+  .key-terms { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; margin: 20px 0; }
+  .key-term { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 13px 15px; }
+  .key-term dt { font-family: var(--mono); font-size: 11px; color: var(--accent); margin-bottom: 4px; }
+  .key-term dd { font-size: 12px; color: var(--text-dim); }
+
+  /* ── VIRT FLOW (page3 전용) ── */
+  .virt-stack { margin: 20px 0; }
+  .virt-row { display: flex; gap: 10px; margin-bottom: 14px; align-items: flex-start; }
+  .virt-tag { font-family: var(--mono); font-size: 10px; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; white-space: nowrap; color: var(--text-dim); min-width: 80px; text-align: center; margin-top: 2px; }
+  .virt-body { flex: 1; }
+  .virt-title { font-weight: 700; font-size: 14px; margin-bottom: 4px; }
+  .virt-desc  { font-size: 12.5px; color: var(--text-dim); }
+
+  /* ── FOOTER ── */
+  footer { text-align: center; padding: 28px; border-top: 1px solid var(--border); font-size: 11px; color: var(--text-dim); font-family: var(--mono); }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════ NAVBAR ═══════════════ -->
+<nav class="navbar">
+  <div class="nav-brand">// STUDY GUIDE</div>
+  <div class="nav-tab active" onclick="showPage('p1', this)">
+    🐳 Docker 핵심 <span class="nav-badge">S01–06</span>
+  </div>
+  <div class="nav-tab" onclick="showPage('p2', this)">
+    🖥 OS · 하드웨어 <span class="nav-badge">S07–10</span>
+  </div>
+  <div class="nav-tab" onclick="showPage('p3', this)">
+    ⚙️ 가상화 심화 <span class="nav-badge">S11–13</span>
+  </div>
+</nav>
+
+<!-- ═══════════════ PAGE 1: DOCKER ═══════════════ -->
+<div id="p1" class="page active">
+  <div class="page-header">
+    <div class="header-tag">Page 1 · Docker Fundamentals</div>
+    <h1>Docker <span>Container</span> 완전 이해</h1>
+    <p>VM과의 차이점 · 레이어 캐싱 · Docker Daemon 아키텍처</p>
+  </div>
+  <div class="container">
+    <nav class="toc">
+      <div class="toc-title">// Contents</div>
+      <ol>
+        <li><a href="#s1">VM vs Container 핵심 차이</a></li>
+        <li><a href="#s2">아키텍처 비교 다이어그램</a></li>
+        <li><a href="#s3">레이어(Layer) 개념</a></li>
+        <li><a href="#s3b">Container Layer · OverlayFS 구조</a></li>
+        <li><a href="#s3c">파일 추가·수정·삭제 — 실제 동작</a></li>
+        <li><a href="#s3d">레이어 = diff 스냅샷 · 실제 디렉터리 구조</a></li>
+        <li><a href="#s4">레이어 캐시 Hit / Miss</a></li>
+        <li><a href="#s5">Docker Daemon 역할</a></li>
+        <li><a href="#s6">핵심 개념 요약</a></li>
+      </ol>
+    </nav>
+
+    <!-- S1 -->
+    <section id="s1">
+      <div class="section-label"><span class="section-num">01</span><h2>VM vs Container — 핵심 차이</h2></div>
+      <p>가장 근본적인 차이는 <strong>OS 커널을 공유하느냐, 격리하느냐</strong>입니다.</p>
+      <div class="compare-grid">
+        <div class="compare-card vm">
+          <div class="card-title">🖥 Virtual Machine</div>
+          <ul>
+            <li>각 VM이 Guest OS 전체를 포함</li>
+            <li>Hypervisor가 하드웨어 가상화</li>
+            <li>부팅 시간: 수십 초 ~ 수 분</li>
+            <li>이미지 크기: 수 GB 단위</li>
+            <li>격리 수준: 강력 (완전한 OS 분리)</li>
+            <li>오버헤드: CPU/메모리 상당히 큼</li>
+          </ul>
+        </div>
+        <div class="compare-card docker">
+          <div class="card-title">📦 Docker Container</div>
+          <ul>
+            <li>호스트 OS 커널을 공유</li>
+            <li>Namespace / cgroup으로 격리</li>
+            <li>부팅 시간: 밀리초 ~ 수 초</li>
+            <li>이미지 크기: 수 MB ~ 수백 MB</li>
+            <li>격리 수준: 프로세스 수준</li>
+            <li>오버헤드: 거의 없음 (네이티브에 근접)</li>
+          </ul>
+        </div>
+      </div>
+      <h3>격리 기술: Namespace & cgroup</h3>
+      <div class="info-cards">
+        <div class="info-card">
+          <div class="info-card-title" style="color:var(--accent)">🔒 Linux Namespace</div>
+          <ul>
+            <li>pid: 프로세스 ID 공간 격리</li>
+            <li>net: 네트워크 인터페이스 격리</li>
+            <li>mnt: 파일시스템 마운트 격리</li>
+            <li>uts: 호스트명 격리</li>
+            <li>ipc: 프로세스간 통신 격리</li>
+            <li>user: UID/GID 공간 격리</li>
+          </ul>
+        </div>
+        <div class="info-card">
+          <div class="info-card-title" style="color:var(--yellow)">⚡ cgroup</div>
+          <ul>
+            <li>CPU 사용량 제한</li>
+            <li>메모리 상한 설정</li>
+            <li>디스크 I/O 스로틀링</li>
+            <li>네트워크 대역폭 제어</li>
+            <li>자원 사용 모니터링</li>
+          </ul>
+        </div>
+        <div class="info-card">
+          <div class="info-card-title" style="color:var(--green)">📁 Union File System</div>
+          <ul>
+            <li>OverlayFS (현재 기본 드라이버)</li>
+            <li>여러 레이어를 하나로 병합</li>
+            <li>읽기 전용 레이어 공유</li>
+            <li>CoW(Copy-on-Write) 방식</li>
+          </ul>
+        </div>
+      </div>
+      <div class="callout ok">
+        <strong>✅ 핵심 포인트</strong>
+        Container는 VM처럼 OS를 복제하지 않습니다. 호스트 Linux 커널을 그대로 씁니다. Docker for Mac/Windows에서는 내부적으로 경량 Linux VM을 띄워 그 위에서 컨테이너를 실행합니다.
+      </div>
+    </section>
+
+    <hr class="divider">
+
+    <!-- S2 -->
+    <section id="s2">
+      <div class="section-label"><span class="section-num">02</span><h2>아키텍처 비교 다이어그램</h2></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="arch-diagram">
+          <div class="arch-label">Virtual Machine 구조</div>
+          <div class="arch-row col2"><div class="arch-box app">App A</div><div class="arch-box app">App B</div></div>
+          <div class="arch-row col2"><div class="arch-box guestos">Guest OS</div><div class="arch-box guestos">Guest OS</div></div>
+          <div class="arch-arrow">⬇</div>
+          <div class="arch-box hyper">Hypervisor</div>
+          <div class="arch-arrow">⬇</div>
+          <div class="arch-box hw">Host OS + Hardware</div>
+        </div>
+        <div class="arch-diagram">
+          <div class="arch-label">Docker Container 구조</div>
+          <div class="arch-row col2"><div class="arch-box app">App A</div><div class="arch-box app">App B</div></div>
+          <div class="arch-row col2"><div class="arch-box runtime">Container</div><div class="arch-box runtime">Container</div></div>
+          <div class="arch-arrow">⬇</div>
+          <div class="arch-box kernel">Docker Daemon + Host OS Kernel</div>
+          <div class="arch-arrow">⬇</div>
+          <div class="arch-box hw">Hardware</div>
+        </div>
+      </div>
+      <p style="font-size:12px;color:var(--text-dim);text-align:center;margin-top:8px">VM은 Guest OS 전체 복제 / Container는 커널 공유 후 프로세스만 격리</p>
+    </section>
+
+    <hr class="divider">
+
+    <!-- S3 -->
+    <section id="s3">
+      <div class="section-label"><span class="section-num">03</span><h2>레이어(Layer) 개념</h2></div>
+      <p>Docker 이미지는 <strong>불변(immutable) 레이어들의 스택</strong>입니다. Dockerfile의 각 명령어(RUN, COPY, ADD)는 새로운 레이어를 생성합니다.</p>
+      <div class="code-block">
+        <div class="code-header"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div> Dockerfile</div>
+        <pre><span class="c-keyword">FROM</span>   ubuntu:22.04          <span class="c-comment"># Layer 0: base image</span>
+<span class="c-keyword">RUN</span>    apt-get install -y java <span class="c-comment"># Layer 1: java 설치</span>
+<span class="c-keyword">COPY</span>   . /app                <span class="c-comment"># Layer 2: 소스 복사</span>
+<span class="c-keyword">RUN</span>    ./gradlew build        <span class="c-comment"># Layer 3: 빌드</span>
+<span class="c-keyword">CMD</span>    ["java", "-jar", "app.jar"] <span class="c-comment"># 메타데이터 (레이어 아님)</span></pre>
+      </div>
+      <h3>레이어 스택 구조</h3>
+      <div class="layer-stack">
+        <div class="layer l0">
+          <div class="layer-num">R/W</div>
+          <div class="layer-content"><div><div class="layer-name">Container Layer</div><div class="layer-desc">컨테이너 실행 중 변경사항 (파일 쓰기·삭제) — 컨테이너 전용 쓰기 공간</div></div><span class="layer-badge badge-rw">READ / WRITE</span></div>
+        </div>
+        <div style="text-align:center;color:var(--text-dim);font-size:16px;margin:2px 0">⬇ 아래는 모두 Read-Only</div>
+        <div class="layer l1">
+          <div class="layer-num">L3</div>
+          <div class="layer-content"><div><div class="layer-name">RUN ./gradlew build</div><div class="layer-desc">빌드 결과물 (jar, class 파일)</div></div><span class="layer-badge badge-ro">READ ONLY</span></div>
+        </div>
+        <div class="layer l2">
+          <div class="layer-num">L2</div>
+          <div class="layer-content"><div><div class="layer-name">COPY . /app</div><div class="layer-desc">소스 코드 파일들</div></div><span class="layer-badge badge-ro">READ ONLY</span></div>
+        </div>
+        <div class="layer l3">
+          <div class="layer-num">L1</div>
+          <div class="layer-content"><div><div class="layer-name">RUN apt-get install java</div><div class="layer-desc">Java 런타임 바이너리</div></div><span class="layer-badge badge-cached">CACHED</span></div>
+        </div>
+        <div class="layer l4">
+          <div class="layer-num">L0</div>
+          <div class="layer-content"><div><div class="layer-name">FROM ubuntu:22.04</div><div class="layer-desc">베이스 이미지 레이어</div></div><span class="layer-badge badge-base">BASE IMAGE</span></div>
+        </div>
+      </div>
+    </section>
+
+    <hr class="divider">
+
+    <!-- S3b -->
+    <section id="s3b">
+      <div class="section-label"><span class="section-num">03-B</span><h2>Container Layer · OverlayFS 구조</h2></div>
+
+      <p><strong>Container Layer</strong>는 컨테이너 프로세스가 아니라, 그 컨테이너가 파일시스템에 뭔가 쓸 때 실제로 기록되는 <strong>전용 쓰기 공간</strong>입니다. 컨테이너가 100개 뜨면 이미지 레이어는 공유되고, Container Layer만 100개 생깁니다.</p>
+
+      <h3>OverlayFS 세 가지 개념</h3>
+      <div class="info-cards">
+        <div class="info-card">
+          <div class="info-card-title" style="color:var(--text-dim)">📂 lower</div>
+          <ul>
+            <li>읽기 전용 이미지 레이어들</li>
+            <li>변경 불가 — 항상 원본 유지</li>
+            <li>여러 컨테이너가 공유</li>
+          </ul>
+        </div>
+        <div class="info-card">
+          <div class="info-card-title" style="color:var(--green)">✏️ upper</div>
+          <ul>
+            <li>Container Layer (R/W)</li>
+            <li>실제 변경사항이 기록되는 곳</li>
+            <li>이 컨테이너 전용</li>
+          </ul>
+        </div>
+        <div class="info-card">
+          <div class="info-card-title" style="color:var(--accent)">👁 merged</div>
+          <ul>
+            <li>lower + upper를 합쳐서 보여주는 가상 뷰</li>
+            <li>컨테이너 안에서 보이는 파일시스템</li>
+            <li>실제로 합치는 작업 없음 — 조회 시 실시간 결정</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div> 실제 디스크 디렉터리 구조</div>
+        <pre>/var/lib/docker/overlay2/
+  ├── abc123/          <span class="c-comment"># 레이어 1 (ubuntu base)</span>
+  │   └── diff/        <span class="c-comment"># 이 레이어의 변경분만</span>
+  │       ├── bin/
+  │       ├── etc/
+  │       └── usr/
+  │
+  ├── def456/          <span class="c-comment"># 레이어 2 (java 설치)</span>
+  │   └── diff/
+  │       └── usr/lib/jvm/   <span class="c-comment"># java로 생긴 파일들만</span>
+  │
+  ├── ghi789/          <span class="c-comment"># 레이어 3 (COPY . /app)</span>
+  │   └── diff/
+  │       └── app/           <span class="c-comment"># 복사된 소스 파일들만</span>
+  │
+  └── mno345/          <span class="c-comment"># Container Layer (R/W)</span>
+      ├── diff/        <span class="c-comment"># 컨테이너가 실제로 쓴 변경분</span>
+      ├── merged/      <span class="c-comment"># 모든 레이어 합친 뷰 (컨테이너가 보는 것)</span>
+      ├── upper/       <span class="c-comment"># diff와 동일 (쓰기 대상)</span>
+      └── lower        <span class="c-comment"># 아래 레이어들 참조 링크</span></pre>
+      </div>
+
+      <div class="callout">
+        <strong>💡 파일 탐색 순서</strong>
+        컨테이너 안에서 파일을 읽을 때 OverlayFS는 upper(최신) → L3 → L2 → L1 → L0(베이스) 순으로 탐색합니다. 가장 먼저 발견된 레이어의 파일이 사용됩니다. 같은 경로가 여러 레이어에 있으면 위쪽(최신) 레이어가 아래를 가립니다(shadow).
+      </div>
+    </section>
+
+    <hr class="divider">
+
+    <!-- S3c -->
+    <section id="s3c">
+      <div class="section-label"><span class="section-num">03-C</span><h2>파일 추가·수정·삭제 — 실제 동작</h2></div>
+
+      <p>lower는 읽기 전용이라 직접 건드릴 수 없습니다. OverlayFS는 세 가지 상황을 각각 다르게 처리합니다.</p>
+
+      <h3>① 파일 추가</h3>
+      <div class="code-block">
+        <div class="code-header"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div> 파일 추가</div>
+        <pre><span class="c-comment"># 컨테이너 안에서</span>
+$ touch /app/new.txt
+
+<span class="c-comment"># OverlayFS 내부 동작</span>
+upper/app/new.txt  <span class="c-hit">← upper에 파일 생성</span>
+lower/             <span class="c-comment">← 그대로</span>
+merged/app/new.txt <span class="c-comment">← upper + lower 합쳐진 뷰에서 보임</span></pre>
+      </div>
+
+      <h3>② 파일 수정 — Copy-on-Write (CoW)</h3>
+      <div class="code-block">
+        <div class="code-header"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div> 파일 수정 (CoW)</div>
+        <pre><span class="c-comment"># config.yaml 은 lower L2에 존재하는 파일</span>
+$ echo "new" > /app/config.yaml
+
+<span class="c-comment"># OverlayFS 내부 동작</span>
+1. lower L2의 config.yaml을 upper로 복사   <span class="c-miss">← CoW 발생</span>
+2. upper의 config.yaml 수정 적용
+3. merged에서는 upper 버전이 lower를 가림
+
+lower L2/app/config.yaml  <span class="c-comment">← 원본 그대로 유지</span>
+upper/app/config.yaml     <span class="c-hit">← 수정된 버전 (여기서 읽힘)</span></pre>
+      </div>
+
+      <h3>③ 파일·디렉터리 삭제 — Whiteout</h3>
+      <p>lower는 지울 수 없습니다. 대신 OverlayFS는 <strong>whiteout</strong>이라는 특수 마커 파일을 upper에 생성해 해당 파일을 merged 뷰에서 숨깁니다.</p>
+      <div class="code-block">
+        <div class="code-header"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div> 파일/디렉터리 삭제 (Whiteout)</div>
+        <pre><span class="c-comment"># 컨테이너 안에서</span>
+$ rm /etc/config/settings.conf
+$ rm -rf /etc/config/
+
+<span class="c-comment"># OverlayFS 내부 동작</span>
+upper/.wh.settings.conf   <span class="c-miss">← whiteout 마커 (크기 0, 특수 파일)</span>
+upper/.wh..wh..opq        <span class="c-miss">← 디렉터리 통째 삭제 마커 (opaque whiteout)</span>
+
+<span class="c-comment"># merged 뷰 구성 시</span>
+upper에 .wh.파일명 존재 → lower의 해당 파일 숨김
+lower의 실제 파일은 여전히 존재 (컨테이너에서만 안 보임)</span></pre>
+      </div>
+
+      <h3>세 가지 동작 요약</h3>
+      <div class="arch-diagram">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px">
+            <div style="font-weight:700;color:var(--green);margin-bottom:8px;font-size:13px">① 파일 추가</div>
+            <div style="font-family:var(--mono);font-size:11px;color:var(--text-dim);line-height:1.8">upper에<br>파일 생성<br><br>lower 변화 없음</div>
+          </div>
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px">
+            <div style="font-weight:700;color:var(--accent);margin-bottom:8px;font-size:13px">② 파일 수정</div>
+            <div style="font-family:var(--mono);font-size:11px;color:var(--text-dim);line-height:1.8">lower → upper<br>CoW 복사 후<br>upper에서 수정<br>lower 원본 유지</div>
+          </div>
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px">
+            <div style="font-weight:700;color:var(--red);margin-bottom:8px;font-size:13px">③ 파일 삭제</div>
+            <div style="font-family:var(--mono);font-size:11px;color:var(--text-dim);line-height:1.8">upper에<br>.wh.파일명<br>마커 생성<br>lower 원본 유지</div>
+          </div>
+        </div>
+        <div style="margin-top:12px;font-size:12px;color:var(--text-dim);text-align:center">어떤 경우에도 lower(이미지 레이어)는 절대 변경되지 않습니다</div>
+      </div>
+    </section>
+
+    <hr class="divider">
+
+    <!-- S3d -->
+    <section id="s3d">
+      <div class="section-label"><span class="section-num">03-D</span><h2>레이어 = diff 스냅샷 · 레이어 해시</h2></div>
+
+      <p>레이어는 특별한 바이너리 포맷이 아닙니다. <strong>그 명령어가 파일시스템에 가한 변경분(diff)을 담은 일반 리눅스 디렉터리 트리</strong>입니다.</p>
+
+      <h3>레이어 하나의 실제 내용</h3>
+      <div class="code-block">
+        <div class="code-header"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div> 레이어 구성 요소</div>
+        <pre><span class="c-comment"># 레이어 = 아래 네 가지의 집합</span>
+
+1. 파일 바이너리   <span class="c-comment"># 실제 파일 내용</span>
+   /usr/lib/jvm/java-17/bin/java  (실행 바이너리)
+   /app/Main.class                (컴파일 결과물)
+
+2. 파일 경로       <span class="c-comment"># 어느 위치에 있는 파일인지</span>
+   /usr/lib/jvm/java-17/bin/java
+
+3. 메타데이터      <span class="c-comment"># 파일 속성</span>
+   권한: chmod 755
+   소유자: uid=0, gid=0
+   타임스탬프: 2024-01-01T00:00:00Z
+
+4. Whiteout 마커   <span class="c-comment"># 삭제 표시</span>
+   .wh.deleted_file
+   .wh..wh..opq    (디렉터리 통째 삭제)</pre>
+      </div>
+
+      <h3>RUN 명령어 실행 후 레이어 확정 과정</h3>
+      <div class="arch-diagram">
+        <div class="arch-box app" style="text-align:left;padding:12px 18px">
+          <div style="font-weight:700;margin-bottom:4px">RUN apt-get install java 실행</div>
+          <div style="font-size:12px;color:var(--text-dim)">upper에 /usr/lib/jvm/... 파일들 생성됨</div>
+        </div>
+        <div class="arch-arrow">⬇ 명령어 완료</div>
+        <div class="arch-box runtime" style="text-align:left;padding:12px 18px">
+          <div style="font-weight:700;margin-bottom:4px">upper의 내용을 새 레이어(L1)로 확정</div>
+          <div style="font-size:12px;color:var(--text-dim)">/var/lib/docker/overlay2/def456/diff/ 로 저장</div>
+        </div>
+        <div class="arch-arrow">⬇</div>
+        <div class="arch-box kernel" style="text-align:left;padding:12px 18px">
+          <div style="font-weight:700;margin-bottom:4px">다음 명령어는 L1을 lower로 삼아 시작</div>
+          <div style="font-size:12px;color:var(--text-dim)">COPY . /app → upper에 소스 파일들 생성 → L2로 확정...</div>
+        </div>
+      </div>
+
+      <h3>레이어 해시 계산</h3>
+      <div class="code-block">
+        <div class="code-header"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div> 레이어 ID = SHA256 해시</div>
+        <pre>레이어 ID = SHA256(
+  모든 파일 경로        +
+  모든 파일 바이너리 내용 +
+  모든 파일 메타데이터  +
+  부모 레이어 해시
+)
+
+<span class="c-comment"># 파일 하나라도 바뀌면 해시가 달라짐 → Cache MISS</span>
+<span class="c-comment"># 완전히 동일하면 해시 일치 → Cache HIT → 재사용</span>
+
+<span class="c-comment"># 실제 레이어 해시 확인</span>
+$ docker image inspect myapp --format='{{json .RootFS.Layers}}'
+[
+  "sha256:a3ed95caeb02...",  <span class="c-comment"># L0</span>
+  "sha256:9f16d3c8bc73...",  <span class="c-comment"># L1</span>
+  "sha256:f2e4e8c7a1b9..."   <span class="c-comment"># L2</span>
+]</pre>
+      </div>
+
+      <div class="callout ok">
+        <strong>✅ 레이어 한 줄 정의</strong>
+        레이어 = 파일 바이너리 + 경로 + 메타데이터 + whiteout 마커의 집합. 특별한 포맷 없이 그냥 리눅스 디렉터리 트리 그대로입니다. Dockerfile 명령어 하나 실행 후 변경된 파일시스템의 diff 스냅샷입니다.
+      </div>
+    </section>
+
+    <hr class="divider">
+
+    <!-- S4 -->
+    <section id="s4">
+      <div class="section-label"><span class="section-num">04</span><h2>레이어 캐시 (Cache Hit / Miss)</h2></div>
+      <p>Docker는 빌드 시 각 레이어를 <strong>SHA256 해시</strong>로 식별합니다. 동일한 명령어 + 동일한 입력이면 캐시를 재사용하고, 하나라도 바뀌면 그 이후 레이어를 모두 다시 빌드합니다.</p>
+      <div class="cache-flow">
+        <div class="cache-step"><div class="cache-icon icon-info">🔍</div><div class="cache-text"><strong>레이어 식별자 계산</strong><span>명령어 문자열 + 부모 레이어 해시 + (COPY/ADD의 경우) 파일 내용 체크섬 조합</span></div></div>
+        <div class="cache-step"><div class="cache-icon icon-hit">✅</div><div class="cache-text"><strong>Cache HIT — 기존 레이어 재사용</strong><span>해시가 로컬 캐시에 존재 → 빌드 시간 대폭 절감</span></div></div>
+        <div class="cache-step"><div class="cache-icon icon-miss">❌</div><div class="cache-text"><strong>Cache MISS — 레이어 재빌드</strong><span>해시 불일치 → 해당 레이어부터 이후 모든 레이어 연쇄 재빌드</span></div></div>
+      </div>
+      <div class="callout warn">
+        <strong>⚠️ 캐시는 위에서 아래로 전파</strong>
+        중간 레이어 하나가 바뀌면 그 아래 모든 레이어의 캐시가 무효화됩니다. 자주 바뀌는 것은 Dockerfile 아래쪽에 배치하세요.
+      </div>
+      <div class="code-block">
+        <div class="code-header"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div> ✅ 좋은 패턴 — 의존성 먼저, 소스는 나중에</div>
+        <pre><span class="c-keyword">FROM</span> openjdk:17
+<span class="c-cmd">RUN</span>  apt-get install -y curl wget     <span class="c-hit"># HIT: 거의 변하지 않음</span>
+<span class="c-cmd">COPY</span> build.gradle settings.gradle /app/
+<span class="c-cmd">RUN</span>  cd /app && ./gradlew dependencies <span class="c-hit"># HIT: build.gradle 변경 없으면</span>
+<span class="c-cmd">COPY</span> src /app/src                     <span class="c-miss"># MISS: 소스 변경 시만</span>
+<span class="c-cmd">RUN</span>  cd /app && ./gradlew build       <span class="c-miss"># MISS: 소스 변경 시만</span></pre>
+      </div>
+    </section>
+
+    <hr class="divider">
+
+    <!-- S5 -->
+    <section id="s5">
+      <div class="section-label"><span class="section-num">05</span><h2>Docker Daemon 역할</h2></div>
+      <p>Docker Daemon(<code>dockerd</code>)은 Docker 시스템의 <strong>중앙 관리자</strong>입니다. CLI 요청을 받아 컨테이너·이미지·볼륨·네트워크를 실제로 관리합니다.</p>
+      <div class="daemon-diagram">
+        <div class="arch-label" style="text-align:left;margin-bottom:12px">CLIENT → DAEMON → RUNTIME 흐름</div>
+        <div class="daemon-row">
+          <div class="daemon-node client"><div class="node-title">docker CLI</div><div class="node-sub">docker run / build ...</div></div>
+          <div class="daemon-arrow">──REST──▶</div>
+          <div class="daemon-node daemon"><div class="node-title">dockerd</div><div class="node-sub">Docker Daemon</div></div>
+          <div class="daemon-arrow">──gRPC──▶</div>
+          <div class="daemon-node target"><div class="node-title">containerd</div><div class="node-sub">Container Runtime</div></div>
+        </div>
+        <div class="daemon-label">/var/run/docker.sock</div>
+      </div>
+      <div class="code-block">
+        <div class="code-header"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div> 프로세스 계층</div>
+        <pre>dockerd (Docker Daemon)
+  └─ containerd              <span class="c-comment"># 컨테이너 생명주기 관리</span>
+       ├─ containerd-shim     <span class="c-comment"># 컨테이너당 1개 — 데몬 재시작 시 컨테이너 보존</span>
+       │    └─ runc           <span class="c-comment"># OCI 표준 컨테이너 생성 후 종료</span>
+       │         └─ your app process
+       └─ BuildKit            <span class="c-comment"># 병렬 이미지 빌드</span></pre>
+      </div>
+      <div class="callout">
+        <strong>💡 containerd-shim의 역할</strong>
+        dockerd가 재시작되어도 실행 중인 컨테이너가 죽지 않는 이유입니다. shim이 컨테이너 프로세스의 부모 역할을 유지해 데몬과 컨테이너를 분리합니다.
+      </div>
+    </section>
+
+    <hr class="divider">
+
+    <!-- S6 -->
+    <section id="s6">
+      <div class="section-label"><span class="section-num">06</span><h2>핵심 개념 요약</h2></div>
+      <table class="summary-table">
+        <thead><tr><th>개념</th><th>한 줄 정의</th><th>관련 기술</th></tr></thead>
+        <tbody>
+          <tr><td>Container vs VM</td><td>커널 공유(컨테이너) vs 커널 격리(VM)</td><td>Namespace, cgroup</td></tr>
+          <tr><td>Image Layer</td><td>Dockerfile 명령어 단위의 파일시스템 diff 스냅샷</td><td>OverlayFS, SHA256</td></tr>
+          <tr><td>레이어 구성</td><td>파일 바이너리 + 경로 + 메타데이터 + whiteout 마커</td><td>diff/ 디렉터리</td></tr>
+          <tr><td>Container Layer</td><td>컨테이너 전용 R/W 쓰기 공간 (upper). 삭제 시 소멸</td><td>OverlayFS upper</td></tr>
+          <tr><td>lower / upper / merged</td><td>lower=RO 이미지, upper=RW 컨테이너, merged=합친 뷰</td><td>OverlayFS</td></tr>
+          <tr><td>Copy-on-Write</td><td>lower 파일 수정 시 upper로 복사 후 수정. 원본 불변</td><td>OverlayFS CoW</td></tr>
+          <tr><td>Whiteout</td><td>lower 파일 삭제 시 .wh.파일명 마커로 merged에서 숨김</td><td>.wh.* 파일</td></tr>
+          <tr><td>Cache HIT</td><td>레이어 SHA256 해시 일치 → 기존 레이어 재사용</td><td>레이어 ID</td></tr>
+          <tr><td>Cache MISS</td><td>해시 불일치 → 해당 레이어부터 전부 재빌드</td><td>캐시 무효화 전파</td></tr>
+          <tr><td>Docker Daemon</td><td>모든 Docker 작업을 조율하는 백그라운드 서버</td><td>dockerd, Unix socket</td></tr>
+          <tr><td>containerd</td><td>컨테이너 생명주기를 실제 관리하는 런타임</td><td>runc, OCI 표준</td></tr>
+        </tbody>
+      </table>
+    </section>
+  </div>
+  <footer>Docker Fundamentals · Page 1/3 · Labradorlabs 스터디 자료 · 2026</footer>
+</div>
+
+<!-- ═══════════════ PAGE 2: OS / HARDWARE ═══════════════ -->
+<div id="p2" class="page">
+  <div class="page-header">
+    <div class="header-tag">Page 2 · OS & Hardware Fundamentals</div>
+    <h1>OS <span>구조</span> · 하드웨어 기초</h1>
+    <p>Kernel Space · 부팅 과정 · RAM/ROM · 칩 · 플래시 메모리</p>
+  </div>
+  <div class="container">
+    <nav class="toc">
+      <div class="toc-title">// Contents</div>
+      <ol>
+        <li><a href="#s7">Kernel Space / User Space</a></li>
+        <li><a href="#s8">시스템 콜 (syscall)</a></li>
+        <li><a href="#s9">부팅 과정 상세</a></li>
+        <li><a href="#s10">RAM / ROM / Storage 계층</a></li>
+        <li><a href="#s11">칩 · 반도체란</a></li>
+        <li><a href="#s12">플래시 메모리 · ROM의 역사</a></li>
+      </ol>
+    </nav>
+
+    <!-- S7 -->
+    <section id="s7">
+      <div class="section-label"><span class="section-num">07</span><h2>Kernel Space / User Space</h2></div>
+      <p>OS는 실행 권한 수준에 따라 두 영역으로 나뉩니다. CPU 자체가 하드웨어적으로 이 두 모드를 구분합니다.</p>
+      <div class="compare-grid">
+        <div class="compare-card docker">
+          <div class="card-title">🟢 User Space (Ring 3)</div>
+          <ul>
+            <li>일반 앱이 실행되는 영역</li>
+            <li>Chrome, Java 앱, bash 등</li>
+            <li>하드웨어에 직접 접근 불가</li>
+            <li>메모리 주소 공간이 제한됨</li>
+            <li>잘못 동작해도 시스템 전체 안전</li>
+          </ul>
+        </div>
+        <div class="compare-card vm">
+          <div class="card-title">🔴 Kernel Space (Ring 0)</div>
+          <ul>
+            <li>OS 커널이 실행되는 영역</li>
+            <li>최고 권한 — 모든 하드웨어 접근 가능</li>
+            <li>메모리·CPU·디스크·네트워크 직접 제어</li>
+            <li>여기서 버그 나면 시스템 전체 크래시</li>
+            <li>일반 프로세스는 진입 불가</li>
+          </ul>
+        </div>
+      </div>
+      <div class="callout">
+        <strong>💡 Docker와의 연결</strong>
+        컨테이너 안의 앱이 syscall을 날리면 그것을 처리하는 커널은 호스트의 것입니다. VM은 Guest OS 커널이 별도로 있어서 Guest 커널이 먼저 받습니다. 이것이 "커널 공유"의 실체입니다.
+      </div>
+    </section>
+
+    <hr class="divider">
+
+    <!-- S8 -->
+    <section id="s8">
+      <div class="section-label"><span class="section-num">08</span><h2>시스템 콜 (System Call)</h2></div>
+      <p>앱이 파일 읽기·네트워크·메모리 할당 등 하드웨어 자원이 필요할 때 <strong>커널에 요청하는 유일한 통로</strong>입니다.</p>
+      <div class="arch-diagram">
+        <div class="arch-label">syscall 흐름</div>
+        <div class="arch-box app" style="text-align:left;padding:12px 18px">
+          <div style="color:var(--green);font-weight:700;margin-bottom:6px">[ User Space — Ring 3 ]</div>
+          <div style="font-size:12px;color:var(--text-dim)">App 코드 실행 중... 파일을 읽어야 함 → open("/etc/config") 호출</div>
+        </div>
+        <div class="arch-arrow">⬇ syscall 발생 — CPU 모드 전환 (Ring 3 → Ring 0)</div>
+        <div class="arch-box kernel" style="text-align:left;padding:12px 18px">
+          <div style="color:var(--purple);font-weight:700;margin-bottom:6px">[ Kernel Space — Ring 0 ]</div>
+          <div style="font-size:12px;color:var(--text-dim)">커널이 파일시스템 드라이버 통해 디스크 접근 → 데이터를 User Space 버퍼에 복사</div>
+        </div>
+        <div class="arch-arrow">⬆ 반환 — CPU 모드 복귀 (Ring 0 → Ring 3)</div>
+        <div class="arch-box app" style="text-align:left;padding:12px 18px">
+          <div style="font-size:12px;color:var(--text-dim)">App이 결과값을 받아서 계속 실행</div>
+        </div>
+      </div>
+      <div class="code-block">
+        <div class="code-header"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div> Linux 주요 syscall</div>
+        <pre><span class="c-comment"># 파일 I/O</span>
+open()   read()   write()   close()   stat()
+<span class="c-comment"># 프로세스</span>
+fork()   exec()   exit()   wait()   getpid()
+<span class="c-comment"># 메모리</span>
+mmap()   brk()   munmap()
+<span class="c-comment"># 네트워크</span>
+socket()   bind()   connect()   send()   recv()
+
+<span class="c-comment"># syscall 추적 도구</span>
+$ strace ls -la   <span class="c-comment"># ls가 날리는 모든 syscall 출력</span></pre>
+      </div>
+    </section>
+
+    <hr class="divider">
+
+    <!-- S9 -->
+    <section id="s9">
+      <div class="section-label"><span class="section-num">09</span><h2>부팅 과정 — 커널을 메모리에 올리는 것</h2></div>
+      <p>부팅의 본질은 <strong>커널 이미지를 디스크에서 RAM에 올리고 초기화</strong>하는 것입니다.</p>
+      <div class="layer-stack">
+        <div class="layer l4"><div class="layer-num" style="font-size:9px;min-width:60px">STEP 1</div><div class="layer-content"><div><div class="layer-name">전원 ON → BIOS/UEFI 실행</div><div class="layer-desc">CPU가 ROM 칩의 고정 주소를 읽음. 펌웨어가 CPU·RAM·장치 초기화(POST). OS 없이 동작</div></div><span class="layer-badge badge-base">ROM 펌웨어</span></div></div>
+        <div class="layer l3"><div class="layer-num" style="font-size:9px;min-width:60px">STEP 2</div><div class="layer-content"><div><div class="layer-name">부트로더(GRUB) 실행</div><div class="layer-desc">BIOS가 디스크 MBR/GPT에서 부트로더를 찾아 RAM에 올림. 어떤 OS를 부팅할지 선택</div></div><span class="layer-badge badge-ro">HDD/SSD</span></div></div>
+        <div class="layer l0"><div class="layer-num" style="font-size:9px;min-width:60px">STEP 3 ★</div><div class="layer-content"><div><div class="layer-name" style="color:var(--accent)">커널 이미지 → RAM 로드 (핵심)</div><div class="layer-desc">vmlinuz(압축 커널 ~10~14MB)를 디스크에서 RAM으로 복사. 압축 해제 후 커널 자기 초기화</div></div><span class="layer-badge badge-cached">RAM에 적재</span></div></div>
+        <div class="layer l1"><div class="layer-num" style="font-size:9px;min-width:60px">STEP 4</div><div class="layer-content"><div><div class="layer-name">커널 초기화</div><div class="layer-desc">메모리 관리자·스케줄러·드라이버 세팅. initramfs로 루트 파일시스템 마운트</div></div><span class="layer-badge badge-ro">Kernel Space</span></div></div>
+        <div class="layer l2"><div class="layer-num" style="font-size:9px;min-width:60px">STEP 5</div><div class="layer-content"><div><div class="layer-name">PID 1 실행 → 서비스 기동</div><div class="layer-desc">커널이 systemd를 최초 프로세스로 실행. 이후 모든 서비스·데몬 병렬 시작</div></div><span class="layer-badge badge-rw">User Space</span></div></div>
+      </div>
+      <h3>왜 요즘 부팅이 빠른가</h3>
+      <div class="info-cards">
+        <div class="info-card"><div class="info-card-title" style="color:var(--accent)">⚡ systemd 병렬 기동</div><ul><li>구형 SysV init: 서비스를 순차 실행</li><li>systemd: 의존성 분석 후 병렬 실행</li><li>필요 없는 서비스는 지연 로딩</li></ul></div>
+        <div class="info-card"><div class="info-card-title" style="color:var(--yellow)">💾 NVMe SSD 보급</div><ul><li>HDD 순차 읽기: ~150 MB/s</li><li>NVMe 순차 읽기: ~3,500 MB/s</li><li>커널 30MB 로드가 거의 순간</li></ul></div>
+        <div class="info-card"><div class="info-card-title" style="color:var(--purple)">🪟 Windows Fast Startup</div><ul><li>종료 시 커널 상태를 파일에 저장</li><li>다음 부팅 시 RAM에 복원</li><li>엄밀히는 재부팅이 아닌 복원</li></ul></div>
+      </div>
+      <div class="callout ok">
+        <strong>✅ Docker가 밀리초에 뜨는 이유</strong>
+        커널은 이미 RAM에 올라가 있습니다. 컨테이너는 STEP 1~4가 전혀 없고, Namespace + cgroup 설정 후 프로세스 하나를 실행하는 것뿐입니다.
+      </div>
+    </section>
+
+    <hr class="divider">
+
+    <!-- S10 -->
+    <section id="s10">
+      <div class="section-label"><span class="section-num">10</span><h2>RAM / ROM / Storage 계층</h2></div>
+      <table class="summary-table">
+        <thead><tr><th>구분</th><th>약자 원문</th><th>휘발성</th><th>접근 방식</th><th>대표 용도</th></tr></thead>
+        <tbody>
+          <tr><td>RAM</td><td>Random Access Memory</td><td style="color:var(--red)">휘발성</td><td>CPU 주소 버스 직접</td><td>실행 중인 프로세스·커널</td></tr>
+          <tr><td>ROM</td><td>Read Only Memory</td><td style="color:var(--green)">비휘발성</td><td>CPU 직접 (고정 주소)</td><td>BIOS/UEFI 펌웨어</td></tr>
+          <tr><td>SSD</td><td>Solid State Drive</td><td style="color:var(--green)">비휘발성</td><td>NVMe / SATA I/O</td><td>OS, 파일, 프로그램</td></tr>
+          <tr><td>HDD</td><td>Hard Disk Drive</td><td style="color:var(--green)">비휘발성</td><td>SATA I/O</td><td>대용량 데이터 저장</td></tr>
+        </tbody>
+      </table>
+      <div class="callout">
+        <strong>💡 RAM인데 HDD는 왜 RAM이 아닌가</strong>
+        HDD도 기술적으로 랜덤 접근이 가능하지만, RAM이라는 용어는 "CPU가 주소 버스로 직접 접근하는 메모리"를 뜻하는 용어로 굳어졌습니다. HDD/SSD는 별도의 I/O 인터페이스를 거쳐야 하므로 저장장치로 분류가 다릅니다.
+      </div>
+    </section>
+
+    <hr class="divider">
+
+    <!-- S11 -->
+    <section id="s11">
+      <div class="section-label"><span class="section-num">11</span><h2>칩(Chip) · 반도체란</h2></div>
+      <p><strong>실리콘(규소) 위에 트랜지스터 수십억 개를 새겨넣은 집적회로(IC)</strong>입니다. 마더보드의 검은 사각형 부품들이 전부 칩입니다.</p>
+      <div class="arch-diagram">
+        <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center;margin-bottom:14px">
+          <div style="text-align:center"><div style="font-size:28px;margin-bottom:6px">🪨</div><div style="font-size:12px;font-weight:700;color:var(--accent)">모래 (SiO₂)</div><div style="font-size:11px;color:var(--text-dim)">원료 — 지구상 풍부</div></div>
+          <div style="color:var(--text-dim);font-size:18px">→</div>
+          <div style="text-align:center"><div style="font-size:28px;margin-bottom:6px">💎</div><div style="font-size:12px;font-weight:700;color:var(--accent)">실리콘 웨이퍼</div><div style="font-size:11px;color:var(--text-dim)">순수 실리콘 원판</div></div>
+        </div>
+        <div class="arch-arrow">⬇ 포토리소그래피 공정 (TSMC, 삼성 등)</div>
+        <div class="arch-box kernel" style="text-align:left;padding:12px 18px">
+          <div style="font-weight:700;margin-bottom:4px">웨이퍼에 회로 패턴을 새김</div>
+          <div style="font-size:12px;color:var(--text-dim)">트랜지스터 수십억 개 → 각 트랜지스터는 전기 스위치(0/1) → 조합이 모여 연산·저장·제어 구현</div>
+        </div>
+        <div class="arch-arrow">⬇ 웨이퍼를 잘라 개별 칩으로 분리 → 패키징</div>
+        <div class="arch-box app">완성된 칩 (CPU, RAM, SSD 컨트롤러, BIOS ROM, GPU ...)</div>
+      </div>
+      <h3>왜 실리콘(반도체)인가</h3>
+      <div class="compare-grid">
+        <div class="compare-card docker">
+          <div class="card-title">⚡ 도체 / 반도체 / 절연체</div>
+          <ul>
+            <li>도체: 항상 전기 흐름 (구리, 철)</li>
+            <li>절연체: 전기 안 흐름 (유리, 고무)</li>
+            <li>반도체: 조건에 따라 흐르거나 안 흐름</li>
+            <li>이 특성으로 0/1 표현에 최적</li>
+          </ul>
+        </div>
+        <div class="compare-card ok">
+          <div class="card-title">✅ 실리콘의 장점</div>
+          <ul>
+            <li>반도체 특성이 우수</li>
+            <li>모래(SiO₂)에서 추출 — 원료 풍부</li>
+            <li>고온에서도 안정적</li>
+            <li>수십 년간 공정 기술 축적</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <hr class="divider">
+
+    <!-- S12 -->
+    <section id="s12">
+      <div class="section-label"><span class="section-num">12</span><h2>플래시 메모리 · ROM의 역사</h2></div>
+      <p>플래시 메모리는 <strong>전원이 없어도 데이터가 유지되는 비휘발성 메모리</strong>입니다. SSD, USB, SD카드, BIOS 칩, 스마트폰 저장공간이 전부 플래시 메모리입니다.</p>
+      <h3>ROM의 진화</h3>
+      <div class="layer-stack">
+        <div class="layer l4"><div class="layer-num" style="font-size:9px;min-width:70px">초기 ROM</div><div class="layer-content"><div><div class="layer-name">Mask ROM</div><div class="layer-desc">공장에서 회로를 물리적으로 태워 데이터 새김. 절대 수정 불가. 버그 있으면 칩 전체 교체</div></div><span class="layer-badge badge-base">읽기 전용</span></div></div>
+        <div class="layer l3"><div class="layer-num" style="font-size:9px;min-width:70px">EEPROM</div><div class="layer-content"><div><div class="layer-name">Electrically Erasable ROM</div><div class="layer-desc">전기 신호로 지우고 다시 쓸 수 있게 됨. 느리고 수명 짧음. 바이트 단위 쓰기</div></div><span class="layer-badge badge-ro">전기로 재기록</span></div></div>
+        <div class="layer l0"><div class="layer-num" style="font-size:9px;min-width:70px">Flash</div><div class="layer-content"><div><div class="layer-name">Flash Memory (현재)</div><div class="layer-desc">EEPROM 개선. 블록 단위로 한 번에 지움 — "flash"에서 이름 유래. 빠르고 저렴하고 대용량. BIOS·SSD·USB 전부 이것</div></div><span class="layer-badge badge-rw">읽기/쓰기 가능</span></div></div>
+      </div>
+      <h3>플래시 메모리 동작 원리 (플로팅 게이트)</h3>
+      <div class="arch-diagram">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center">
+            <div style="color:var(--green);font-weight:700;margin-bottom:8px">데이터 = 1</div>
+            <div style="font-size:32px;margin:6px 0">⬜</div>
+            <div style="font-family:var(--mono);font-size:11px;color:var(--text-dim)">플로팅 게이트에 전자 없음<br>전류 흐름 → 1로 읽힘</div>
+          </div>
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center">
+            <div style="color:var(--accent);font-weight:700;margin-bottom:8px">데이터 = 0</div>
+            <div style="font-size:32px;margin:6px 0">⬛</div>
+            <div style="font-family:var(--mono);font-size:11px;color:var(--text-dim)">플로팅 게이트에 전자 갇힘<br>전류 차단 → 0으로 읽힘</div>
+          </div>
+        </div>
+        <div style="margin-top:12px;font-size:12px;color:var(--text-dim);text-align:center">전원이 꺼져도 전자는 갇힌 채로 유지 → 비휘발성</div>
+      </div>
+      <div class="callout ok">
+        <strong>✅ 펌웨어 한 줄 정의</strong>
+        특정 하드웨어 칩에 종속되어, 그 칩 위에서 OS 없이 직접 동작하는 소프트웨어. 공유기·에어팟·프린터·SSD 전부 자기만의 펌웨어를 가집니다.
+      </div>
+    </section>
+  </div>
+  <footer>OS & Hardware Fundamentals · Page 2/3 · Labradorlabs 스터디 자료 · 2026</footer>
+</div>
+
+<!-- ═══════════════ PAGE 3: VIRTUALIZATION ═══════════════ -->
+<div id="p3" class="page">
+  <div class="page-header">
+    <div class="header-tag">Page 3 · Virtualization Deep Dive</div>
+    <h1>가상화 <span>심화</span></h1>
+    <p>Hypervisor · Type 1/2 · KVM · QEMU · Proxmox</p>
+  </div>
+  <div class="container">
+    <nav class="toc">
+      <div class="toc-title">// Contents</div>
+      <ol>
+        <li><a href="#s13">Hypervisor란</a></li>
+        <li><a href="#s14">Type 1 vs Type 2</a></li>
+        <li><a href="#s14b">VirtualBox on Linux — KVM과의 관계</a></li>
+        <li><a href="#s15">KVM — Linux 커널 가상화</a></li>
+        <li><a href="#s16">QEMU — 하드웨어 에뮬레이터</a></li>
+        <li><a href="#s17">KVM + QEMU 역할 분담</a></li>
+        <li><a href="#s18">Proxmox 구조 · 전체 정리</a></li>
+      </ol>
+    </nav>
+
+    <!-- S13 -->
+    <section id="s13">
+      <div class="section-label"><span class="section-num">13</span><h2>Hypervisor란</h2></div>
+      <p><strong>VM을 만들고 관리하는 전용 소프트웨어 계층</strong>입니다. Host OS에 포함된 것도 아니고, 일반 앱의 기능도 아닙니다.</p>
+      <p>물리 하드웨어(CPU, RAM, 디스크)를 여러 VM이 나눠 쓸 수 있도록 <strong>가상 하드웨어를 만들어 각 VM에 제공</strong>합니다.</p>
+      <div class="arch-diagram">
+        <div class="arch-label">Hypervisor의 역할</div>
+        <div class="arch-box hw" style="text-align:left;padding:12px 18px">
+          <div style="font-weight:700;margin-bottom:4px">실제 하드웨어</div>
+          <div style="font-size:12px">CPU 8코어, RAM 32GB, Disk 2TB</div>
+        </div>
+        <div class="arch-arrow">⬇ Hypervisor가 분할</div>
+        <div class="arch-row col3">
+          <div class="arch-box app"><div style="font-weight:700">VM-A</div><div style="font-size:11px">가상 CPU 2코어<br>가상 RAM 8GB</div></div>
+          <div class="arch-box app"><div style="font-weight:700">VM-B</div><div style="font-size:11px">가상 CPU 4코어<br>가상 RAM 16GB</div></div>
+          <div class="arch-box app"><div style="font-weight:700">VM-C</div><div style="font-size:11px">가상 CPU 2코어<br>가상 RAM 8GB</div></div>
+        </div>
+      </div>
+      <p>각 VM 입장에서는 자기가 하드웨어를 독점하고 있다고 생각합니다. 실제로는 Hypervisor가 중간에서 중재합니다.</p>
+    </section>
+
+    <hr class="divider">
+
+    <!-- S14 -->
+    <section id="s14">
+      <div class="section-label"><span class="section-num">14</span><h2>Type 1 vs Type 2</h2></div>
+
+      <div class="compare-grid">
+        <div class="compare-card docker">
+          <div class="card-title">Type 1 — Bare-metal Hypervisor</div>
+          <ul>
+            <li>하드웨어 위에 Hypervisor만 올라감</li>
+            <li>범용 Host OS가 아예 없음</li>
+            <li>Hypervisor 자체가 OS 역할 일부 수행</li>
+            <li>성능 우수, 주로 서버·데이터센터용</li>
+          </ul>
+        </div>
+        <div class="compare-card vm">
+          <div class="card-title">Type 2 — Hosted Hypervisor</div>
+          <ul>
+            <li>범용 Host OS 위에서 앱처럼 실행</li>
+            <li>Host OS가 반드시 존재</li>
+            <li>CPU 가상화 명령어(VT-x)를 활용</li>
+            <li>주로 개발자 노트북·개인 환경</li>
+          </ul>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:20px">
+        <div class="arch-diagram">
+          <div class="arch-label">Type 1 구조</div>
+          <div class="arch-row col2"><div class="arch-box app">VM-A</div><div class="arch-box app">VM-B</div></div>
+          <div class="arch-arrow">⬇</div>
+          <div class="arch-box hyper">Hypervisor<br><span style="font-size:10px">(= 사실상 OS 역할)</span></div>
+          <div class="arch-arrow">⬇</div>
+          <div class="arch-box hw">Hardware</div>
+          <div style="margin-top:10px;font-size:11px;color:var(--text-dim);text-align:center">VMware ESXi, Xen<br>Hyper-V (Server Core)</div>
+        </div>
+        <div class="arch-diagram">
+          <div class="arch-label">Type 2 구조</div>
+          <div class="arch-row col2"><div class="arch-box app">VM-A</div><div class="arch-box app">VM-B</div></div>
+          <div class="arch-arrow">⬇</div>
+          <div class="arch-box hyper">Hypervisor 앱</div>
+          <div class="arch-arrow">⬇</div>
+          <div class="arch-box kernel">Host OS (Windows / macOS)</div>
+          <div class="arch-arrow">⬇</div>
+          <div class="arch-box hw">Hardware</div>
+          <div style="margin-top:10px;font-size:11px;color:var(--text-dim);text-align:center">VirtualBox, Parallels<br>VMware Fusion</div>
+        </div>
+      </div>
+
+      <h3>분류 기준 — Host OS의 존재 여부</h3>
+      <table class="summary-table">
+        <thead><tr><th>제품</th><th>Host OS 존재</th><th>분류</th><th>용도</th></tr></thead>
+        <tbody>
+          <tr><td>VMware ESXi</td><td style="color:var(--green)">❌ 없음</td><td>Type 1 (순수)</td><td>서버·데이터센터</td></tr>
+          <tr><td>Xen</td><td style="color:var(--green)">❌ 없음</td><td>Type 1 (순수)</td><td>서버·AWS EC2 구세대</td></tr>
+          <tr><td>Hyper-V (Server Core)</td><td style="color:var(--green)">❌ 없음</td><td>Type 1 (순수)</td><td>Windows 서버 환경</td></tr>
+          <tr><td>Proxmox</td><td style="color:var(--red)">✅ Debian Linux</td><td>Type 2 (엄밀히)</td><td>홈랩·중소규모 서버</td></tr>
+          <tr><td>Linux + KVM</td><td style="color:var(--red)">✅ Linux</td><td>Type 2 (엄밀히)</td><td>서버·클라우드</td></tr>
+          <tr><td>VirtualBox</td><td style="color:var(--red)">✅ 있음</td><td>Type 2</td><td>개발자 노트북</td></tr>
+          <tr><td>Parallels</td><td style="color:var(--red)">✅ macOS</td><td>Type 2</td><td>Mac 개발 환경</td></tr>
+        </tbody>
+      </table>
+      <div class="callout warn">
+        <strong>⚠️ "Type 1.5"라는 표현에 대해</strong>
+        KVM은 커널에 내장되어 성능이 Type 1에 가깝기 때문에 업계에서 편의상 "Type 1" 또는 "Type 1.5"로 부르는 경우가 많습니다. 하지만 교과서적 분류 기준(Host OS 존재 여부)으로는 Type 2입니다.
+      </div>
+    </section>
+
+    <hr class="divider">
+
+    <!-- S14b -->
+    <section id="s14b">
+      <div class="section-label"><span class="section-num">14-B</span><h2>VirtualBox on Linux — KVM과의 관계</h2></div>
+
+      <p>Linux 위에서 VirtualBox를 실행하면 <strong>KVM을 전혀 사용하지 않습니다.</strong> VirtualBox는 자체 가상화 엔진(VBoxVMM)을 내장하고 있기 때문입니다.</p>
+
+      <div class="arch-diagram">
+        <div class="arch-label">Linux + VirtualBox 구조</div>
+        <div class="arch-row col2">
+          <div class="arch-box app">VM-A (Guest OS)</div>
+          <div class="arch-box app">VM-B (Guest OS)</div>
+        </div>
+        <div class="arch-arrow">⬇</div>
+        <div class="arch-box hyper">VirtualBox (자체 VBoxVMM 엔진 내장)</div>
+        <div class="arch-arrow">⬇ CPU 하드웨어 가상화 명령어 직접 사용 (VT-x/AMD-V)</div>
+        <div class="arch-box kernel">Linux Host OS 커널</div>
+        <div class="arch-arrow">⬇</div>
+        <div class="arch-box hw">Hardware</div>
+      </div>
+
+      <h3>VirtualBox vs KVM/QEMU 비교</h3>
+      <div class="compare-grid">
+        <div class="compare-card docker">
+          <div class="card-title">📦 VirtualBox on Linux</div>
+          <ul>
+            <li>자체 하이퍼바이저 엔진(VBoxVMM) 사용</li>
+            <li>KVM 모듈과 무관하게 동작</li>
+            <li>CPU 가상화 명령어(VT-x)는 직접 사용</li>
+            <li>Type 2 Hypervisor</li>
+            <li>GUI 친화적, 개발자 노트북용</li>
+          </ul>
+        </div>
+        <div class="compare-card ok">
+          <div class="card-title">⚙️ KVM + QEMU on Linux</div>
+          <ul>
+            <li>KVM 커널 모듈로 CPU 가속</li>
+            <li>QEMU가 나머지 하드웨어 에뮬레이션</li>
+            <li>성능이 VirtualBox보다 우수</li>
+            <li>Type 2 (엄밀히) / 업계에서 Type 1.5</li>
+            <li>서버·클라우드 환경에 적합</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="callout warn">
+        <strong>⚠️ VirtualBox + KVM 동시 실행 시 충돌</strong>
+        KVM은 /dev/kvm 을 통해 CPU 하드웨어 가상화 명령어(VT-x/AMD-V)를 독점적으로 사용하려 합니다. VirtualBox도 같은 명령어를 직접 쓰려 하기 때문에, 두 소프트웨어를 동시에 실행하면 충돌이 발생합니다. VirtualBox 실행 전 KVM 모듈을 언로드해야 합니다.
+      </div>
+
+      <div class="code-block">
+        <div class="code-header"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div> KVM ↔ VirtualBox 전환</div>
+        <pre><span class="c-comment"># KVM 모듈 언로드 (VirtualBox 사용 전)</span>
+$ sudo modprobe -r kvm_intel   <span class="c-comment"># Intel CPU</span>
+$ sudo modprobe -r kvm_amd    <span class="c-comment"># AMD CPU</span>
+$ sudo modprobe -r kvm
+
+<span class="c-comment"># KVM 모듈 다시 로드 (KVM/QEMU 사용 시)</span>
+$ sudo modprobe kvm
+$ sudo modprobe kvm_intel</pre>
+      </div>
+    </section>
+
+    <hr class="divider">
+
+    <!-- S15 -->
+    <section id="s15">
+      <div class="section-label"><span class="section-num">15</span><h2>KVM — Linux 커널 가상화</h2></div>
+      <p>KVM(Kernel-based Virtual Machine)은 <strong>Linux 커널 안에 내장된 가상화 모듈</strong>입니다. 독립 실행 프로그램이 아니라 커널 모듈입니다.</p>
+
+      <div class="compare-grid">
+        <div class="compare-card ok">
+          <div class="card-title">✅ KVM이 하는 것</div>
+          <ul>
+            <li>CPU 명령어 가상화</li>
+            <li>메모리 가상화</li>
+            <li>/dev/kvm 인터페이스 제공</li>
+            <li>CPU 하드웨어 가상화 명령어 활용 (VT-x, AMD-V)</li>
+          </ul>
+        </div>
+        <div class="compare-card warn">
+          <div class="card-title">❌ KVM이 못 하는 것</div>
+          <ul>
+            <li>가상 디스크</li>
+            <li>가상 네트워크 카드</li>
+            <li>가상 USB · 그래픽 카드</li>
+            <li>BIOS/UEFI 펌웨어</li>
+            <li>스스로 VM을 띄우는 것</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="callout">
+        <strong>💡 KVM은 커널 모듈이라 혼자 VM을 띄울 수 없습니다</strong>
+        KVM은 /dev/kvm 이라는 인터페이스를 열어 "CPU 가상화 해줘"라는 요청을 받을 수 있을 뿐입니다. 누군가 이 인터페이스를 열고 명령을 내려야 하는데, 그 역할이 QEMU입니다.
+      </div>
+    </section>
+
+    <hr class="divider">
+
+    <!-- S16 -->
+    <section id="s16">
+      <div class="section-label"><span class="section-num">16</span><h2>QEMU — 하드웨어 에뮬레이터</h2></div>
+      <p><strong>하드웨어 전체를 소프트웨어로 통째로 흉내내는 에뮬레이터</strong>입니다. CPU, 디스크, 네트워크 카드, BIOS 등 VM에 필요한 모든 가상 하드웨어를 구현합니다.</p>
+
+      <div class="compare-grid">
+        <div class="compare-card vm">
+          <div class="card-title">🐢 QEMU 단독 (KVM 없이)</div>
+          <ul>
+            <li>모든 CPU 명령어를 소프트웨어로 번역</li>
+            <li>매우 느림</li>
+            <li>장점: x86 호스트에서 ARM Guest 실행 가능</li>
+            <li>다른 아키텍처 에뮬레이션 가능</li>
+          </ul>
+        </div>
+        <div class="compare-card ok">
+          <div class="card-title">🚀 QEMU + KVM</div>
+          <ul>
+            <li>CPU 명령어는 KVM이 하드웨어로 직접 실행</li>
+            <li>나머지 하드웨어는 QEMU가 에뮬레이션</li>
+            <li>빠름 (네이티브에 근접)</li>
+            <li>단점: 호스트와 같은 아키텍처만 가능</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <hr class="divider">
+
+    <!-- S17 -->
+    <section id="s17">
+      <div class="section-label"><span class="section-num">17</span><h2>KVM + QEMU 역할 분담</h2></div>
+
+      <div class="arch-diagram">
+        <div class="arch-label">KVM + QEMU 구조</div>
+        <div class="arch-box app" style="text-align:left;padding:12px 18px">
+          <div style="font-weight:700;margin-bottom:6px">QEMU 프로세스 (VM 전체 조립)</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:11px;margin-top:8px">
+            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px;text-align:center;color:var(--text-dim)">가상 디스크<br>(qcow2 파일)</div>
+            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px;text-align:center;color:var(--text-dim)">가상 NIC<br>(virtio)</div>
+            <div style="background:#e8f0f5;border:1px solid var(--accent2);border-radius:6px;padding:8px;text-align:center;color:var(--accent2);font-weight:700">CPU/메모리<br>→ KVM에 위임</div>
+          </div>
+        </div>
+        <div class="arch-arrow">⬇ /dev/kvm 을 통해 CPU 가상화 요청</div>
+        <div class="arch-box kernel">KVM 모듈 (Linux 커널 내장) — CPU·메모리 가상화 처리</div>
+        <div class="arch-arrow">⬇ CPU 하드웨어 가상화 명령어 (Intel VT-x / AMD-V)</div>
+        <div class="arch-box hw">물리 CPU / 메모리</div>
+      </div>
+
+      <h3>소프트웨어 스택 전체</h3>
+      <div class="code-block">
+        <div class="code-header"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div> Linux 가상화 스택</div>
+        <pre>libvirt / virt-manager / Proxmox 웹UI  <span class="c-comment"># 관리 도구 (사람이 쓰는 인터페이스)</span>
+  └─ QEMU 프로세스                       <span class="c-comment"># VM 전체 조립 — 가상 하드웨어 구현</span>
+       ├─ 가상 디스크 (qcow2)
+       ├─ 가상 NIC (virtio)
+       ├─ BIOS/UEFI (SeaBIOS / OVMF)
+       └─ /dev/kvm 호출                  <span class="c-comment"># CPU/메모리만 KVM에 위임</span>
+            └─ KVM 커널 모듈             <span class="c-comment"># 하드웨어 가속 처리</span>
+                 └─ 물리 CPU (VT-x)</pre>
+      </div>
+    </section>
+
+    <hr class="divider">
+
+    <!-- S18 -->
+    <section id="s18">
+      <div class="section-label"><span class="section-num">18</span><h2>Proxmox 구조 · 전체 정리</h2></div>
+
+      <p>Proxmox는 <strong>Debian Linux + KVM + QEMU + 웹 관리 UI</strong>의 조합입니다.</p>
+
+      <div class="arch-diagram">
+        <div class="arch-label">Proxmox 전체 스택</div>
+        <div class="arch-box app">Proxmox 웹 UI (브라우저에서 접근)</div>
+        <div class="arch-arrow">⬇</div>
+        <div class="arch-box runtime">libvirt / pve-manager (VM 관리 레이어)</div>
+        <div class="arch-arrow">⬇</div>
+        <div class="arch-box runtime">QEMU 프로세스 (가상 하드웨어 에뮬레이션)</div>
+        <div class="arch-arrow">⬇ /dev/kvm</div>
+        <div class="arch-box kernel">KVM 모듈 (Debian Linux 커널 내장)</div>
+        <div class="arch-arrow">⬇</div>
+        <div class="arch-box hw">물리 하드웨어</div>
+      </div>
+
+      <h3>가상화 솔루션 전체 비교</h3>
+      <table class="summary-table">
+        <thead><tr><th>개념</th><th>한 줄 정의</th><th>유형</th></tr></thead>
+        <tbody>
+          <tr><td>Hypervisor</td><td>VM을 만들고 관리하는 전용 소프트웨어 계층</td><td>—</td></tr>
+          <tr><td>Type 1 (Bare-metal)</td><td>하드웨어 위에 직접, Host OS 없음</td><td>ESXi, Xen</td></tr>
+          <tr><td>Type 2 (Hosted)</td><td>Host OS 위에서 앱처럼 실행</td><td>VirtualBox, Parallels, KVM</td></tr>
+          <tr><td>KVM</td><td>Linux 커널 내장 가상화 모듈. CPU/메모리 가상화만 담당</td><td>커널 모듈</td></tr>
+          <tr><td>QEMU</td><td>가상 디스크·NIC·BIOS 등 하드웨어 전체 에뮬레이터. KVM과 짝을 이룸</td><td>에뮬레이터</td></tr>
+          <tr><td>Proxmox</td><td>Debian + KVM + QEMU + 웹UI 조합. 엄밀히 Type 2</td><td>관리 플랫폼</td></tr>
+          <tr><td>libvirt</td><td>KVM/QEMU를 편하게 제어하는 관리 라이브러리</td><td>관리 도구</td></tr>
+        </tbody>
+      </table>
+
+      <div class="callout ok">
+        <strong>✅ KVM만 쓰면 안 되는 이유 — 한 줄 요약</strong>
+        KVM은 CPU/메모리 가속 부품이고, QEMU는 그것을 포함한 VM 전체를 조립하는 프로그램입니다. KVM 혼자는 VM을 띄울 수 없습니다. 가상 디스크·NIC·BIOS가 없으면 Guest OS가 부팅 자체를 못 합니다.
+      </div>
+    </section>
+  </div>
+  <footer>Virtualization Deep Dive · Page 3/3 · Labradorlabs 스터디 자료 · 2026</footer>
+</div>
+
+<script>
+  function showPage(id, tab) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    tab.classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+</script>
+</body>
+</html>

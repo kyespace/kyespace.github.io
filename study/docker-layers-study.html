@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Docker Layer 스터디</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700&family=Noto+Sans+KR:wght@300;400;700&display=swap');
+
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --border: #1e2d45;
+    --accent: #00d4ff;
+    --accent2: #7c3aed;
+    --accent3: #10b981;
+    --warn: #f59e0b;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --code-bg: #0d1117;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans KR', sans-serif;
+    line-height: 1.7;
+    min-height: 100vh;
+  }
+
+  /* ─── Header ─── */
+  header {
+    background: linear-gradient(135deg, #0a0e1a 0%, #111827 50%, #0f1e35 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 60px 40px 40px;
+    position: relative;
+    overflow: hidden;
+  }
+  header::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 70% 50%, rgba(0,212,255,0.06) 0%, transparent 60%);
+  }
+  .header-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  header h1 {
+    font-size: clamp(28px, 5vw, 48px);
+    font-weight: 700;
+    letter-spacing: -1px;
+    line-height: 1.1;
+  }
+  header h1 span { color: var(--accent); }
+  header p {
+    margin-top: 14px;
+    color: var(--muted);
+    font-size: 15px;
+    max-width: 600px;
+  }
+  .toc {
+    margin-top: 30px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .toc a {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    text-decoration: none;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 6px 14px;
+    border-radius: 3px;
+    transition: all .2s;
+  }
+  .toc a:hover { color: var(--accent); border-color: var(--accent); }
+
+  /* ─── Layout ─── */
+  main { max-width: 960px; margin: 0 auto; padding: 50px 30px; }
+
+  section { margin-bottom: 70px; }
+
+  .section-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  h2 {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 24px;
+    border-left: 3px solid var(--accent);
+    padding-left: 16px;
+  }
+  h3 {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--accent);
+    margin: 28px 0 12px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  p { color: #94a3b8; margin-bottom: 14px; font-size: 14.5px; }
+  strong { color: var(--text); }
+
+  /* ─── Layer Stack Visual ─── */
+  .layer-stack {
+    margin: 30px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    width: 100%;
+    max-width: 600px;
+  }
+  .layer {
+    position: relative;
+    padding: 14px 24px;
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    transition: all .25s;
+    overflow: hidden;
+  }
+  .layer::before {
+    content: '';
+    position: absolute; left: 0; top: 0; bottom: 0;
+    width: 3px;
+    transition: background .25s;
+  }
+  .layer:hover { background: rgba(255,255,255,0.03); }
+  .layer .layer-left { display: flex; align-items: center; gap: 14px; }
+  .layer .layer-icon {
+    font-size: 18px;
+    width: 32px;
+    text-align: center;
+  }
+  .layer .layer-name {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .layer .layer-desc {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+  .layer .layer-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 2px;
+    letter-spacing: 1px;
+  }
+
+  /* Colors per layer type */
+  .layer-writable { background: rgba(16,185,129,0.06); }
+  .layer-writable::before { background: var(--accent3); }
+  .layer-writable .layer-name { color: var(--accent3); }
+  .layer-writable .layer-badge { background: rgba(16,185,129,0.15); color: var(--accent3); }
+
+  .layer-cmd { background: rgba(0,212,255,0.04); }
+  .layer-cmd::before { background: var(--accent); }
+  .layer-cmd .layer-name { color: var(--accent); }
+  .layer-cmd .layer-badge { background: rgba(0,212,255,0.1); color: var(--accent); }
+
+  .layer-copy { background: rgba(124,58,237,0.04); }
+  .layer-copy::before { background: var(--accent2); }
+  .layer-copy .layer-name { color: var(--accent2); }
+  .layer-copy .layer-badge { background: rgba(124,58,237,0.15); color: #a78bfa; }
+
+  .layer-from { background: rgba(245,158,11,0.04); }
+  .layer-from::before { background: var(--warn); }
+  .layer-from .layer-name { color: var(--warn); }
+  .layer-from .layer-badge { background: rgba(245,158,11,0.1); color: var(--warn); }
+
+  .layer-arrow {
+    text-align: center;
+    color: var(--muted);
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    padding: 4px 0;
+    letter-spacing: 2px;
+  }
+
+  /* Detail panel */
+  .layer-detail {
+    display: none;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-top: none;
+    padding: 14px 24px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.8;
+  }
+  .layer-detail.open { display: block; }
+
+  /* ─── UnionFS Diagram ─── */
+  .unionfs-diagram {
+    margin: 30px 0;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 30px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    position: relative;
+    overflow: hidden;
+  }
+  .unionfs-diagram::before {
+    content: 'OVERLAY FILESYSTEM';
+    position: absolute;
+    top: 10px; right: 14px;
+    font-size: 9px;
+    color: var(--border);
+    letter-spacing: 2px;
+  }
+
+  .fs-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 6px 0;
+  }
+  .fs-layer-box {
+    flex: 1;
+    padding: 10px 16px;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border: 1px solid;
+  }
+  .fs-arrow { color: var(--muted); font-size: 18px; }
+
+  /* ─── Code blocks ─── */
+  .code-block {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 20px 24px;
+    margin: 16px 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    line-height: 1.8;
+    overflow-x: auto;
+    position: relative;
+  }
+  .code-block .filename {
+    position: absolute;
+    top: 10px; right: 14px;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+  .k  { color: #ff7b72; }  /* keyword */
+  .s  { color: #a5d6ff; }  /* string */
+  .c  { color: #8b949e; }  /* comment */
+  .v  { color: var(--accent3); }  /* value/var */
+  .cmd-line { color: var(--accent); }
+
+  /* ─── Info cards ─── */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+    margin: 24px 0;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 20px;
+    transition: border-color .2s;
+  }
+  .card:hover { border-color: var(--accent); }
+  .card-icon { font-size: 22px; margin-bottom: 10px; }
+  .card-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+  .card p { font-size: 13px; margin: 0; }
+
+  /* ─── Comparison table ─── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 13.5px;
+  }
+  th {
+    background: var(--surface);
+    color: var(--accent);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+    padding: 12px 16px;
+    text-align: left;
+    border: 1px solid var(--border);
+  }
+  td {
+    padding: 11px 16px;
+    border: 1px solid var(--border);
+    color: #94a3b8;
+    vertical-align: top;
+  }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+  .yes { color: var(--accent3); font-weight: 700; }
+  .no  { color: #ef4444; }
+
+  /* ─── Hash chain ─── */
+  .hash-chain {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin: 20px 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+  }
+  .hash-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 8px 12px;
+    border-radius: 3px;
+    color: var(--muted);
+    transition: all .2s;
+  }
+  .hash-box:hover { border-color: var(--accent); color: var(--accent); }
+  .hash-box .hash-label { font-size: 9px; color: var(--muted); display: block; margin-bottom: 3px; }
+  .hash-box .hash-val { color: var(--accent3); }
+  .hash-arrow { color: var(--muted); }
+
+  /* ─── CoW animation ─── */
+  .cow-demo {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 24px;
+    margin: 20px 0;
+  }
+  .cow-demo h4 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--accent);
+    margin-bottom: 16px;
+  }
+  .cow-steps { display: flex; flex-direction: column; gap: 8px; }
+  .cow-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 10px 14px;
+    border-radius: 3px;
+    border: 1px solid transparent;
+    opacity: 0;
+    transform: translateX(-10px);
+    animation: fadeIn .4s forwards;
+  }
+  .cow-step:nth-child(1) { animation-delay: .1s; }
+  .cow-step:nth-child(2) { animation-delay: .3s; }
+  .cow-step:nth-child(3) { animation-delay: .5s; }
+  .cow-step:nth-child(4) { animation-delay: .7s; }
+  @keyframes fadeIn { to { opacity: 1; transform: none; } }
+  .cow-step.read  { background: rgba(0,212,255,0.05); border-color: rgba(0,212,255,0.2); }
+  .cow-step.copy  { background: rgba(245,158,11,0.05); border-color: rgba(245,158,11,0.2); }
+  .cow-step.write { background: rgba(16,185,129,0.05); border-color: rgba(16,185,129,0.2); }
+  .cow-step.done  { background: rgba(124,58,237,0.05); border-color: rgba(124,58,237,0.2); }
+  .step-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .cow-step.read  .step-num { background: rgba(0,212,255,0.2); color: var(--accent); }
+  .cow-step.copy  .step-num { background: rgba(245,158,11,0.2); color: var(--warn); }
+  .cow-step.write .step-num { background: rgba(16,185,129,0.2); color: var(--accent3); }
+  .cow-step.done  .step-num { background: rgba(124,58,237,0.2); color: #a78bfa; }
+  .step-text { font-size: 13px; color: var(--muted); }
+  .step-text strong { color: var(--text); }
+
+  /* ─── Quiz ─── */
+  .quiz-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent2);
+    border-radius: 4px;
+    padding: 20px 24px;
+    margin: 20px 0;
+  }
+  .quiz-q {
+    font-size: 14px;
+    color: var(--text);
+    margin-bottom: 14px;
+    font-weight: 600;
+  }
+  .quiz-options { display: flex; flex-direction: column; gap: 8px; }
+  .quiz-opt {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 10px 16px;
+    font-size: 13px;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all .2s;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .quiz-opt:hover { border-color: var(--accent2); color: var(--text); }
+  .quiz-opt.correct { border-color: var(--accent3) !important; background: rgba(16,185,129,0.08); color: var(--accent3) !important; }
+  .quiz-opt.wrong   { border-color: #ef4444 !important; background: rgba(239,68,68,0.06); color: #ef4444 !important; }
+  .quiz-explain {
+    display: none;
+    margin-top: 12px;
+    font-size: 13px;
+    color: var(--muted);
+    padding: 12px 16px;
+    background: var(--code-bg);
+    border-radius: 3px;
+    border-left: 2px solid var(--accent3);
+  }
+  .quiz-explain.show { display: block; }
+
+  /* ─── Footer ─── */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 30px 40px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-tag">// Study Notes</div>
+  <h1>Docker <span>Layer</span> 내부 구조</h1>
+  <p>이미지가 어떻게 레이어로 쌓이고, Union Filesystem이 이를 하나의 뷰로 합치는지 기술적으로 이해한다.</p>
+  <nav class="toc">
+    <a href="#overview">개요</a>
+    <a href="#how">레이어 생성 원리</a>
+    <a href="#unionfs">Union Filesystem</a>
+    <a href="#cow">Copy-on-Write</a>
+    <a href="#storage">Storage Driver</a>
+    <a href="#cache">레이어 캐시</a>
+    <a href="#quiz">퀴즈</a>
+  </nav>
+</header>
+
+<main>
+
+  <!-- 1. Overview -->
+  <section id="overview">
+    <div class="section-title">// 01</div>
+    <h2>Docker 이미지는 왜 "레이어"인가?</h2>
+
+    <p>Docker 이미지는 단일 파일이 아니다. <strong>변경 불가능한(immutable) 파일시스템 스냅샷 여러 개가 수직으로 쌓인 구조</strong>다. 각 레이어는 이전 레이어 대비 <em>diff(변경분)</em>만 저장한다.</p>
+
+    <p>컨테이너를 실행하면 그 위에 얇고 쓰기 가능한 레이어가 하나 더 올라간다. 이미지 레이어는 건드리지 않는다.</p>
+
+    <div class="section-title" style="margin-top:30px">// 인터랙티브 레이어 스택 — 클릭하면 상세 설명</div>
+    <div class="layer-stack">
+      <div class="layer layer-writable" onclick="toggleDetail('d0')">
+        <div class="layer-left">
+          <div class="layer-icon">✏️</div>
+          <div>
+            <div class="layer-name">Container Layer</div>
+            <div class="layer-desc">실행 중에만 존재 · 쓰기 가능</div>
+          </div>
+        </div>
+        <div class="layer-badge">WRITABLE</div>
+      </div>
+      <div id="d0" class="layer-detail">
+        컨테이너가 시작될 때 생성되는 임시 레이어. 프로세스가 파일을 쓰면 여기에 기록됨.
+        컨테이너 삭제 시 이 레이어도 사라짐. docker commit하면 이 레이어가 이미지로 굳음.
+      </div>
+
+      <div class="layer-arrow">▲ Union Mount (OverlayFS)</div>
+
+      <div class="layer layer-cmd" onclick="toggleDetail('d1')">
+        <div class="layer-left">
+          <div class="layer-icon">⚙️</div>
+          <div>
+            <div class="layer-name">RUN apt-get install nginx</div>
+            <div class="layer-desc">Layer sha256:a3f2... · 38MB</div>
+          </div>
+        </div>
+        <div class="layer-badge">RO</div>
+      </div>
+      <div id="d1" class="layer-detail">
+        Dockerfile의 RUN 명령 하나 = 레이어 하나. 명령 실행 후 파일시스템 변경분만 저장.
+        sha256 해시로 식별되며, 같은 해시면 여러 이미지가 공유함.
+      </div>
+
+      <div class="layer layer-copy" onclick="toggleDetail('d2')">
+        <div class="layer-left">
+          <div class="layer-icon">📁</div>
+          <div>
+            <div class="layer-name">COPY ./app /app</div>
+            <div class="layer-desc">Layer sha256:9c1e... · 12MB</div>
+          </div>
+        </div>
+        <div class="layer-badge">RO</div>
+      </div>
+      <div id="d2" class="layer-detail">
+        COPY / ADD 명령도 별도 레이어. 소스 파일이 1바이트라도 바뀌면 이 레이어부터 아래 모든 캐시가 무효화됨.
+        따라서 Dockerfile에서 COPY는 최대한 뒤에 배치하는 것이 캐시 효율에 좋음.
+      </div>
+
+      <div class="layer layer-cmd" onclick="toggleDetail('d3')">
+        <div class="layer-left">
+          <div class="layer-icon">⚙️</div>
+          <div>
+            <div class="layer-name">RUN apt-get update</div>
+            <div class="layer-desc">Layer sha256:7b8d... · 55MB</div>
+          </div>
+        </div>
+        <div class="layer-badge">RO</div>
+      </div>
+      <div id="d3" class="layer-detail">
+        패키지 인덱스를 갱신하는 레이어. apt-get update와 install을 같은 RUN에 묶지 않으면
+        update 레이어가 캐시되어 stale 패키지 문제가 생길 수 있음 (cache busting 패턴 참고).
+      </div>
+
+      <div class="layer layer-from" onclick="toggleDetail('d4')">
+        <div class="layer-left">
+          <div class="layer-icon">🐧</div>
+          <div>
+            <div class="layer-name">FROM ubuntu:22.04</div>
+            <div class="layer-desc">Base image · 77MB</div>
+          </div>
+        </div>
+        <div class="layer-badge">BASE</div>
+      </div>
+      <div id="d4" class="layer-detail">
+        모든 이미지의 출발점. FROM scratch는 진짜 빈 레이어.
+        ubuntu:22.04 베이스 레이어는 Docker Hub에서 pull하며, 동일 레이어를 쓰는 다른 이미지들과 디스크를 공유함.
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. How layers are created -->
+  <section id="how">
+    <div class="section-title">// 02</div>
+    <h2>레이어는 기술적으로 어떻게 생성되나?</h2>
+
+    <p>Docker 빌드 시 각 Dockerfile 명령은 임시 컨테이너를 실행하고, 그 컨테이너의 파일시스템 변경분을 tar로 묶어 저장한다. 이 diff가 곧 레이어다.</p>
+
+    <div class="code-block">
+      <div class="filename">Dockerfile</div>
+<span class="k">FROM</span> <span class="v">ubuntu:22.04</span>          <span class="c"># Layer 0: base</span>
+
+<span class="k">RUN</span> apt-get update             <span class="c"># Layer 1: /var/lib/apt/* 변경분만 저장</span>
+<span class="k">RUN</span> apt-get install -y nginx   <span class="c"># Layer 2: /usr/sbin/nginx 등 추가</span>
+<span class="k">COPY</span> ./html /var/www/html      <span class="c"># Layer 3: /var/www/html/* 추가</span>
+<span class="k">CMD</span> ["nginx", "-g", "daemon off;"] <span class="c"># 메타데이터만, 레이어 생성 안 함</span>
+    </div>
+
+    <h3>// 내부에서 실제로 일어나는 일</h3>
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-icon">🔨</div>
+        <div class="card-title">1. exec 임시 컨테이너</div>
+        <p>이전 레이어들을 읽기 전용으로 마운트한 환경에서 명령 실행</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">📸</div>
+        <div class="card-title">2. 파일시스템 diff 추출</div>
+        <p>명령 전후의 파일시스템을 비교해 추가/수정/삭제된 파일만 추출</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">📦</div>
+        <div class="card-title">3. tar 아카이브로 저장</div>
+        <p>diff를 tar.gz로 압축, sha256 해시 계산 후 content-addressable store에 저장</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔗</div>
+        <div class="card-title">4. manifest에 연결</div>
+        <p>이미지 manifest JSON에 레이어 해시 목록을 순서대로 기록</p>
+      </div>
+    </div>
+
+    <h3>// 레이어 해시 체인</h3>
+    <p>각 레이어는 sha256으로 식별되고, 이미지 manifest가 이들을 순서대로 묶는다.</p>
+    <div class="hash-chain">
+      <div class="hash-box">
+        <span class="hash-label">BASE</span>
+        <span class="hash-val">sha256:7b8d…</span>
+      </div>
+      <span class="hash-arrow">→</span>
+      <div class="hash-box">
+        <span class="hash-label">RUN update</span>
+        <span class="hash-val">sha256:a3f2…</span>
+      </div>
+      <span class="hash-arrow">→</span>
+      <div class="hash-box">
+        <span class="hash-label">RUN install</span>
+        <span class="hash-val">sha256:9c1e…</span>
+      </div>
+      <span class="hash-arrow">→</span>
+      <div class="hash-box">
+        <span class="hash-label">COPY</span>
+        <span class="hash-val">sha256:f55a…</span>
+      </div>
+      <span class="hash-arrow">→</span>
+      <div class="hash-box">
+        <span class="hash-label">IMAGE ID</span>
+        <span class="hash-val">sha256:1d2c…</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. UnionFS -->
+  <section id="unionfs">
+    <div class="section-title">// 03</div>
+    <h2>Union Filesystem — 레이어를 하나로 합치는 기술</h2>
+
+    <p>여러 레이어(디렉터리)를 <strong>하나의 파일시스템처럼 보이게</strong> 마운트하는 기술이 Union Filesystem이다. Linux에서는 <strong>OverlayFS</strong>가 표준으로 사용된다.</p>
+
+    <div class="unionfs-diagram">
+      <div class="fs-row">
+        <div class="fs-layer-box" style="background:rgba(16,185,129,0.08);border-color:rgba(16,185,129,0.3);color:#10b981;">
+          <span>📁 merged (컨테이너가 보는 뷰)</span>
+          <span style="font-size:10px;color:#64748b">← 실제 접근 경로</span>
+        </div>
+      </div>
+      <div style="text-align:center;color:#334155;margin:6px 0;font-size:18px">↑ Union Mount</div>
+      <div class="fs-row">
+        <div class="fs-layer-box" style="background:rgba(16,185,129,0.06);border-color:rgba(16,185,129,0.25);color:#10b981;flex:1">
+          <span>upperdir (Container RW)</span>
+          <span style="color:#64748b;font-size:10px">쓰기 발생 시 여기에 기록</span>
+        </div>
+        <span style="color:#334155;font-size:16px;padding:0 6px">+</span>
+        <div class="fs-layer-box" style="background:rgba(100,116,139,0.06);border-color:#1e2d45;color:#64748b;flex:1">
+          <span>workdir (OverlayFS 내부)</span>
+          <span style="font-size:10px">CoW 임시 작업 디렉터리</span>
+        </div>
+      </div>
+      <div style="text-align:center;color:#334155;margin:6px 0;font-size:18px">↑</div>
+      <div class="fs-row" style="gap:4px">
+        <div class="fs-layer-box" style="background:rgba(0,212,255,0.04);border-color:rgba(0,212,255,0.2);color:#00d4ff;flex:1">
+          <span>lowerdir[2]</span><span style="font-size:10px;color:#64748b">Layer N</span>
+        </div>
+        <div class="fs-layer-box" style="background:rgba(124,58,237,0.04);border-color:rgba(124,58,237,0.2);color:#a78bfa;flex:1">
+          <span>lowerdir[1]</span><span style="font-size:10px;color:#64748b">Layer N-1</span>
+        </div>
+        <div class="fs-layer-box" style="background:rgba(245,158,11,0.04);border-color:rgba(245,158,11,0.2);color:#f59e0b;flex:1">
+          <span>lowerdir[0]</span><span style="font-size:10px;color:#64748b">Base Layer</span>
+        </div>
+      </div>
+    </div>
+
+    <h3>// OverlayFS mount 명령 예시</h3>
+    <div class="code-block">
+<span class="cmd-line">$ mount -t overlay overlay \</span>
+  <span class="s">-o lowerdir=/layer0:/layer1:/layer2,\</span>
+     <span class="s">upperdir=/container/rw,\</span>
+     <span class="s">workdir=/container/work</span>  \
+  <span class="v">/container/merged</span>
+
+<span class="c"># lowerdir: 읽기 전용 이미지 레이어들 (콜론으로 구분, 오른쪽이 최상위)</span>
+<span class="c"># upperdir: 컨테이너 전용 쓰기 레이어</span>
+<span class="c"># merged  : 컨테이너 프로세스가 실제로 보는 경로</span>
+    </div>
+
+    <h3>// 파일 조회 우선순위</h3>
+    <p>같은 경로의 파일이 여러 레이어에 있을 때, <strong>upperdir → 최신 lowerdir → 구 lowerdir</strong> 순으로 가장 위 레이어의 파일을 반환한다. 삭제는 <em>whiteout 파일</em>(.wh.&lt;filename&gt;)로 표시해 하위 레이어 파일을 가린다.</p>
+
+    <table>
+      <tr><th>시나리오</th><th>동작</th><th>결과 위치</th></tr>
+      <tr><td>파일 읽기 (수정 없음)</td><td>lowerdir에서 직접 참조</td><td>lowerdir (복사 없음)</td></tr>
+      <tr><td>파일 수정</td><td>lowerdir → upperdir로 CoW 복사 후 수정</td><td>upperdir</td></tr>
+      <tr><td>파일 삭제</td><td>upperdir에 whiteout 파일 생성</td><td>upperdir (.wh.파일명)</td></tr>
+      <tr><td>새 파일 생성</td><td>upperdir에 직접 생성</td><td>upperdir</td></tr>
+    </table>
+  </section>
+
+  <!-- 4. Copy-on-Write -->
+  <section id="cow">
+    <div class="section-title">// 04</div>
+    <h2>Copy-on-Write (CoW) 메커니즘</h2>
+
+    <p>이미지 레이어는 read-only다. 컨테이너가 파일을 <em>수정</em>하려 할 때 비로소 복사가 일어난다. 이것이 <strong>Copy-on-Write</strong>다. 읽기만 한다면 복사 비용은 제로다.</p>
+
+    <div class="cow-demo">
+      <h4>// CoW 실행 흐름 — nginx.conf 수정 시나리오</h4>
+      <div class="cow-steps">
+        <div class="cow-step read">
+          <div class="step-num">1</div>
+          <div class="step-text">컨테이너가 <strong>/etc/nginx/nginx.conf</strong> 수정 요청. 현재 파일은 <strong>lowerdir(이미지 레이어)</strong>에 존재.</div>
+        </div>
+        <div class="cow-step copy">
+          <div class="step-num">2</div>
+          <div class="step-text">OverlayFS가 해당 파일을 <strong>upperdir(컨테이너 RW 레이어)</strong>로 복사. (이미지 레이어는 그대로)</div>
+        </div>
+        <div class="cow-step write">
+          <div class="step-num">3</div>
+          <div class="step-text">복사된 <strong>upperdir의 파일</strong>에 수정 내용 기록. 이미지 레이어의 원본은 변경되지 않음.</div>
+        </div>
+        <div class="cow-step done">
+          <div class="step-num">4</div>
+          <div class="step-text">이후 조회 시 upperdir 파일이 우선 반환됨. 동일 이미지를 쓰는 <strong>다른 컨테이너는 영향 없음</strong>.</div>
+        </div>
+      </div>
+    </div>
+
+    <h3>// CoW의 이점</h3>
+    <div class="card-grid">
+      <div class="card">
+        <div class="card-icon">⚡</div>
+        <div class="card-title">빠른 컨테이너 시작</div>
+        <p>시작 시 이미지 전체를 복사하지 않음. 쓰기 발생 시에만 복사.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">💾</div>
+        <div class="card-title">디스크 공유</div>
+        <p>같은 이미지 기반의 컨테이너 100개가 이미지 레이어를 공유. 추가 용량 = 각 컨테이너의 변경분만.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🔒</div>
+        <div class="card-title">이미지 불변성</div>
+        <p>이미지 레이어는 절대 수정되지 않으므로 무결성이 보장됨.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. Storage Drivers -->
+  <section id="storage">
+    <div class="section-title">// 05</div>
+    <h2>Storage Driver 종류</h2>
+    <p>Union Filesystem을 구현하는 방식은 여러 가지다. 현재 Linux에서는 <strong>overlay2</strong>가 기본 표준이다.</p>
+
+    <table>
+      <tr>
+        <th>Driver</th>
+        <th>기반 기술</th>
+        <th>권장 여부</th>
+        <th>특이사항</th>
+      </tr>
+      <tr>
+        <td><strong>overlay2</strong></td>
+        <td>OverlayFS (kernel 4.0+)</td>
+        <td class="yes">✓ 현재 표준</td>
+        <td>성능 우수, 커널 내장</td>
+      </tr>
+      <tr>
+        <td>overlay</td>
+        <td>OverlayFS (구버전)</td>
+        <td class="no">✗ deprecated</td>
+        <td>inode 소진 문제 있음</td>
+      </tr>
+      <tr>
+        <td>devicemapper</td>
+        <td>LVM thin provisioning</td>
+        <td class="no">✗ deprecated</td>
+        <td>RHEL/CentOS 구버전 사용</td>
+      </tr>
+      <tr>
+        <td>btrfs</td>
+        <td>Btrfs subvolume/snapshot</td>
+        <td style="color:#f59e0b">△ 선택적</td>
+        <td>Btrfs 파일시스템 필요</td>
+      </tr>
+      <tr>
+        <td>zfs</td>
+        <td>ZFS dataset</td>
+        <td style="color:#f59e0b">△ 선택적</td>
+        <td>ZFS 파일시스템 필요</td>
+      </tr>
+      <tr>
+        <td>vfs</td>
+        <td>단순 디렉터리 복사</td>
+        <td class="no">✗ 비추천</td>
+        <td>CoW 없음, 테스트용</td>
+      </tr>
+    </table>
+
+    <h3>// 현재 Storage Driver 확인</h3>
+    <div class="code-block">
+<span class="cmd-line">$ docker info | grep "Storage Driver"</span>
+<span class="v">Storage Driver: overlay2</span>
+
+<span class="cmd-line">$ docker inspect &lt;container_id&gt; | grep -A5 GraphDriver</span>
+<span class="s">"GraphDriver": {</span>
+  <span class="s">"Data": {</span>
+    <span class="s">"LowerDir": "/var/lib/docker/overlay2/abc.../diff:..."</span>,
+    <span class="s">"MergedDir": "/var/lib/docker/overlay2/abc.../merged"</span>,
+    <span class="s">"UpperDir": "/var/lib/docker/overlay2/abc.../diff"</span>,
+    <span class="s">"WorkDir": "/var/lib/docker/overlay2/abc.../work"</span>
+  <span class="s">}</span>
+<span class="s">}</span>
+    </div>
+  </section>
+
+  <!-- 6. Layer Cache -->
+  <section id="cache">
+    <div class="section-title">// 06</div>
+    <h2>레이어 캐시와 빌드 최적화</h2>
+
+    <p>Docker는 빌드 시 각 명령의 레이어 해시를 로컬 캐시와 비교한다. <strong>해시가 같으면 재실행하지 않고 캐시를 그대로 사용</strong>한다. 어느 레이어가 무효화되면 그 이후 레이어는 모두 재빌드된다.</p>
+
+    <h3>// 나쁜 예 vs 좋은 예</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#ef4444;margin-bottom:8px;letter-spacing:1px">✗ BAD — 소스 변경마다 전체 재빌드</div>
+        <div class="code-block" style="margin:0">
+<span class="k">FROM</span> <span class="v">node:20</span>
+<span class="k">WORKDIR</span> /app
+<span class="k">COPY</span> . .          <span class="c"># 소스 변경 → 캐시 bust</span>
+<span class="k">RUN</span> npm install   <span class="c"># 매번 재실행됨</span>
+<span class="k">CMD</span> ["node","app.js"]
+        </div>
+      </div>
+      <div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#10b981;margin-bottom:8px;letter-spacing:1px">✓ GOOD — 의존성은 캐시 활용</div>
+        <div class="code-block" style="margin:0">
+<span class="k">FROM</span> <span class="v">node:20</span>
+<span class="k">WORKDIR</span> /app
+<span class="k">COPY</span> package*.json . <span class="c"># 의존성 파일만</span>
+<span class="k">RUN</span> npm install      <span class="c"># 캐시됨</span>
+<span class="k">COPY</span> . .             <span class="c"># 소스는 나중에</span>
+<span class="k">CMD</span> ["node","app.js"]
+        </div>
+      </div>
+    </div>
+
+    <h3>// 레이어 수 줄이기 — RUN 명령 합치기</h3>
+    <div class="code-block">
+<span class="c"># 나쁜 예: 레이어 3개, apt 캐시가 별도 레이어에 남음</span>
+<span class="k">RUN</span> apt-get update
+<span class="k">RUN</span> apt-get install -y curl
+<span class="k">RUN</span> rm -rf /var/lib/apt/lists/*
+
+<span class="c"># 좋은 예: 레이어 1개, 캐시 정리도 같은 레이어에서</span>
+<span class="k">RUN</span> apt-get update \
+  && apt-get install -y curl \
+  && rm -rf /var/lib/apt/lists/*
+    </div>
+
+    <h3>// 레이어 수 확인 명령</h3>
+    <div class="code-block">
+<span class="cmd-line">$ docker history nginx:latest</span>
+IMAGE          CREATED        CREATED BY                     SIZE
+<span class="v">2ac752d7aeb1</span>   2 weeks ago    CMD ["nginx" "-g" "daemon…"]   0B
+&lt;missing&gt;      2 weeks ago    STOPSIGNAL SIGQUIT             0B
+&lt;missing&gt;      2 weeks ago    EXPOSE 80                      0B
+&lt;missing&gt;      2 weeks ago    COPY docker-entrypoint.sh …    4.62kB
+&lt;missing&gt;      2 weeks ago    RUN /bin/sh -c set -x …        112MB
+<span class="c">...</span>
+
+<span class="cmd-line">$ docker inspect nginx:latest | python3 -c \</span>
+  <span class="s">"import sys,json; d=json.load(sys.stdin); print(len(d[0]['RootFS']['Layers']),'layers')"</span>
+<span class="v">7 layers</span>
+    </div>
+  </section>
+
+  <!-- 7. Quiz -->
+  <section id="quiz">
+    <div class="section-title">// 07</div>
+    <h2>이해도 확인 퀴즈</h2>
+
+    <div class="quiz-block">
+      <div class="quiz-q">Q1. 컨테이너 내에서 이미지 레이어의 파일을 수정했다. 이미지 원본은?</div>
+      <div class="quiz-options">
+        <div class="quiz-opt" onclick="answer(this, false, 'q1')">A. 즉시 수정된다</div>
+        <div class="quiz-opt" onclick="answer(this, true,  'q1')">B. 변경되지 않는다 (CoW로 upperdir에만 기록)</div>
+        <div class="quiz-opt" onclick="answer(this, false, 'q1')">C. 컨테이너 종료 시 반영된다</div>
+        <div class="quiz-opt" onclick="answer(this, false, 'q1')">D. 수정 자체가 불가능하다 (에러 발생)</div>
+      </div>
+      <div id="q1" class="quiz-explain">
+        ✓ Copy-on-Write 덕분에 파일 수정 시도 시 해당 파일이 upperdir(컨테이너 레이어)로 복사된 후 수정된다. 이미지 lowerdir는 절대 변경되지 않는다.
+      </div>
+    </div>
+
+    <div class="quiz-block">
+      <div class="quiz-q">Q2. Dockerfile에서 COPY . . 명령 이후 RUN npm install을 배치하면 생기는 문제는?</div>
+      <div class="quiz-options">
+        <div class="quiz-opt" onclick="answer(this, false, 'q2')">A. COPY 명령은 레이어를 생성하지 않아 문제없다</div>
+        <div class="quiz-opt" onclick="answer(this, false, 'q2')">B. npm install이 병렬로 실행된다</div>
+        <div class="quiz-opt" onclick="answer(this, true,  'q2')">C. 소스 파일이 1자라도 바뀌면 npm install 캐시도 무효화된다</div>
+        <div class="quiz-opt" onclick="answer(this, false, 'q2')">D. node_modules가 이미지에 포함되지 않는다</div>
+      </div>
+      <div id="q2" class="quiz-explain">
+        ✓ Docker 레이어 캐시는 순서 기반이다. COPY . . 레이어가 무효화되면 그 이하 모든 레이어(RUN npm install 포함)가 재실행된다. package.json을 먼저 복사하면 의존성이 변경될 때만 npm install이 재실행된다.
+      </div>
+    </div>
+
+    <div class="quiz-block">
+      <div class="quiz-q">Q3. OverlayFS에서 컨테이너가 파일을 삭제할 때 실제로 일어나는 일은?</div>
+      <div class="quiz-options">
+        <div class="quiz-opt" onclick="answer(this, false, 'q3')">A. lowerdir에서 파일이 직접 삭제된다</div>
+        <div class="quiz-opt" onclick="answer(this, false, 'q3')">B. 삭제가 불가능하다</div>
+        <div class="quiz-opt" onclick="answer(this, true,  'q3')">C. upperdir에 whiteout 파일이 생성되어 lowerdir의 파일을 가린다</div>
+        <div class="quiz-opt" onclick="answer(this, false, 'q3')">D. lowerdir의 파일이 upperdir로 복사된 후 삭제된다</div>
+      </div>
+      <div id="q3" class="quiz-explain">
+        ✓ OverlayFS는 lowerdir를 절대 수정하지 않는다. 삭제 시 upperdir에 .wh.&lt;filename&gt; 형태의 whiteout 파일을 생성해 하위 레이어의 파일을 숨긴다. merged 뷰에서는 해당 파일이 없는 것처럼 보인다.
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  // Docker Layer Study Notes &nbsp;·&nbsp; OverlayFS / Copy-on-Write / Layer Cache &nbsp;·&nbsp; Labrador Labs
+</footer>
+
+<script>
+  function toggleDetail(id) {
+    const el = document.getElementById(id);
+    el.classList.toggle('open');
+  }
+
+  function answer(el, correct, qId) {
+    const block = el.closest('.quiz-block');
+    const opts = block.querySelectorAll('.quiz-opt');
+    const explain = document.getElementById(qId);
+
+    // Reset
+    opts.forEach(o => { o.classList.remove('correct','wrong'); o.style.pointerEvents='none'; });
+
+    if (correct) {
+      el.classList.add('correct');
+    } else {
+      el.classList.add('wrong');
+      // highlight correct one
+      opts.forEach(o => {
+        if (o.getAttribute('onclick') && o.getAttribute('onclick').includes('true')) {
+          o.classList.add('correct');
+        }
+      });
+    }
+    explain.classList.add('show');
+  }
+</script>
+
+</body>
+</html>
