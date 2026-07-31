@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KYE Study Notes</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --card: #161b22;
+    --border: #30363d;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --accent: #58a6ff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Pretendard, Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+  header {
+    padding: 64px 24px 32px;
+    text-align: center;
+  }
+  header h1 {
+    margin: 0 0 8px;
+    font-size: 2rem;
+  }
+  header p {
+    color: var(--muted);
+    margin: 0;
+  }
+  main {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 24px 80px;
+  }
+  #study-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 16px;
+  }
+  .card {
+    display: block;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    text-decoration: none;
+    color: var(--text);
+    transition: border-color .15s ease, transform .15s ease;
+  }
+  .card:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+  }
+  .card h3 {
+    margin: 0 0 6px;
+    font-size: 1.05rem;
+  }
+  .card span {
+    color: var(--muted);
+    font-size: 0.85rem;
+  }
+  .empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: var(--muted);
+    padding: 48px 0;
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+  }
+  footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.8rem;
+    padding: 24px;
+  }
+</style>
+</head>
+<body>
+  <header>
+    <h1>📚 KYE Study Notes</h1>
+    <p>개발 공부 자료 모음 · GitHub Pages로 어디서든 확인</p>
+  </header>
+  <main>
+    <section id="study-list">
+      <p class="empty">아직 등록된 자료가 없습니다.<br>study/ 폴더에 html 파일이 추가되면 여기에 자동으로 표시됩니다.</p>
+    </section>
+  </main>
+  <footer>
+    kyespace.github.io
+  </footer>
+</body>
+</html>
