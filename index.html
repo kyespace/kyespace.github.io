@@ -21,7 +21,7 @@
     color: var(--text);
   }
   header {
-    padding: 64px 24px 32px;
+    padding: 64px 24px 28px;
     text-align: center;
   }
   header h1 {
@@ -32,14 +32,38 @@
     color: var(--muted);
     margin: 0;
   }
-  main {
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 0 24px 80px;
+  .archive-link {
+    display: inline-block;
+    margin-top: 20px;
+    font-size: 0.85rem;
+    color: var(--accent);
+    text-decoration: none;
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 6px 16px;
   }
-  #study-list {
+  .archive-link:hover { border-color: var(--accent); }
+  main {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 8px 24px 80px;
+  }
+  .group {
+    margin-top: 40px;
+  }
+  .group h2 {
+    font-size: 1rem;
+    color: var(--muted);
+    font-weight: 600;
+    letter-spacing: .03em;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 10px;
+    margin-bottom: 16px;
+  }
+  .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
     gap: 16px;
   }
   .card {
@@ -58,19 +82,12 @@
   }
   .card h3 {
     margin: 0 0 6px;
-    font-size: 1.05rem;
+    font-size: 1rem;
+    line-height: 1.4;
   }
   .card span {
     color: var(--muted);
-    font-size: 0.85rem;
-  }
-  .empty {
-    grid-column: 1 / -1;
-    text-align: center;
-    color: var(--muted);
-    padding: 48px 0;
-    border: 1px dashed var(--border);
-    border-radius: 10px;
+    font-size: 0.8rem;
   }
   footer {
     text-align: center;
@@ -84,11 +101,66 @@
   <header>
     <h1>📚 KYE Study Notes</h1>
     <p>개발 공부 자료 모음 · GitHub Pages로 어디서든 확인</p>
+    <a class="archive-link" href="study/study-archive-index.html">전체 아카이브 인덱스 보기 →</a>
   </header>
   <main>
-    <section id="study-list">
-      <p class="empty">아직 등록된 자료가 없습니다.<br>study/ 폴더에 html 파일이 추가되면 여기에 자동으로 표시됩니다.</p>
-    </section>
+    <div class="group">
+      <h2>Spring / Java</h2>
+      <div class="grid">
+        <a class="card" href="study/spring-framework-study-v2.html">
+          <h3>스프링 프레임워크 — 구조와 위상의 완전한 그림 (증보판)</h3>
+          <span>spring-framework-study-v2.html</span>
+        </a>
+        <a class="card" href="study/spring-design-patterns.html">
+          <h3>Spring 디자인 패턴 스터디</h3>
+          <span>spring-design-patterns.html</span>
+        </a>
+        <a class="card" href="study/solid-principles-study.html">
+          <h3>SOLID 원칙 — 객체지향 설계 스터디</h3>
+          <span>solid-principles-study.html</span>
+        </a>
+        <a class="card" href="study/proxy-guide.html">
+          <h3>프록시 배선반 — JDK 동적 프록시 vs CGLIB</h3>
+          <span>proxy-guide.html</span>
+        </a>
+      </div>
+    </div>
+
+    <div class="group">
+      <h2>Docker / Infra</h2>
+      <div class="grid">
+        <a class="card" href="study/docker-container-study.html">
+          <h3>Docker &amp; OS 스터디 가이드</h3>
+          <span>docker-container-study.html</span>
+        </a>
+        <a class="card" href="study/docker-layers-study.html">
+          <h3>Docker Layer 스터디</h3>
+          <span>docker-layers-study.html</span>
+        </a>
+        <a class="card" href="study/linux-permissions-study-v2.html">
+          <h3>Linux 권한 심화 스터디</h3>
+          <span>linux-permissions-study-v2.html</span>
+        </a>
+      </div>
+    </div>
+
+    <div class="group">
+      <h2>AI / Protocol</h2>
+      <div class="grid">
+        <a class="card" href="study/mcp-study-guide.html">
+          <h3>MCP 완전 정복 — 프로토콜 내부 동작과 서버 개발 실무</h3>
+          <span>mcp-study-guide.html</span>
+        </a>
+        <a class="card" href="study/mcp-study-guide-part2.html">
+          <h3>MCP 심화 — 원격 운용, 인증, 프로덕션 (Part 2)</h3>
+          <span>mcp-study-guide-part2.html</span>
+        </a>
+        <a class="card" href="study/webhook-study.html">
+          <h3>Webhook 기술 스터디</h3>
+          <span>webhook-study.html</span>
+        </a>
+      </div>
+    </div>
   </main>
   <footer>
     kyespace.github.io
