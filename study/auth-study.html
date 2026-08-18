@@ -1,0 +1,1067 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>인증 스터디 — 폼 로그인 vs OAuth2</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap');
+
+  :root{
+    --bg:#faf8f4;
+    --surface:#ffffff;
+    --surface-2:#f1eee6;
+    --line:#e2ddd0;
+    --text:#1c1f26;
+    --muted:#5b5f6b;
+    --form:#3348c7;
+    --form-dim:#3348c714;
+    --oauth:#a4680b;
+    --oauth-dim:#a4680b18;
+    --closed:#0f766e;
+    --closed-dim:#0f766e16;
+    --pkce:#9d3a7d;
+    --pkce-dim:#9d3a7d16;
+    --good:#0f8f5f;
+    --bad:#c73737;
+  }
+
+  *{box-sizing:border-box; margin:0; padding:0;}
+
+  html{ background:var(--bg); color-scheme:light; overflow-x:hidden; }
+
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter', -apple-system, sans-serif;
+    line-height:1.65;
+    padding-bottom:80px;
+    min-height:100vh;
+    overflow-x:hidden;
+  }
+
+  code, .mono{ font-family:'IBM Plex Mono', monospace; }
+
+  /* ---------- TERM (glossary popup trigger) ---------- */
+  .term{ cursor:pointer; }
+  .term:not(code){
+    border-bottom:1.5px dotted var(--oauth);
+    font-weight:600;
+  }
+  .method.form .term:not(code){ border-bottom-color:var(--form); }
+  .method.closed .term:not(code){ border-bottom-color:var(--closed); }
+  .method.pkce .term:not(code){ border-bottom-color:var(--pkce); }
+  .term:not(code):hover{ background:var(--oauth-dim); }
+  .method.form .term:not(code):hover{ background:var(--form-dim); }
+  .method.closed .term:not(code):hover{ background:var(--closed-dim); }
+  .method.pkce .term:not(code):hover{ background:var(--pkce-dim); }
+  code.term:hover{ outline:1.5px solid currentColor; }
+
+  /* ---------- MODAL ---------- */
+  .modal-backdrop{
+    position:fixed; inset:0;
+    background:rgba(20,18,10,0.45);
+    display:none;
+    align-items:center; justify-content:center;
+    padding:24px;
+    z-index:100;
+  }
+  .modal-backdrop.open{ display:flex; }
+  .modal-box{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:14px;
+    max-width:420px;
+    width:100%;
+    padding:26px 24px 24px;
+    box-shadow:0 20px 60px rgba(0,0,0,0.18);
+    position:relative;
+  }
+  .modal-box .term-key{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    letter-spacing:.08em;
+    color:var(--oauth);
+    text-transform:uppercase;
+    margin-bottom:6px;
+  }
+  .modal-box h4{ font-size:20px; margin-bottom:12px; font-weight:800; font-family:'IBM Plex Mono', monospace; }
+  .modal-box p{ font-size:14.5px; color:var(--text); line-height:1.65; }
+  .modal-close{
+    position:absolute; top:14px; right:14px;
+    width:30px;height:30px;border-radius:50%;
+    border:1px solid var(--line); background:var(--surface-2);
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; font-size:15px; color:var(--muted);
+  }
+
+  /* ---------- HERO ---------- */
+  .hero{ padding:90px 24px 70px; max-width:920px; margin:0 auto; border-bottom:1px solid var(--line); }
+  .hero .eyebrow{
+    font-family:'IBM Plex Mono', monospace; font-size:13px; letter-spacing:.14em;
+    color:var(--muted); text-transform:uppercase; display:flex; align-items:center; gap:10px; margin-bottom:22px;
+  }
+  .eyebrow .dot{width:7px;height:7px;border-radius:50%;background:var(--oauth);}
+  .hero h1{ font-size:clamp(32px, 5vw, 52px); font-weight:800; letter-spacing:-0.02em; line-height:1.15; margin-bottom:20px; }
+  .hero h1 span{color:var(--oauth);}
+  .hero p{ color:var(--muted); font-size:17px; max-width:640px; }
+  .hero .keyline{
+    margin-top:36px; font-family:'IBM Plex Mono', monospace; font-size:13px; color:var(--muted);
+    display:flex; gap:28px; flex-wrap:wrap;
+  }
+  .hero .keyline b{color:var(--text); font-weight:500;}
+
+  /* ---------- SECTION WRAPPER ---------- */
+  section.method{ max-width:920px; margin:0 auto; padding:64px 24px; border-bottom:1px solid var(--line); }
+  .method-head{ display:flex; align-items:baseline; gap:16px; margin-bottom:8px; }
+  .method-tag{
+    font-family:'IBM Plex Mono', monospace; font-size:12px; font-weight:600; letter-spacing:.08em;
+    padding:4px 10px; border-radius:4px; text-transform:uppercase;
+  }
+  .method.form .method-tag{ color:var(--form); background:var(--form-dim); border:1px solid var(--form); }
+  .method.oauth .method-tag{ color:var(--oauth); background:var(--oauth-dim); border:1px solid var(--oauth); }
+  .method.closed .method-tag{ color:var(--closed); background:var(--closed-dim); border:1px solid var(--closed); }
+  .method.pkce .method-tag{ color:var(--pkce); background:var(--pkce-dim); border:1px solid var(--pkce); }
+
+  .method h2{ font-size:30px; font-weight:800; letter-spacing:-0.01em; }
+  .method .lede{ color:var(--muted); max-width:680px; margin:16px 0 40px; font-size:16px; }
+  .method .lede b{color:var(--text);}
+
+  /* ---------- SEQUENCE FLOW (text steps) ---------- */
+  .flow-title{
+    font-family:'IBM Plex Mono', monospace; font-size:12px; letter-spacing:.1em; color:var(--muted);
+    text-transform:uppercase; margin-bottom:18px;
+  }
+  .flow{ position:relative; padding-left:46px; margin-bottom:48px; }
+  .flow::before{ content:""; position:absolute; left:17px; top:6px; bottom:6px; width:2px; background:var(--line); }
+  .step{ position:relative; padding:0 0 26px 0; }
+  .step:last-child{padding-bottom:0;}
+  .step .badge{
+    position:absolute; left:-46px; top:0; width:36px; height:36px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono', monospace;
+    font-weight:700; font-size:13px; background:var(--surface); border:2px solid var(--line); z-index:1;
+  }
+  .method.form .step .badge{ border-color:var(--form); color:var(--form); }
+  .method.oauth .step .badge{ border-color:var(--oauth); color:var(--oauth); }
+  .method.closed .step .badge{ border-color:var(--closed); color:var(--closed); }
+  .method.pkce .step .badge{ border-color:var(--pkce); color:var(--pkce); }
+
+  .step .actors{
+    font-family:'IBM Plex Mono', monospace; font-size:11.5px; color:var(--muted);
+    letter-spacing:.03em; margin-bottom:4px; text-transform:uppercase;
+  }
+  .step .actors .arrow{color:var(--text); margin:0 4px;}
+  .step .desc{ background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:14px 16px; font-size:14.5px; }
+  .step .desc code{ background:var(--surface-2); padding:1px 6px; border-radius:4px; font-size:13px; color:var(--oauth); }
+  .method.form .step .desc code{ color:var(--form); }
+  .method.closed .step .desc code{ color:var(--closed); }
+  .method.pkce .step .desc code{ color:var(--pkce); }
+
+  /* ---------- PKCE LIVE DEMO ---------- */
+  .pkce-demo{
+    background:var(--surface); border:1px solid var(--line); border-radius:14px;
+    padding:24px; margin-bottom:32px;
+  }
+  .demo-header{ display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:22px; }
+  .demo-btn{
+    font-family:'IBM Plex Mono', monospace; font-size:13px; font-weight:700;
+    background:var(--pkce); color:#fff; border:none; border-radius:8px;
+    padding:11px 18px; cursor:pointer; letter-spacing:.02em;
+  }
+  .demo-btn:hover{ opacity:.88; }
+  .demo-hint{ font-size:12.5px; color:var(--muted); }
+  .demo-flow{ margin-bottom:26px; }
+  .demo-box{
+    background:var(--surface-2); border:1px solid var(--line); border-radius:10px;
+    padding:14px 16px; margin-bottom:6px;
+  }
+  .demo-box .demo-label{
+    font-family:'IBM Plex Mono', monospace; font-size:11.5px; font-weight:700;
+    color:var(--pkce); text-transform:uppercase; letter-spacing:.04em;
+    display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:8px;
+  }
+  .demo-box .tag{
+    font-weight:500; text-transform:none; color:var(--muted); font-size:11px;
+    background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:2px 9px;
+  }
+  .demo-value{
+    font-family:'IBM Plex Mono', monospace; font-size:13px; color:var(--text);
+    word-break:break-all; line-height:1.5;
+  }
+  .demo-arrow{
+    text-align:center; font-family:'IBM Plex Mono', monospace; font-size:12px;
+    color:var(--pkce); padding:8px 0; font-weight:600;
+  }
+  .demo-lanes{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media(max-width:640px){ .demo-lanes{ grid-template-columns:1fr; } }
+  .lane-col{ border-radius:10px; padding:16px 18px; border:1px solid var(--line); }
+  .lane-col.legit{ background:rgba(15,143,95,0.06); border-color:var(--good); }
+  .lane-col.attack{ background:rgba(199,55,55,0.06); border-color:var(--bad); }
+  .lane-col h4{ font-size:13.5px; margin-bottom:8px; }
+  .lane-col p{ font-size:12.5px; color:var(--muted); margin-bottom:12px; line-height:1.55; }
+  .check-row{ font-size:12px; }
+  .check-row .k{ font-family:'IBM Plex Mono', monospace; color:var(--muted); display:block; margin-bottom:3px; }
+  .check-row .v{ font-family:'IBM Plex Mono', monospace; word-break:break-all; display:block; margin-bottom:10px; color:var(--text); }
+  .result{
+    display:inline-block; font-family:'IBM Plex Mono', monospace; font-size:12.5px; font-weight:700;
+    padding:6px 11px; border-radius:7px; margin-top:2px;
+  }
+  .result.good{ color:var(--good); background:rgba(15,143,95,0.12); }
+  .result.bad{ color:var(--bad); background:rgba(199,55,55,0.12); }
+
+  /* ---------- DIAGRAM ---------- */
+  .legend{
+    display:flex; gap:22px; flex-wrap:wrap; font-family:'IBM Plex Mono', monospace;
+    font-size:11.5px; color:var(--muted); margin-bottom:16px;
+  }
+  .legend span{display:flex; align-items:center; gap:7px;}
+  .legend .lin{width:22px; height:0; border-top:2.5px solid var(--oauth); display:inline-block;}
+  .legend .lin.dash{border-top:2.5px dashed var(--form);}
+  .diagram-wrap{
+    background:var(--surface); border:1px solid var(--line); border-radius:14px;
+    padding:18px 10px 6px; margin-bottom:44px;
+    overflow-x:auto; -webkit-overflow-scrolling:touch; touch-action:pan-x;
+  }
+  .diagram-wrap svg{ display:block; min-width:640px; width:100%; height:auto; }
+
+  /* ---------- PROS/CONS ---------- */
+  .grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-bottom:40px; }
+  @media(max-width:640px){ .grid-2{grid-template-columns:1fr;} }
+  .card{ background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:22px 22px 18px; }
+  .card h3{
+    font-size:13px; letter-spacing:.08em; text-transform:uppercase; font-family:'IBM Plex Mono', monospace;
+    margin-bottom:14px; display:flex; align-items:center; gap:8px;
+  }
+  .card.pro h3{color:var(--good);}
+  .card.con h3{color:var(--bad);}
+  .card ul{list-style:none;}
+  .card li{ position:relative; padding-left:18px; margin-bottom:10px; font-size:14.5px; color:var(--text); }
+  .card li::before{ content:"—"; position:absolute; left:0; color:var(--muted); }
+
+  /* ---------- USE CASES ---------- */
+  .usecases{ background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:22px 22px 6px; }
+  .usecases h3{
+    font-size:13px; letter-spacing:.08em; text-transform:uppercase; font-family:'IBM Plex Mono', monospace;
+    color:var(--muted); margin-bottom:14px;
+  }
+  .chip-row{display:flex; flex-wrap:wrap; gap:10px; margin-bottom:16px;}
+  .chip{ font-size:13.5px; padding:7px 13px; border-radius:20px; border:1px solid var(--line); background:var(--surface-2); color:var(--text); }
+
+  /* ---------- INSIGHT BOX ---------- */
+  .insight{
+    background:var(--closed-dim); border:1px solid var(--closed); border-radius:12px;
+    padding:20px 22px; font-size:14.5px; margin-top:8px; margin-bottom:40px;
+  }
+  .insight b{color:var(--closed);}
+
+  .qa{ margin-bottom:20px; }
+  .qa .q{ font-size:15px; color:var(--text); margin-bottom:10px; max-width:680px; }
+  .qa .q b{ font-family:'IBM Plex Mono', monospace; color:var(--oauth); margin-right:4px; }
+  .qa .a{ background:var(--oauth-dim); border:1px solid var(--oauth); border-radius:12px; padding:18px 20px; font-size:14.5px; }
+  .qa .a .a-label{ font-family:'IBM Plex Mono', monospace; color:var(--oauth); margin-right:4px; }
+
+  /* ---------- ROUTE DIAGRAM (FE/BE/Google 통신 경로) ---------- */
+  .route{ margin-bottom:12px; }
+  .route .node{
+    background:var(--surface-2); border:1px solid var(--line); border-radius:10px;
+    padding:12px 16px; font-family:'IBM Plex Mono', monospace; font-weight:700; font-size:13px;
+    color:var(--text); text-align:center;
+  }
+  .route .edge{ position:relative; padding:18px 0 18px 24px; }
+  .route .edge::before{ content:""; position:absolute; left:11px; top:0; bottom:0; width:2px; background:var(--line); }
+  .route .edge-body{ background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:14px 16px; }
+  .route .edge-body .credential{ font-family:'IBM Plex Mono', monospace; font-size:12.5px; font-weight:700; margin-bottom:4px; }
+  .route .edge-body.internal .credential{ color:var(--form); }
+  .route .edge-body.external .credential{ color:var(--oauth); }
+  .route .edge-body .freq{ font-size:11.5px; color:var(--muted); margin-bottom:8px; }
+  .route .edge-body p{ font-size:13.5px; color:var(--text); margin:0; line-height:1.55; }
+
+  /* ---------- SUBSECTION DIVIDER ---------- */
+  .subsection-title{
+    margin-top:56px; padding-top:30px; border-top:1px solid var(--line);
+    font-size:21px; font-weight:800; letter-spacing:-0.01em; color:var(--text);
+    display:flex; align-items:center; gap:10px; margin-bottom:8px;
+  }
+  .subsection-title .num{
+    font-family:'IBM Plex Mono', monospace; font-size:12px; font-weight:700;
+    color:var(--oauth); background:var(--oauth-dim); border:1px solid var(--oauth);
+    border-radius:6px; padding:3px 8px; letter-spacing:.04em;
+  }
+
+  /* ---------- COMPARISON TABLE ---------- */
+  .compare{ max-width:920px; margin:0 auto; padding:64px 24px; }
+  .compare .flow-title{margin-bottom:24px;}
+  .compare h2{ font-size:28px; font-weight:800; margin-bottom:8px; letter-spacing:-0.01em; }
+  .compare > p{color:var(--muted); margin-bottom:32px; max-width:680px;}
+
+  table{ width:100%; border-collapse:collapse; background:var(--surface); border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+  .table-scroll{
+    overflow-x:auto; -webkit-overflow-scrolling:touch; touch-action:pan-x;
+    border-radius:12px; margin-bottom:40px;
+  }
+  .table-scroll table{ margin-bottom:0; min-width:640px; }
+  th, td{ text-align:left; padding:14px 18px; font-size:14.5px; border-bottom:1px solid var(--line); }
+  th{
+    font-family:'IBM Plex Mono', monospace; font-size:12px; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--muted); background:var(--surface-2);
+  }
+  td:first-child, th:first-child{color:var(--muted); font-family:'IBM Plex Mono', monospace; font-size:12.5px; white-space:nowrap;}
+  tr:last-child td{border-bottom:none;}
+  td.f{color:var(--form);}
+  td.o{color:var(--oauth);}
+
+  /* ---------- HYBRID / CLOSING ---------- */
+  .closing{ max-width:920px; margin:0 auto; padding:56px 24px 0; }
+  .closing .note{
+    background:linear-gradient(135deg, var(--form-dim), var(--oauth-dim));
+    border:1px solid var(--line); border-radius:14px; padding:28px 28px;
+  }
+  .closing .note h3{ font-size:18px; margin-bottom:10px; }
+  .closing .note p{color:var(--muted); font-size:15px;}
+  .closing .note p + p{margin-top:10px;}
+  .closing .note b{color:var(--text);}
+
+  footer{
+    max-width:920px; margin:60px auto 0; padding:24px; color:var(--muted);
+    font-family:'IBM Plex Mono', monospace; font-size:12px; text-align:center;
+  }
+</style>
+</head>
+<body>
+
+  <div class="hero">
+    <div class="eyebrow"><span class="dot"></span> AUTHENTICATION STUDY NOTES</div>
+    <h1>폼 로그인 vs <span>OAuth2</span> 로그인</h1>
+    <p>같은 목적("이 사람이 누구인지 확인한다")을 전혀 다른 방식으로 푸는 두 가지 인증 방식을 흐름 단위로 뜯어본다. 누가, 무엇을, 누구에게 증명하는지가 핵심이다. 밑줄 친 약어는 눌러서 설명을 볼 수 있다.</p>
+    <div class="keyline">
+      <span><b>세션 기반</b> · 신뢰 주체 = 우리 서버</span>
+      <span><b>토큰 기반</b> · 신뢰 주체 = 외부 IdP</span>
+    </div>
+  </div>
+
+  <!-- ================= FORM LOGIN ================= -->
+  <section class="method form">
+    <div class="method-head"><span class="method-tag">01 · Session</span></div>
+    <h2>폼 로그인 (Form-based Login)</h2>
+    <p class="lede">아이디/비밀번호를 서버에 직접 제출하고, 서버가 세션을 발급해 로그인 상태를 유지하는 가장 전통적인 방식. <b>인증 주체가 우리 서버 자신</b>이라는 점이 핵심이다.</p>
+
+    <div class="flow-title">인증 흐름</div>
+    <div class="flow">
+      <div class="step">
+        <div class="badge">1</div>
+        <div class="actors">브라우저 <span class="arrow">→</span> 서버</div>
+        <div class="desc">로그인 폼에 아이디/비밀번호를 입력하고 <code>POST /login</code> 요청을 보낸다.</div>
+      </div>
+      <div class="step">
+        <div class="badge">2</div>
+        <div class="actors">서버 <span class="arrow">→</span> DB</div>
+        <div class="desc">DB에서 사용자를 조회하고, 저장된 <code>password_hash</code>와 입력값을 <b>해시 비교</b>(bcrypt 등)한다. 평문 비교는 절대 하지 않는다.</div>
+      </div>
+      <div class="step">
+        <div class="badge">3</div>
+        <div class="actors">서버</div>
+        <div class="desc">인증 성공 시 세션을 생성하고 세션 저장소(메모리, Redis 등)에 <code>session_id → 사용자 정보</code>를 저장한다.</div>
+      </div>
+      <div class="step">
+        <div class="badge">4</div>
+        <div class="actors">서버 <span class="arrow">→</span> 브라우저</div>
+        <div class="desc">응답 헤더에 <code>Set-Cookie: SESSION=xxx; HttpOnly; Secure</code>를 담아 세션 쿠키를 내려준다.</div>
+      </div>
+      <div class="step">
+        <div class="badge">5</div>
+        <div class="actors">브라우저 <span class="arrow">→</span> 서버 (이후 모든 요청)</div>
+        <div class="desc">브라우저가 쿠키를 자동으로 실어 보내고, 서버는 세션 저장소를 조회해 로그인 상태를 판별한다.</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card pro">
+        <h3>▲ 장점</h3>
+        <ul>
+          <li>구현이 단순하고 개념적으로 직관적이다</li>
+          <li>서버가 세션을 완전히 통제한다 — 강제 로그아웃, 즉시 무효화가 쉽다</li>
+          <li>외부 서비스 의존성이 없어 장애 지점이 적다</li>
+          <li>토큰 탈취 시나리오가 상대적으로 단순해 대응하기 쉽다</li>
+        </ul>
+      </div>
+      <div class="card con">
+        <h3>▼ 단점</h3>
+        <ul>
+          <li>서버가 <b>상태(state)</b>를 가져야 해서 수평 확장 시 세션 클러스터링/공유 스토어가 필요</li>
+          <li><span class="term" data-term="CSRF">CSRF</span> 방어(토큰, SameSite 쿠키)를 직접 신경 써야 한다</li>
+          <li>모바일 앱·SPA 등 쿠키를 다루기 애매한 환경에서 불편</li>
+          <li>여러 서비스 간 <span class="term" data-term="SSO">SSO</span>(Single Sign-On) 구현이 번거롭다</li>
+          <li>비밀번호를 우리가 직접 저장·관리해야 하는 책임이 생긴다</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="flow-title">엣지 케이스 — SPA와 궁합이 안 맞는 이유</div>
+    <div class="flow">
+      <div class="step">
+        <div class="badge">1</div>
+        <div class="actors">배포 구조</div>
+        <div class="desc">SPA 프론트엔드는 <code>app.myservice.com</code>(또는 Vercel/Netlify 같은 별도 호스팅), API 서버는 <code>api.myservice.com</code>처럼 <b>서로 다른 도메인</b>에 배포되는 경우가 흔하다.</div>
+      </div>
+      <div class="step">
+        <div class="badge">2</div>
+        <div class="actors">로그인 성공</div>
+        <div class="desc">로그인 요청은 성공하고 서버가 <code>Set-Cookie: SESSION=xxx</code>를 응답에 담아 보낸다 — 여기까지는 문제없다.</div>
+      </div>
+      <div class="step">
+        <div class="badge">3</div>
+        <div class="actors">⚠️ 바로 다음 요청부터 문제 발생</div>
+        <div class="desc">브라우저 쿠키 기본값인 <span class="term" data-term="SameSite">SameSite=Lax</span> 정책 때문에, SPA가 그 직후 보내는 <code>fetch</code>/XHR 요청에는 쿠키가 <b>자동으로 실리지 않는다</b>. 방금 로그인했는데도 API는 "로그인 안 된 사용자"로 취급한다.</div>
+      </div>
+      <div class="step">
+        <div class="badge">4</div>
+        <div class="actors">고친다고 해도</div>
+        <div class="desc">쿠키를 <code>SameSite=None; Secure</code>로 바꾸고, <span class="term" data-term="CORS">CORS</span>에서 <code>Access-Control-Allow-Credentials: true</code>와 정확한 Origin을 지정하고, 프론트의 모든 요청에 <code>credentials: 'include'</code>를 빠짐없이 넣어야 한다 — 설정 지점이 4곳으로 늘어난다.</div>
+      </div>
+      <div class="step">
+        <div class="badge">5</div>
+        <div class="actors">그렇게 다 맞춰도</div>
+        <div class="desc">Safari의 ITP, 크롬 시크릿 모드의 서드파티 쿠키 차단 정책 때문에 <b>일부 브라우저·모드에서는 여전히 로그인이 풀린다</b>. 서버 설정만으로는 완전히 해결되지 않는 영역이 남는다.</div>
+      </div>
+    </div>
+
+    <div class="insight" style="background:var(--form-dim); border-color:var(--form);">
+      <b style="color:var(--form);">그래서 실무에서는</b> — 프론트/API가 도메인을 공유하지 않는 SPA 구조에서는 세션 쿠키 대신, 로그인 응답으로 <code class="term" data-term="access_token">access_token</code>을 바디에 받아 프론트가 메모리에 들고 있다가 매 요청마다 <code>Authorization: Bearer &lt;token&gt;</code> 헤더로 직접 실어 보내는 <b>토큰 기반 방식</b>을 흔히 택한다. 쿠키의 자동 전송에 기대지 않으므로 SameSite·CORS 자격 증명 문제 자체가 사라진다.
+    </div>
+
+    <div class="usecases">
+      <h3>실무 활용 예시</h3>
+      <div class="chip-row">
+        <span class="chip">사내 관리자(Admin) 페이지</span>
+        <span class="chip">전통적인 SSR 웹앱</span>
+        <span class="chip">Spring Security formLogin()</span>
+        <span class="chip">Django / Rails 기본 auth</span>
+        <span class="chip">폐쇄망·내부 시스템</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= OAUTH2 ================= -->
+  <section class="method oauth">
+    <div class="method-head"><span class="method-tag">02 · Token / Delegated</span></div>
+    <h2>OAuth2 로그인 (Authorization Code + <span class="term" data-term="PKCE">PKCE</span>)</h2>
+    <p class="lede">엄밀히 OAuth2는 <b>인가(authorization)</b> 프로토콜이다. 여기에 <b><span class="term" data-term="OIDC">OpenID Connect(OIDC)</span></b>가 얹혀 신원 확인용 <code>id_token</code>을 제공하면서 비로소 "로그인"에 쓰인다. 인증 주체는 외부 <span class="term" data-term="IdP">IdP</span>(구글, 카카오 등)다.</p>
+
+    <div class="flow-title">동작 흐름 다이어그램</div>
+    <div class="legend">
+      <span><span class="lin"></span> 프론트채널 (브라우저 경유)</span>
+      <span><span class="lin dash"></span> 백채널 (서버-서버 직접 통신)</span>
+    </div>
+    <div class="diagram-wrap">
+      <svg viewBox="0 0 860 870" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="OAuth2 Authorization Code with PKCE sequence diagram">
+        <defs>
+          <marker id="arrowAmber" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+            <path d="M0,0 L10,5 L0,10 z" fill="#a4680b"/>
+          </marker>
+          <marker id="arrowIndigo" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+            <path d="M0,0 L10,5 L0,10 z" fill="#3348c7"/>
+          </marker>
+        </defs>
+
+        <!-- lane headers -->
+        <rect x="105" y="20" width="170" height="38" rx="19" fill="#f1eee6" stroke="#e2ddd0"/>
+        <text x="190" y="44" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12.5" font-weight="700" fill="#1c1f26">브라우저</text>
+        <rect x="395" y="20" width="170" height="38" rx="19" fill="#f1eee6" stroke="#e2ddd0"/>
+        <text x="480" y="44" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12.5" font-weight="700" fill="#1c1f26">우리 서버 (Client)</text>
+        <rect x="685" y="20" width="170" height="38" rx="19" fill="#f1eee6" stroke="#e2ddd0"/>
+        <text x="770" y="44" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12.5" font-weight="700" fill="#1c1f26">구글 (Authz Server)</text>
+
+        <!-- lifelines -->
+        <line x1="190" y1="66" x2="190" y2="830" stroke="#e2ddd0" stroke-width="2" stroke-dasharray="4 5"/>
+        <line x1="480" y1="66" x2="480" y2="830" stroke="#e2ddd0" stroke-width="2" stroke-dasharray="4 5"/>
+        <line x1="770" y1="66" x2="770" y2="830" stroke="#e2ddd0" stroke-width="2" stroke-dasharray="4 5"/>
+
+        <!-- row 1 -->
+        <circle cx="46" cy="130" r="13" fill="#ffffff" stroke="#a4680b" stroke-width="2"/>
+        <text x="46" y="134.5" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" font-weight="800" fill="#a4680b">1</text>
+        <line x1="190" y1="130" x2="480" y2="130" stroke="#a4680b" stroke-width="2.5" marker-end="url(#arrowAmber)"/>
+        <rect x="255" y="102" width="160" height="18" fill="#faf8f4" opacity="0.92"/>
+        <text x="335" y="116" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#1c1f26">로그인 시작 요청</text>
+        <rect x="245" y="140" width="180" height="14" fill="#faf8f4" opacity="0.92"/>
+        <text x="335" y="150" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10.5" fill="#5b5f6b">GET /login/google</text>
+
+        <!-- row 2 (self @ server) -->
+        <rect x="290" y="180" width="380" height="48" rx="12" fill="#ffffff" stroke="#a4680b" stroke-width="1.5"/>
+        <circle cx="46" cy="204" r="13" fill="#ffffff" stroke="#a4680b" stroke-width="2"/>
+        <text x="46" y="208.5" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" font-weight="800" fill="#a4680b">2</text>
+        <text x="480" y="200" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#1c1f26">PKCE 값 준비 (self)</text>
+        <text x="480" y="218" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#5b5f6b">code_verifier 생성 → code_challenge = SHA-256(code_verifier)</text>
+
+        <!-- row 3 -->
+        <circle cx="46" cy="278" r="13" fill="#ffffff" stroke="#a4680b" stroke-width="2"/>
+        <text x="46" y="282.5" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" font-weight="800" fill="#a4680b">3</text>
+        <line x1="480" y1="278" x2="190" y2="278" stroke="#a4680b" stroke-width="2.5" marker-end="url(#arrowAmber)"/>
+        <rect x="235" y="250" width="200" height="18" fill="#faf8f4" opacity="0.92"/>
+        <text x="335" y="264" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#1c1f26">인증 서버로 리다이렉트</text>
+        <rect x="185" y="288" width="300" height="14" fill="#faf8f4" opacity="0.92"/>
+        <text x="335" y="298" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#5b5f6b">302 · client_id, redirect_uri, scope, state, code_challenge</text>
+
+        <!-- row 4 -->
+        <circle cx="46" cy="352" r="13" fill="#ffffff" stroke="#a4680b" stroke-width="2"/>
+        <text x="46" y="356.5" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" font-weight="800" fill="#a4680b">4</text>
+        <line x1="190" y1="352" x2="770" y2="352" stroke="#a4680b" stroke-width="2.5" marker-end="url(#arrowAmber)"/>
+        <rect x="410" y="324" width="140" height="18" fill="#faf8f4" opacity="0.95"/>
+        <text x="480" y="338" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#1c1f26">인증 페이지 요청</text>
+        <rect x="330" y="362" width="300" height="14" fill="#faf8f4" opacity="0.95"/>
+        <text x="480" y="372" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#5b5f6b">GET accounts.google.com/o/oauth2/v2/auth?...</text>
+
+        <!-- row 5 (span box) -->
+        <rect x="190" y="400" width="580" height="52" rx="12" fill="rgba(164,104,11,0.08)" stroke="#a4680b" stroke-width="1.5" stroke-dasharray="5 4"/>
+        <circle cx="46" cy="426" r="13" fill="#ffffff" stroke="#a4680b" stroke-width="2"/>
+        <text x="46" y="430.5" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" font-weight="800" fill="#a4680b">5</text>
+        <text x="480" y="422" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#1c1f26">로그인 &amp; 동의(consent)</text>
+        <text x="480" y="440" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#5b5f6b">사용자가 구글 계정으로 인증 후 권한 제공에 동의</text>
+
+        <!-- row 6 -->
+        <circle cx="46" cy="500" r="13" fill="#ffffff" stroke="#a4680b" stroke-width="2"/>
+        <text x="46" y="504.5" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" font-weight="800" fill="#a4680b">6</text>
+        <line x1="770" y1="500" x2="190" y2="500" stroke="#a4680b" stroke-width="2.5" marker-end="url(#arrowAmber)"/>
+        <rect x="410" y="472" width="140" height="18" fill="#faf8f4" opacity="0.95"/>
+        <text x="480" y="486" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#1c1f26">인가 코드 발급</text>
+        <rect x="330" y="510" width="300" height="14" fill="#faf8f4" opacity="0.95"/>
+        <text x="480" y="520" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#5b5f6b">302 · redirect_uri?code=...&amp;state=...</text>
+
+        <!-- row 7 -->
+        <circle cx="46" cy="574" r="13" fill="#ffffff" stroke="#a4680b" stroke-width="2"/>
+        <text x="46" y="578.5" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" font-weight="800" fill="#a4680b">7</text>
+        <line x1="190" y1="574" x2="480" y2="574" stroke="#a4680b" stroke-width="2.5" marker-end="url(#arrowAmber)"/>
+        <rect x="270" y="546" width="130" height="18" fill="#faf8f4" opacity="0.92"/>
+        <text x="335" y="560" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#1c1f26">콜백 도착</text>
+        <rect x="220" y="584" width="230" height="14" fill="#faf8f4" opacity="0.92"/>
+        <text x="335" y="594" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#5b5f6b">GET /callback?code=...&amp;state=...</text>
+
+        <!-- row 8 (dashed, back-channel) -->
+        <circle cx="46" cy="648" r="13" fill="#ffffff" stroke="#3348c7" stroke-width="2"/>
+        <text x="46" y="652.5" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" font-weight="800" fill="#3348c7">8</text>
+        <line x1="480" y1="648" x2="770" y2="648" stroke="#3348c7" stroke-width="2.5" stroke-dasharray="7 5" marker-end="url(#arrowIndigo)"/>
+        <rect x="530" y="620" width="190" height="18" fill="#faf8f4" opacity="0.95"/>
+        <text x="625" y="634" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#1c1f26">토큰 교환 요청 (백채널)</text>
+        <rect x="500" y="658" width="250" height="14" fill="#faf8f4" opacity="0.95"/>
+        <text x="625" y="668" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#5b5f6b">POST /token · code, code_verifier, client_secret</text>
+
+        <!-- row 9 (dashed, back-channel) -->
+        <circle cx="46" cy="722" r="13" fill="#ffffff" stroke="#3348c7" stroke-width="2"/>
+        <text x="46" y="726.5" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" font-weight="800" fill="#3348c7">9</text>
+        <line x1="770" y1="722" x2="480" y2="722" stroke="#3348c7" stroke-width="2.5" stroke-dasharray="7 5" marker-end="url(#arrowIndigo)"/>
+        <rect x="560" y="694" width="130" height="18" fill="#faf8f4" opacity="0.95"/>
+        <text x="625" y="708" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#1c1f26">토큰 응답</text>
+        <rect x="490" y="732" width="270" height="14" fill="#faf8f4" opacity="0.95"/>
+        <text x="625" y="742" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#5b5f6b">access_token, id_token(JWT), refresh_token</text>
+
+        <!-- row 10 (self @ server) -->
+        <rect x="290" y="772" width="380" height="48" rx="12" fill="#ffffff" stroke="#a4680b" stroke-width="1.5"/>
+        <circle cx="46" cy="796" r="13" fill="#ffffff" stroke="#a4680b" stroke-width="2"/>
+        <text x="46" y="800.5" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" font-weight="800" fill="#a4680b">10</text>
+        <text x="480" y="792" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#1c1f26">검증 후 세션 발급 (self)</text>
+        <text x="480" y="810" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="10" fill="#5b5f6b">id_token 서명·iss·aud·exp 검증 → 세션/쿠키 발급</text>
+      </svg>
+    </div>
+
+    <div class="flow-title">단계별 상세 설명</div>
+    <div class="flow">
+      <div class="step">
+        <div class="badge">1</div>
+        <div class="actors">브라우저 <span class="arrow">→</span> 우리 서버</div>
+        <div class="desc">"구글로 로그인" 버튼 클릭. 서버는 <code class="term" data-term="code_verifier">code_verifier</code>를 생성하고 그 해시값인 <code class="term" data-term="code_challenge">code_challenge</code>를 준비한다(<span class="term" data-term="PKCE">PKCE</span>).</div>
+      </div>
+      <div class="step">
+        <div class="badge">2</div>
+        <div class="actors">브라우저 <span class="arrow">→</span> Authorization Server(구글)</div>
+        <div class="desc"><code>client_id, redirect_uri, scope, state, code_challenge</code>를 담아 구글 인증 페이지로 리다이렉트된다.</div>
+      </div>
+      <div class="step">
+        <div class="badge">3</div>
+        <div class="actors">사용자 <span class="arrow">↔</span> 구글</div>
+        <div class="desc">사용자가 구글 계정으로 로그인하고, 우리 앱에 정보 제공을 <b>동의(consent)</b>한다.</div>
+      </div>
+      <div class="step">
+        <div class="badge">4</div>
+        <div class="actors">구글 <span class="arrow">→</span> 브라우저 <span class="arrow">→</span> 서버</div>
+        <div class="desc">구글이 <span class="term" data-term="redirect_uri">redirect_uri</span>로 1회용 <code>authorization code</code>와 <span class="term" data-term="state">state</span>를 실어 리다이렉트한다.</div>
+      </div>
+      <div class="step">
+        <div class="badge">5</div>
+        <div class="actors">서버 <span class="arrow">→</span> 구글 (백채널)</div>
+        <div class="desc">서버가 <code>code</code> + <code class="term" data-term="code_verifier">code_verifier</code> + <code class="term" data-term="client_secret">client_secret</code>을 토큰 엔드포인트로 보내 토큰 교환을 요청한다.</div>
+      </div>
+      <div class="step">
+        <div class="badge">6</div>
+        <div class="actors">구글 <span class="arrow">→</span> 서버</div>
+        <div class="desc"><code class="term" data-term="access_token">access_token</code>, <code class="term" data-term="id_token">id_token</code>(OIDC, <span class="term" data-term="JWT">JWT</span>), <code class="term" data-term="refresh_token">refresh_token</code>을 발급받는다.</div>
+      </div>
+      <div class="step">
+        <div class="badge">7</div>
+        <div class="actors">서버</div>
+        <div class="desc"><code class="term" data-term="id_token">id_token</code>의 서명·<code>iss</code>·<code>aud</code>·<code>exp</code>를 검증해 사용자 신원(이메일 등)을 확정한다.</div>
+      </div>
+      <div class="step">
+        <div class="badge">8</div>
+        <div class="actors">서버 <span class="arrow">→</span> 브라우저</div>
+        <div class="desc">확인된 사용자로 자체 세션 또는 자체 JWT를 발급하며 로그인이 완료된다.</div>
+      </div>
+    </div>
+
+    <div class="flow-title"><span class="term" data-term="id_token">id_token</span> vs <span class="term" data-term="access_token">access_token</span> — 발급 주체는 같지만 역할이 다르다</div>
+    <p style="font-size:15px; color:var(--text); margin-bottom:14px; max-width:680px;">
+      <b style="font-family:'IBM Plex Mono', monospace; color:var(--oauth);">Q.</b> 이 두 토큰은 실제로 같은 OAuth2 <span class="term" data-term="IdP">인증 서버(Authorization Server)</span>가 발급하는 것인가요, 아니면 서로 다른 곳에서 발급되는 것인가요?
+    </p>
+    <div class="insight" style="background:var(--oauth-dim); border-color:var(--oauth); margin-bottom:20px;">
+      <b style="color:var(--oauth); font-family:'IBM Plex Mono', monospace;">A.</b> 두 토큰 모두 <b>같은 Authorization Server(구글)</b>가, 위 다이어그램의 <b>9번 단계(토큰 응답)</b>에서 함께 발급합니다. 발급 시점과 발급 주체는 완전히 동일하며, <b>누가 그 토큰을 읽고 신뢰해야 하는가(소비 주체)</b>만 다릅니다.
+    </div>
+
+    <div class="table-scroll">
+    <table>
+      <tr><th>항목</th><th>id_token</th><th>access_token</th></tr>
+      <tr><td>발급 주체</td><td class="o">Authorization Server (동일)</td><td class="o">Authorization Server (동일)</td></tr>
+      <tr><td>소비 주체</td><td>우리 클라이언트(서버) 자신</td><td>리소스 서버 · API</td></tr>
+      <tr><td>대답하는 질문</td><td>"로그인한 사람이 누구인가"</td><td>"이 요청이 무엇에 접근해도 되는가"</td></tr>
+      <tr><td>표준 형식</td><td>항상 <span class="term" data-term="JWT">JWT</span></td><td>JWT 또는 opaque(불투명) 문자열</td></tr>
+      <tr><td>담긴 정보</td><td>이메일·이름 등 신원 클레임</td><td>보통 scope·권한 정보 (신원 없음)</td></tr>
+      <tr><td>API 호출에 사용</td><td>❌ 원래 용도 아님</td><td>✅ <code>Authorization: Bearer</code> 헤더</td></tr>
+      <tr><td>사용 주기</td><td>로그인 시점에 1회 검증 후 폐기</td><td>만료 전까지 매 API 요청마다 재사용</td></tr>
+    </table>
+    </div>
+
+    <div class="grid-2">
+      <div class="card pro">
+        <h3>▲ 장점</h3>
+        <ul>
+          <li>비밀번호를 우리가 저장하지 않는다 — 유출 책임과 위험을 IdP에 위임</li>
+          <li>원클릭 로그인으로 회원가입 이탈률이 낮다</li>
+          <li>IdP가 <span class="term" data-term="MFA">MFA</span>·이상 로그인 탐지를 대신 처리해 준다</li>
+          <li><span class="term" data-term="SSO">SSO</span>·여러 서비스 간 신원 공유가 자연스럽다</li>
+        </ul>
+      </div>
+      <div class="card con">
+        <h3>▼ 단점</h3>
+        <ul>
+          <li>외부 IdP 장애 시 우리 서비스 로그인도 함께 막힌다</li>
+          <li>리다이렉트, state, PKCE 등 보안 디테일이 많아 구현·검증이 복잡</li>
+          <li>토큰 저장·만료·갱신(refresh) 로직을 별도로 관리해야 한다</li>
+          <li><code>redirect_uri</code> 오설정 등 실수 하나가 심각한 보안 취약점이 될 수 있다</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="usecases">
+      <h3>실무 활용 예시</h3>
+      <div class="chip-row">
+        <span class="chip">구글/카카오/네이버 소셜 로그인</span>
+        <span class="chip">사내 SSO — Okta, Auth0, Keycloak</span>
+        <span class="chip">모바일 앱 소셜 로그인</span>
+        <span class="chip">서비스 간 API 인가 (Client Credentials Flow)</span>
+        <span class="chip">"제3자 앱에 캘린더 접근 허용" 같은 위임 인가</span>
+      </div>
+    </div>
+
+    <div class="subsection-title"><span class="num">DEEP-DIVE</span> access_token은 언제, 어디로 오가는가</div>
+    <p class="lede" style="margin-bottom:24px;">로그인이 끝난 뒤 애플리케이션을 사용하는 동안, 실제로는 <b>성격이 다른 두 종류의 통신</b>이 동시에 존재한다. 이 둘을 구분해서 보면 흐름이 훨씬 명확해진다.</p>
+
+    <div class="route">
+      <div class="node">FE (브라우저 / 앱)</div>
+      <div class="edge">
+        <div class="edge-body internal">
+          <div class="credential">우리 시스템이 발급한 세션 쿠키 또는 JWT</div>
+          <div class="freq">빈도 — 우리 서버로 보내는 모든 요청마다</div>
+          <p>화면 조회, 데이터 저장 등 애플리케이션 내부의 통상적인 기능은 전부 이 경로로 처리된다. <b>access_token은 이 구간에 전혀 관여하지 않는다.</b> 로그인 <i>수단</i>이 무엇이었든(폼 로그인이든 OAuth2든), 이 구간은 <b>폼 로그인의 세션 쿠키 방식과 완전히 동일</b>하게 동작한다.</p>
+        </div>
+      </div>
+      <div class="node">BE (우리 서버)</div>
+      <div class="edge">
+        <div class="edge-body external">
+          <div class="credential">access_token</div>
+          <div class="freq">빈도 — 구글 소유 리소스가 필요한 요청에서만</div>
+          <p>캘린더 조회, 메일 전송처럼 <b>구글이 소유한 리소스</b>를 다뤄야 할 때만, BE가 보관해둔 access_token을 꺼내 구글 API를 호출한다.</p>
+        </div>
+      </div>
+      <div class="node">구글 리소스 서버 (Calendar API 등)</div>
+    </div>
+
+    <div class="grid-2" style="margin-top:24px;">
+      <div class="card">
+        <h3 style="color:var(--oauth);">scope 판단은 왜 구글의 몫인가</h3>
+        <p style="font-size:13.5px; color:var(--text); line-height:1.6;">access_token이 담는 권한(scope)은 우리 애플리케이션 내부의 세부 권한이 아니라 <b>구글이 소유한 리소스에 대한 접근 권한</b>이다. 우리는 등록 시 사용할 scope를 선언하고 로그인 요청에 명시할 뿐이며, 그 scope가 실제로 유효한지는 <b>리소스를 소유한 구글</b>이 판단하고 사용자가 동의 화면에서 승인해야 발급된다. "이 사용자가 우리 앱의 관리자인가" 같은 판단은 구글이 관여하지 않는 별개의 인가 로직으로, 로그인 완료 후 우리 시스템이 자체 DB로 직접 결정한다.</p>
+      </div>
+      <div class="card">
+        <h3 style="color:var(--oauth);">왜 매번 다시 증명해야 하는가</h3>
+        <p style="font-size:13.5px; color:var(--text); line-height:1.6;">구글의 리소스 서버는 우리 애플리케이션과 세션을 공유하지 않는 <b>별도의 시스템</b>이다. 건물에 한 번 등록됐다고 문마다 카드를 안 대는 게 아니라 매번 태그해야 하듯, 구글 API도 요청마다 access_token으로 자격을 증명해야 한다. 덕분에 사용자가 연결을 해제하면 다음 요청부터 즉시 차단되고, 토큰 수명을 짧게 유지해 유출 시 피해도 최소화된다. <span class="term" data-term="refresh_token">refresh_token</span>은 이 짧은 access_token을 재로그인 없이 갱신하기 위한 장치다.</p>
+      </div>
+    </div>
+
+    <div class="flow-title" style="margin-top:36px;">나중에 필요해졌을 때 — access_token이 만료돼 있다면</div>
+    <p style="font-size:14.5px; color:var(--muted); margin-bottom:18px; max-width:680px;">access_token은 보통 수십 분~1시간 정도로 짧게 만료된다. 로그인 직후엔 안 쓰다가 한참 뒤에 구글 캘린더 기능을 실제로 호출하는 시점엔, 그 access_token은 이미 만료돼 있을 가능성이 높다. 이 상황은 예외가 아니라 <b>기본적으로 예정된 흐름</b>이다.</p>
+    <div class="flow">
+      <div class="step">
+        <div class="badge">1</div>
+        <div class="actors">사용 시점 도래</div>
+        <div class="desc">사용자가 실제로 구글 캘린더 기능을 눌렀다. BE는 API를 호출하기 <b>직전에</b> 보관 중인 access_token의 만료 여부를 확인한다.</div>
+      </div>
+      <div class="step">
+        <div class="badge">2</div>
+        <div class="actors">✅ 아직 유효한 경우</div>
+        <div class="desc">그대로 access_token을 실어 구글 API를 호출한다. 별도 절차 없음.</div>
+      </div>
+      <div class="step">
+        <div class="badge">3</div>
+        <div class="actors">⏰ 만료된 경우 — BE ↔ 구글 (백채널)</div>
+        <div class="desc">BE가 보관해둔 <code class="term" data-term="refresh_token">refresh_token</code>으로 구글 토큰 엔드포인트에 재발급을 요청한다. <b>사용자 개입도, 재로그인도 없이</b> 새 access_token을 즉시 받는다.</div>
+      </div>
+      <div class="step">
+        <div class="badge">4</div>
+        <div class="actors">🛑 refresh_token까지 만료·철회된 경우</div>
+        <div class="desc">이때만 예외적으로 사용자를 다시 구글 동의 화면으로 보내 처음부터 인가를 다시 받는다. (오랜 미사용, 사용자의 수동 연결 해제, 비밀번호 변경 등으로 발생)</div>
+      </div>
+    </div>
+
+    <div class="insight" style="background:var(--oauth-dim); border-color:var(--oauth);">
+      <b style="color:var(--oauth);">핵심</b> — access_token의 짧은 수명 자체는 문제가 되지 않는다. <b>쓰기 직전에 유효성을 확인하고, 필요하면 그 순간 조용히 갈아 끼우기</b> 때문이다. refresh_token이 존재하는 이유가 정확히 이 "오래 안 쓰다가 나중에 쓰는" 시나리오를 대비하기 위함이다.
+    </div>
+
+    <div class="flow-title" style="margin-top:36px;">그렇다면 애초에 access_token 하나를 길게 두면 안 되나</div>
+    <p style="font-size:14.5px; color:var(--text); margin-bottom:18px; max-width:680px;">기술적으로는 가능하지만, <b>노출 빈도와 위험이 다른 두 가지 역할을 하나의 토큰에 억지로 합치는 셈</b>이라 손해가 더 크다. access_token과 refresh_token을 분리하면 각자의 위험 수준에 맞춰 서로 다른 전략을 적용할 수 있다.</p>
+
+    <div class="table-scroll">
+    <table>
+      <tr><th>비교 항목</th><th>access_token 하나만, 길게</th><th>access_token(짧게) + refresh_token</th></tr>
+      <tr><td>노출 빈도</td><td>매 API 요청마다 네트워크로 노출</td><td>access_token만 매 요청 노출 · refresh_token은 갱신 시점에만 극히 드물게 노출</td></tr>
+      <tr><td>유출 시 피해 범위</td><td>만료 전까지 장시간 전체 접근 허용</td><td class="o">access_token이 유출돼도 곧 만료되어 피해 창이 짧음</td></tr>
+      <tr><td>즉시 차단(revocation)</td><td>자체 검증 토큰이라 만료 전엔 막을 방법이 마땅치 않음</td><td class="o">만료 주기가 짧아 다음 재확인 시점에 사실상 즉시 차단됨</td></tr>
+      <tr><td>보관 위치</td><td>민감한 장수명 토큰을 여러 경로로 들고 다녀야 함</td><td class="o">refresh_token은 BE에만 안전하게 보관, access_token만 짧게 순환</td></tr>
+      <tr><td>사용자 경험</td><td>재로그인은 없지만 위 위험을 그대로 감수</td><td>재로그인 없이 조용히 갱신되어 경험은 동일하게 유지</td></tr>
+    </table>
+    </div>
+
+    <div class="insight" style="background:var(--oauth-dim); border-color:var(--oauth); margin-bottom:0;">
+      <b style="color:var(--oauth);">비유</b> — access_token은 <b>발레파킹 키</b>다. 자주 남에게 건네고, 짧은 시간만 쓰이고, 잃어버려도 할 수 있는 일이 제한적이다. refresh_token은 <b>집 안 금고에 넣어두는 원본 키</b>다. 거의 꺼내지 않고, 남에게 건넬 일도 없으며, 오직 새 발레파킹 키를 만들 때만 쓰인다. 이렇게 <b>노출 빈도가 다른 두 가지 위험을 분리</b>하는 것이 access_token을 그냥 길게 두는 것보다 훨씬 안전하다.
+    </div>
+  </section>
+
+  <!-- ================= PKCE DEEP-DIVE ================= -->
+  <section class="method pkce">
+    <div class="method-head"><span class="method-tag">03 · Deep-dive</span></div>
+    <h2><span class="term" data-term="code_verifier">code_verifier</span> / <span class="term" data-term="code_challenge">code_challenge</span>는 실제로 어떻게 동작할까</h2>
+    <p class="lede">인가 코드(<code>authorization code</code>)는 리다이렉트 URL에 그대로 노출되기 때문에, 브라우저 히스토리·프록시 로그·악성 앱 등을 통해 <b>중간에 가로채일 가능성</b>이 있다. <span class="term" data-term="PKCE">PKCE</span>는 "코드를 훔쳐도 토큰으로 바꿀 수 없게" 만드는 장치다. 아래에서 직접 값을 생성해보며 원리를 확인해보자.</p>
+
+    <div class="flow-title">동작 원리 3단계</div>
+    <div class="flow">
+      <div class="step">
+        <div class="badge">1</div>
+        <div class="actors">클라이언트 (요청 시작 시)</div>
+        <div class="desc">무작위 <code class="term" data-term="code_verifier">code_verifier</code>(43~128자)를 만들어 <b>클라이언트 메모리에만</b> 보관한다. 이 값은 네트워크로 전송되지 않는다.</div>
+      </div>
+      <div class="step">
+        <div class="badge">2</div>
+        <div class="actors">클라이언트 → 인증 서버 (1차 요청)</div>
+        <div class="desc"><code class="term" data-term="code_verifier">code_verifier</code>를 SHA-256으로 해시하고 Base64URL로 인코딩한 <code class="term" data-term="code_challenge">code_challenge</code>만 인가 요청에 실어 보낸다. 해시는 역산이 사실상 불가능하므로, 이 값만 봐서는 원본을 알 수 없다.</div>
+      </div>
+      <div class="step">
+        <div class="badge">3</div>
+        <div class="actors">클라이언트 → 인증 서버 (토큰 교환)</div>
+        <div class="desc">인가 코드와 함께 원본 <code class="term" data-term="code_verifier">code_verifier</code>를 제출한다. 인증 서버는 저장해둔 <code>code_challenge</code>와 <code>SHA256(code_verifier)</code>를 비교해 <b>같은 클라이언트가 시작부터 끝까지 요청했는지</b>를 검증한다.</div>
+      </div>
+    </div>
+
+    <div class="flow-title">직접 만들어보는 PKCE 데모</div>
+    <div class="pkce-demo">
+      <div class="demo-header">
+        <button class="demo-btn" id="pkceGenBtn" type="button">🎲 새 code_verifier 생성</button>
+        <span class="demo-hint">브라우저에서 실제 SHA-256 연산으로 계산됩니다</span>
+      </div>
+
+      <div class="demo-flow">
+        <div class="demo-box">
+          <div class="demo-label">code_verifier <span class="tag">클라이언트만 보관 · 절대 전송되지 않음</span></div>
+          <div class="demo-value" id="verifierOut">버튼을 눌러 생성하세요</div>
+        </div>
+        <div class="demo-arrow">↓ SHA-256(code_verifier) → Base64URL 인코딩</div>
+        <div class="demo-box">
+          <div class="demo-label">code_challenge <span class="tag">1차 인가 요청에 실려 서버로 전송됨</span></div>
+          <div class="demo-value" id="challengeOut">—</div>
+        </div>
+      </div>
+
+      <div class="demo-lanes">
+        <div class="lane-col legit">
+          <h4>✅ 우리 서버가 토큰을 교환할 때</h4>
+          <p>2단계에서 받아둔 code_challenge와, 3단계에서 우리 서버가 제출한 진짜 code_verifier를 해시해서 비교한다.</p>
+          <span class="check-row">
+            <span class="k">SHA256(우리가 제출한 code_verifier) =</span>
+            <span class="v" id="legitHash">—</span>
+            <span class="result good" id="legitResult">일치 → 토큰 발급 ✅</span>
+          </span>
+        </div>
+        <div class="lane-col attack">
+          <h4>🛑 공격자가 코드만 훔쳤을 때</h4>
+          <p>공격자는 authorization code는 가로챘지만 code_verifier는 원 클라이언트 메모리에만 있어 알 수 없다. 임의로 값을 지어내 제출해본다.</p>
+          <span class="check-row">
+            <span class="k">SHA256(공격자가 지어낸 값) =</span>
+            <span class="v" id="attackHash">—</span>
+            <span class="result bad" id="attackResult">불일치 → 토큰 발급 거부 ❌</span>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="insight" style="background:var(--pkce-dim); border-color:var(--pkce);">
+      <b style="color:var(--pkce);">핵심</b> — code_challenge는 "잠긴 상자"이고 code_verifier는 그 "열쇠"다. 인가 코드가 도중에 유출돼도, 공격자는 열쇠(code_verifier)를 만든 적이 없으므로 최종 토큰 교환 단계를 통과하지 못한다.
+    </div>
+  </section>
+
+  <!-- ================= CLOSED NETWORK ================= -->
+  <section class="method closed">
+    <div class="method-head"><span class="method-tag">04 · Air-gapped</span></div>
+    <h2>폐쇄망 환경에서 OAuth2 적용하기</h2>
+    <p class="lede">인터넷이 차단된 사내망·공공기관·금융권 등에서는 구글·카카오 같은 외부 <span class="term" data-term="IdP">IdP</span>에 접근할 수 없다. 이때도 OAuth2/OIDC의 <b>프로토콜 구조 자체는 그대로 두고</b>, Authorization Server를 내부에 직접 세우는 것이 일반적인 접근이다.</p>
+
+    <div class="flow-title">일반적인 적용 절차</div>
+    <div class="flow">
+      <div class="step">
+        <div class="badge">1</div>
+        <div class="actors">인프라</div>
+        <div class="desc">사내 <b>Authorization Server</b>를 구축한다. Keycloak, WSO2 Identity Server, Gluu 등 OIDC 호환 오픈소스(또는 상용 IAM)를 폐쇄망 내부에 설치해 "우리만의 구글"을 만든다.</div>
+      </div>
+      <div class="step">
+        <div class="badge">2</div>
+        <div class="actors">계정 연동</div>
+        <div class="desc">사내 AD/LDAP, HR 시스템의 사번 계정을 Authorization Server와 연동한다. 사용자용 계정 체계를 별도로 새로 만들지 않는다.</div>
+      </div>
+      <div class="step">
+        <div class="badge">3</div>
+        <div class="actors">TLS/DNS</div>
+        <div class="desc">외부 CA(Let's Encrypt 등)에 접근할 수 없으므로 사내 루트 인증서로 사설 TLS 인증서를 발급하고, <code>authorize</code>·<code>token</code>·<span class="term" data-term="JWKS">jwks</span> 등 엔드포인트를 내부 DNS 존(예: <code>sso.internal.corp</code>)으로 구성한다.</div>
+      </div>
+      <div class="step">
+        <div class="badge">4</div>
+        <div class="actors">클라이언트 등록</div>
+        <div class="desc">각 사내 서비스를 클라이언트로 등록하고 <code class="term" data-term="redirect_uri">redirect_uri</code>를 지정한다. JWT 서명 검증용 공개키(<span class="term" data-term="JWKS">JWKS</span>)는 외부 fetch 없이 내부망에서 주기적으로 캐싱·동기화한다.</div>
+      </div>
+      <div class="step">
+        <div class="badge">5</div>
+        <div class="actors">플로우 적용</div>
+        <div class="desc">브라우저 리다이렉트, 인가 코드 교환, 토큰 검증 등 표준 Authorization Code + PKCE 흐름을 공개 인터넷 환경과 동일하게 그대로 적용한다.</div>
+      </div>
+      <div class="step">
+        <div class="badge">6</div>
+        <div class="actors">선택 사항</div>
+        <div class="desc">서비스 간(server-to-server) 통신에는 <code>client_credentials</code> 플로우에 <span class="term" data-term="mTLS">mTLS</span>를 병행해, 폐쇄망 특유의 강한 신원 검증 요구를 충족시킨다.</div>
+      </div>
+    </div>
+
+    <div class="insight">
+      <b>핵심 요약</b> — 프로토콜(리다이렉트 → 코드 발급 → 토큰 교환 → 검증)은 그대로 두고, <b>신뢰 루트(Authorization Server)의 위치만 외부에서 내부로</b> 옮기는 것이 폐쇄망 OAuth2 적용의 본질이다. 완전 폐쇄가 아니라 특정 IdP 도메인만 프록시로 화이트리스트 허용하는 <b>제한적 아웃바운드</b> 방식을 쓰는 경우도 있다.
+    </div>
+
+    <div class="usecases">
+      <h3>실무 활용 예시</h3>
+      <div class="chip-row">
+        <span class="chip">Keycloak / WSO2 Identity Server 자체 구축</span>
+        <span class="chip">사내 SSO 게이트웨이</span>
+        <span class="chip">금융·공공기관 내부망 인증</span>
+        <span class="chip">서비스 메시 내 mTLS + Client Credentials</span>
+        <span class="chip">사번 계정 기반 AD/LDAP 연동 로그인</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= COMPARISON ================= -->
+  <div class="compare">
+    <div class="flow-title">Side by side</div>
+    <h2>한눈에 비교</h2>
+    <p>두 방식은 대체재라기보다, 신뢰를 어디에 둘 것인가에 대한 서로 다른 선택이다.</p>
+
+    <div class="table-scroll">
+    <table>
+      <tr><th>항목</th><th>폼 로그인</th><th>OAuth2 로그인</th></tr>
+      <tr><td>인증 주체</td><td class="f">우리 서버</td><td class="o">외부 IdP</td></tr>
+      <tr><td>비밀번호 보관</td><td class="f">우리 DB가 책임</td><td class="o">불필요 (IdP가 보관)</td></tr>
+      <tr><td>서버 상태</td><td class="f">세션 저장소 필요 (stateful)</td><td class="o">토큰 검증 위주 (stateless에 가까움)</td></tr>
+      <tr><td>확장성</td><td class="f">세션 클러스터링 고려 필요</td><td class="o">토큰 검증만 하면 되어 수평 확장 유리</td></tr>
+      <tr><td>구현 난이도</td><td class="f">낮음</td><td class="o">높음 (리다이렉트·PKCE·토큰 검증)</td></tr>
+      <tr><td>장애 의존성</td><td class="f">외부 의존 없음</td><td class="o">IdP 장애 시 로그인 불가</td></tr>
+      <tr><td>SSO 적합성</td><td class="f">약함</td><td class="o">강함</td></tr>
+      <tr><td>대표 용도</td><td class="f">관리자 페이지, 내부 시스템</td><td class="o">소셜 로그인, 서비스 간 인가</td></tr>
+    </table>
+    </div>
+  </div>
+
+  <!-- ================= CLOSING ================= -->
+  <div class="closing">
+    <div class="note">
+      <h3>실무에서는 대부분 두 방식을 같이 쓴다</h3>
+      <p>흔한 패턴은 <b>폼 로그인 + 소셜 로그인 병행</b>이다. 이메일/비밀번호 가입도 열어두고, 구글·카카오 버튼도 함께 제공한 뒤, 어떤 경로로 로그인했든 <b>최종적으로는 우리 서버가 발급하는 세션이나 JWT로 통일</b>해서 이후 요청을 처리한다. 즉, OAuth2는 "누구인지 확인하는 단계"에서만 쓰이고, 그 이후의 인가·세션 관리는 결국 우리 시스템의 몫이다.</p>
+      <p>정리하면: 인증 <b>수단</b>은 다양해질 수 있어도, 인증 <b>이후의 상태 관리</b>는 서비스가 직접 설계해야 한다는 점은 변하지 않는다.</p>
+    </div>
+  </div>
+
+  <footer>AUTH STUDY NOTES — FORM LOGIN / OAUTH2 (AUTHORIZATION CODE + PKCE) / AIR-GAPPED OAUTH2</footer>
+
+  <!-- ================= GLOSSARY MODAL ================= -->
+  <div class="modal-backdrop" id="termBackdrop">
+    <div class="modal-box">
+      <button class="modal-close" type="button" onclick="closeTermModal()">✕</button>
+      <div class="term-key" id="modalTermKey"></div>
+      <h4 id="modalTermTitle"></h4>
+      <div id="modalTermBody"></div>
+    </div>
+  </div>
+
+  <script>
+    var GLOSSARY = {
+      PKCE: {sub:"Proof Key for Code Exchange", title:"PKCE", body:"인가 코드가 중간에 탈취되더라도 공격자가 토큰으로 교환하지 못하게 막는 보안 확장입니다. 클라이언트가 무작위 code_verifier를 만들고 그 해시값(code_challenge)만 먼저 인증 서버에 보낸 뒤, 토큰 교환 시점에 원본 code_verifier를 함께 제출해 같은 클라이언트임을 증명합니다. client_secret을 안전하게 숨기기 어려운 모바일/SPA 환경에서 특히 중요합니다."},
+      OIDC: {sub:"OpenID Connect", title:"OIDC", body:"OAuth2 위에 얹혀 '이 사용자가 누구인지'를 표준화된 방식(id_token, JWT)으로 알려주는 신원 확인 계층입니다. OAuth2 자체는 인가(권한 위임) 프로토콜이라, 로그인 용도로 쓰려면 OIDC가 필요합니다."},
+      SSO: {sub:"Single Sign-On", title:"SSO", body:"한 번의 로그인으로 여러 연동 서비스에 다시 로그인하지 않고 접근할 수 있게 하는 방식입니다. 하나의 신뢰된 Identity Provider가 여러 서비스에 인증 결과를 공유해줍니다."},
+      CSRF: {sub:"Cross-Site Request Forgery", title:"CSRF", body:"사용자가 로그인된 상태를 악용해, 공격자가 사용자 모르게 의도치 않은 요청을 대신 보내게 만드는 공격입니다. 세션 쿠키 기반 로그인에서 특히 신경 써야 하며, CSRF 토큰이나 SameSite 쿠키 옵션으로 방어합니다."},
+      MFA: {sub:"Multi-Factor Authentication", title:"MFA", body:"비밀번호 외에 OTP, 생체인증 등 추가 인증 수단을 요구해 계정 탈취 위험을 낮추는 방식입니다. 소셜 로그인을 쓰면 IdP가 이미 적용해둔 MFA 정책의 혜택을 그대로 받을 수 있습니다."},
+      IdP: {sub:"Identity Provider", title:"IdP", body:"사용자의 신원을 실제로 확인하고 인증 결과를 발급해주는 주체입니다. 구글, 카카오 같은 외부 서비스일 수도, 사내에 직접 구축한 서버(Keycloak 등)일 수도 있습니다."},
+      JWT: {sub:"JSON Web Token", title:"JWT", body:"서명이 포함된 JSON 형식의 토큰입니다. 헤더·페이로드·서명 세 부분으로 구성되며, 서버가 개인키로 서명하고 공개키(JWKS)로 검증합니다. id_token, access_token 모두 보통 JWT 형식으로 발급됩니다."},
+      JWKS: {sub:"JSON Web Key Set", title:"JWKS", body:"JWT 서명을 검증하기 위한 공개키 목록을 표준 형식으로 제공하는 엔드포인트입니다. 클라이언트는 이 공개키로 토큰의 서명이 실제 인증 서버가 발급한 것인지 확인합니다."},
+      id_token: {sub:"신원 확인 토큰 (OIDC)", title:"id_token", body:"OIDC에서 발급되는, 로그인한 사용자가 누구인지(이메일, 이름 등)를 담은 JWT입니다. 리소스 접근 권한과는 무관하며 오직 '신원 증명'이 목적입니다."},
+      access_token: {sub:"접근 권한 토큰", title:"access_token", body:"이 토큰을 가진 쪽이 특정 API/리소스에 접근할 권한이 있음을 증명하는 토큰입니다. 신원 정보가 아니라 '권한'을 표현합니다."},
+      refresh_token: {sub:"갱신 토큰", title:"refresh_token", body:"access_token이 만료되었을 때 사용자를 다시 로그인시키지 않고도 새 access_token을 발급받기 위해 쓰는 토큰입니다. 유효기간이 길고 민감하므로 안전하게 보관해야 합니다."},
+      client_secret: {sub:"클라이언트 비밀값", title:"client_secret", body:"우리 서버(Client)가 자신이 등록된 정당한 클라이언트임을 인증 서버에 증명할 때 쓰는 비밀 값입니다. 반드시 서버 측에만 보관해야 하며, 브라우저나 모바일 앱에 노출되면 안 됩니다."},
+      code_verifier: {sub:"PKCE 원본 값", title:"code_verifier", body:"클라이언트가 요청 시작 시 생성하는 무작위 문자열입니다. 토큰 교환 시점에 이 원본 값을 함께 제출해, 자신이 code_challenge를 만든 바로 그 클라이언트임을 증명합니다."},
+      code_challenge: {sub:"PKCE 해시 값", title:"code_challenge", body:"code_verifier를 SHA-256으로 해시한 값입니다. 인가 요청 시 먼저 인증 서버에 전달되며, 이후 code_verifier와 대조해 검증됩니다."},
+      state: {sub:"CSRF 방지용 값", title:"state", body:"인가 요청을 보낼 때 클라이언트가 생성해 함께 보내는 무작위 값입니다. 콜백으로 돌아온 state가 처음 보낸 값과 같은지 확인해, 요청 위조(CSRF)나 요청/응답이 뒤바뀌는 것을 방지합니다."},
+      redirect_uri: {sub:"콜백 주소", title:"redirect_uri", body:"인증이 끝난 뒤 인가 코드를 전달받을 우리 서버의 콜백 URL입니다. 사전에 등록된 값과 정확히 일치해야만 인증 서버가 리다이렉트를 허용합니다."},
+      mTLS: {sub:"Mutual TLS", title:"mTLS", body:"클라이언트와 서버가 서로의 인증서를 검증하는 양방향 TLS입니다. 폐쇄망 내 서비스 간 통신에서 신원을 강하게 보증하고 싶을 때 OAuth2와 함께 자주 쓰입니다."},
+      SameSite: {sub:"쿠키 속성", title:"SameSite", body:"쿠키를 다른 사이트에서 시작된 요청에도 실어 보낼지를 제어하는 속성입니다. 기본값에 가까운 Lax는 다른 도메인에서 보내는 fetch/XHR 요청에 쿠키를 싣지 않아, 프론트와 API가 다른 도메인인 SPA 구조에서 로그인 직후에도 인증이 안 되는 원인이 됩니다. None으로 바꾸려면 Secure(HTTPS)가 함께 있어야 합니다."},
+      CORS: {sub:"Cross-Origin Resource Sharing", title:"CORS", body:"브라우저가 다른 출처(origin)로 보내는 요청을 기본적으로 막아두고, 서버가 특정 헤더로 허용을 명시했을 때만 응답을 프론트에서 읽을 수 있게 하는 정책입니다. 쿠키를 함께 보내려면 Access-Control-Allow-Credentials와 와일드카드가 아닌 정확한 Origin 지정이 함께 필요합니다."}
+    };
+
+    function openTermModal(key){
+      var g = GLOSSARY[key];
+      if(!g) return;
+      document.getElementById('modalTermKey').textContent = g.sub || '';
+      document.getElementById('modalTermTitle').textContent = g.title;
+      document.getElementById('modalTermBody').innerHTML = '<p>' + g.body + '</p>';
+      document.getElementById('termBackdrop').classList.add('open');
+    }
+    function closeTermModal(){
+      document.getElementById('termBackdrop').classList.remove('open');
+    }
+    document.addEventListener('click', function(e){
+      var t = e.target.closest('.term');
+      if(t){ openTermModal(t.getAttribute('data-term')); return; }
+      if(e.target.id === 'termBackdrop'){ closeTermModal(); }
+    });
+    document.addEventListener('keydown', function(e){
+      if(e.key === 'Escape') closeTermModal();
+    });
+
+    // ---------- PKCE live demo ----------
+    function sha256(ascii) {
+      function rightRotate(value, amount) { return (value>>>amount) | (value<<(32 - amount)); }
+      var maxWord = Math.pow(2, 32);
+      var result = '';
+      var words = [];
+      var asciiBitLength = ascii.length * 8;
+      var hash = sha256.h = sha256.h || [];
+      var k = sha256.k = sha256.k || [];
+      var primeCounter = k.length;
+      var isComposite = {};
+      for (var candidate = 2; primeCounter < 64; candidate++) {
+        if (!isComposite[candidate]) {
+          for (var i = 0; i < 313; i += candidate) { isComposite[i] = candidate; }
+          hash[primeCounter] = (Math.pow(candidate, 0.5) * maxWord) | 0;
+          k[primeCounter++] = (Math.pow(candidate, 1/3) * maxWord) | 0;
+        }
+      }
+      ascii += '\x80';
+      while (ascii.length % 64 - 56) ascii += '\x00';
+      for (i = 0; i < ascii.length; i++) {
+        var j = ascii.charCodeAt(i);
+        if (j >> 8) return '';
+        words[i >> 2] |= j << ((3 - i) % 4) * 8;
+      }
+      words[words.length] = ((asciiBitLength / maxWord) | 0);
+      words[words.length] = (asciiBitLength);
+      for (j = 0; j < words.length;) {
+        var w = words.slice(j, j += 16);
+        var oldHash = hash;
+        hash = hash.slice(0, 8);
+        for (i = 0; i < 64; i++) {
+          var w15 = w[i - 15], w2 = w[i - 2];
+          var a = hash[0], e = hash[4];
+          var temp1 = hash[7]
+            + (rightRotate(e, 6) ^ rightRotate(e, 11) ^ rightRotate(e, 25))
+            + ((e & hash[5]) ^ ((~e) & hash[6]))
+            + k[i]
+            + (w[i] = (i < 16) ? w[i] : (
+                w[i - 16]
+                + (rightRotate(w15, 7) ^ rightRotate(w15, 18) ^ (w15 >>> 3))
+                + w[i - 7]
+                + (rightRotate(w2, 17) ^ rightRotate(w2, 19) ^ (w2 >>> 10))
+              ) | 0
+            );
+          var temp2 = (rightRotate(a, 2) ^ rightRotate(a, 13) ^ rightRotate(a, 22))
+            + ((a & hash[1]) ^ (a & hash[2]) ^ (hash[1] & hash[2]));
+          hash = [(temp1 + temp2) | 0].concat(hash);
+          hash[4] = (hash[4] + temp1) | 0;
+        }
+        for (i = 0; i < 8; i++) { hash[i] = (hash[i] + oldHash[i]) | 0; }
+      }
+      for (i = 0; i < 8; i++) {
+        for (j = 3; j + 1; j--) {
+          var b = (hash[i] >> (j * 8)) & 255;
+          result += ((b < 16) ? '0' : '') + b.toString(16);
+        }
+      }
+      return result;
+    }
+
+    function hexToBase64url(hex){
+      var bytes = [];
+      for (var c = 0; c < hex.length; c += 2) bytes.push(parseInt(hex.substr(c, 2), 16));
+      var binary = String.fromCharCode.apply(null, bytes);
+      return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    }
+
+    var PKCE_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
+    function randomVerifier(len){
+      var s = '';
+      for (var i = 0; i < len; i++) s += PKCE_CHARS[Math.floor(Math.random() * PKCE_CHARS.length)];
+      return s;
+    }
+    function toCodeChallenge(verifier){
+      return hexToBase64url(sha256(verifier));
+    }
+
+    function runPkceDemo(){
+      var verifier = randomVerifier(64);
+      var challenge = toCodeChallenge(verifier);
+
+      document.getElementById('verifierOut').textContent = verifier;
+      document.getElementById('challengeOut').textContent = challenge;
+
+      // legit: our server resubmits the SAME verifier at token exchange
+      var legitHash = toCodeChallenge(verifier);
+      document.getElementById('legitHash').textContent = legitHash;
+      var legitOk = legitHash === challenge;
+      var legitEl = document.getElementById('legitResult');
+      legitEl.textContent = legitOk ? '일치 → 토큰 발급 ✅' : '불일치 ❌';
+      legitEl.className = 'result ' + (legitOk ? 'good' : 'bad');
+
+      // attacker: guesses a random, unrelated verifier
+      var attackerGuess = randomVerifier(64);
+      var attackHash = toCodeChallenge(attackerGuess);
+      document.getElementById('attackHash').textContent = attackHash;
+      var attackOk = attackHash === challenge;
+      var attackEl = document.getElementById('attackResult');
+      attackEl.textContent = attackOk ? '일치(사실상 불가능) ✅' : '불일치 → 토큰 발급 거부 ❌';
+      attackEl.className = 'result ' + (attackOk ? 'good' : 'bad');
+    }
+
+    var pkceBtn = document.getElementById('pkceGenBtn');
+    if (pkceBtn) {
+      pkceBtn.addEventListener('click', runPkceDemo);
+      runPkceDemo();
+    }
+  </script>
+
+</body>
+</html>
