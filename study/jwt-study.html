@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JWT 해부도 — 토큰 발급부터 검증까지</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0B1220;
+    --panel: #121B2E;
+    --panel-2: #0E1626;
+    --line: #223049;
+    --text: #F5F8FC;
+    --muted: #AAB6C8;
+    --header-c: #FF6B6B;
+    --payload-c: #4ECDC4;
+    --sig-c: #FFD166;
+    --ok: #6EE7A8;
+    --bad: #FF6B6B;
+    --radius: 10px;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth; background:var(--bg);}
+  html, body{overflow-x:hidden; width:100%;}
+  *{overflow-wrap:anywhere;}
+  html, body{min-height:100%;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'IBM Plex Sans KR', sans-serif;
+    line-height:1.7;
+  }
+  code, .mono, textarea, .token{
+    font-family:'IBM Plex Mono','IBM Plex Sans KR',monospace;
+  }
+  h1,h2,h3,.display{
+    font-family:'Space Grotesk','IBM Plex Sans KR',sans-serif;
+    letter-spacing:-0.01em;
+  }
+  a{color:inherit;}
+
+  /* Layout */
+  .shell{ display:grid; grid-template-columns:240px 1fr; max-width:1180px; margin:0 auto; background:var(--bg); min-height:100vh;}
+  nav.side{
+    position:sticky; top:0; align-self:start; height:100vh; overflow-y:auto;
+    padding:36px 20px 40px 28px; border-right:1px solid var(--line);
+  }
+  nav.side .brand{font-size:14px; color:var(--muted); margin-bottom:28px; letter-spacing:0.08em;}
+  nav.side .navlink{
+    display:block; width:100%; text-align:left; font-size:13.5px; color:var(--muted); text-decoration:none;
+    background:transparent; border:none; border-left:2px solid transparent; font-family:inherit;
+    padding:7px 0 7px 12px; margin-left:-12px; cursor:pointer;
+    transition:color .15s, border-color .15s;
+  }
+  nav.side .navlink:hover, nav.side .navlink.active{ color:var(--text); border-left-color:var(--sig-c); }
+  nav.side .num{color:var(--payload-c); margin-right:6px; font-family:'IBM Plex Mono',monospace;}
+
+  main{padding:0 40px 120px 48px;}
+  section{padding-top:64px; scroll-margin-top:24px;}
+  section:first-of-type{padding-top:56px;}
+
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--sig-c);
+    letter-spacing:0.12em; text-transform:uppercase; margin-bottom:10px;
+  }
+  h2{font-size:28px; margin:0 0 18px; font-weight:600;}
+  h3{font-size:18px; margin:28px 0 10px; font-weight:600; color:var(--text);}
+  p{color:#DCE3EE; font-size:15.5px; margin:0 0 14px; max-width:680px;}
+  .muted{color:var(--muted);}
+
+  /* Hero */
+  .hero{padding:80px 0 60px;}
+  .hero h1{font-size:44px; line-height:1.25; margin:0 0 20px; max-width:720px;}
+  .hero .lead{font-size:17px; color:#DCE3EE; max-width:640px;}
+  .hero-token{
+    margin-top:36px; font-size:14px; padding:18px 20px; background:var(--panel);
+    border:1px solid var(--line); border-radius:var(--radius); word-break:break-all;
+  }
+  .seg-h{color:var(--header-c);}
+  .seg-p{color:var(--payload-c);}
+  .seg-s{color:var(--sig-c);}
+  .dot{color:var(--muted); font-weight:600;}
+
+  /* Cards / panels */
+  .panel{
+    background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+    padding:22px 24px; margin:18px 0;
+  }
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+  @media(max-width:720px){.grid2{grid-template-columns:1fr;}}
+
+  .segbox{border-radius:8px; padding:14px 16px; border:1px solid var(--line); background:var(--panel-2);}
+  .segbox .tag{font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.08em; text-transform:uppercase; margin-bottom:8px; display:inline-block;}
+  .segbox pre{margin:0; font-size:13px; white-space:pre-wrap; color:var(--text);}
+  .segbox.header{border-color:#5a2c2c;} .segbox.header .tag{color:var(--header-c);}
+  .segbox.payload{border-color:#22514d;} .segbox.payload .tag{color:var(--payload-c);}
+  .segbox.sig{border-color:#5a4a1c;} .segbox.sig .tag{color:var(--sig-c);}
+
+  table{width:100%; border-collapse:collapse; font-size:14px; margin:8px 0 4px;}
+  th,td{text-align:left; padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:top;}
+  th{color:var(--muted); font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:.04em;}
+  td.k{font-family:'IBM Plex Mono',monospace; color:var(--sig-c); white-space:nowrap;}
+
+  .flow{display:flex; flex-wrap:wrap; gap:0; align-items:stretch; margin:20px 0;}
+  .flow .step{
+    flex:1 1 150px; background:var(--panel); border:1px solid var(--line); border-radius:8px;
+    padding:14px 16px; font-size:13.5px; position:relative; min-width:140px;
+  }
+  .flow .step .n{font-family:'IBM Plex Mono',monospace; color:var(--payload-c); font-size:12px; margin-bottom:6px; display:block;}
+  .flow .arrow{align-self:center; padding:0 10px; color:var(--muted); font-size:18px;}
+  @media(max-width:720px){.flow{flex-direction:column;} .flow .arrow{transform:rotate(90deg); padding:4px 0; align-self:flex-start; margin-left:10px;}}
+
+  .keydiff{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:16px 0;}
+  @media(max-width:720px){.keydiff{grid-template-columns:1fr;}}
+  .keydiff .col{border-radius:8px; padding:16px 18px; border:1px solid var(--line);}
+  .keydiff .col h4{margin:0 0 8px; font-size:14px; font-family:'IBM Plex Mono',monospace; letter-spacing:.02em;}
+  .keydiff .col.sym h4{color:var(--header-c);}
+  .keydiff .col.asym h4{color:var(--payload-c);}
+  .keydiff ul{margin:0; padding-left:18px; font-size:13.5px; color:#C4CDDC;}
+  .keydiff li{margin-bottom:6px;}
+
+  /* Step list (numbered, vertical) */
+  .steps{list-style:none; margin:14px 0; padding:0; counter-reset:step;}
+  .steps li{position:relative; padding:14px 0 14px 44px; border-bottom:1px solid var(--line); font-size:14.5px; color:#DCE3EE;}
+  .steps li:last-child{border-bottom:none;}
+  .steps li::before{
+    counter-increment:step; content:counter(step); position:absolute; left:0; top:12px;
+    width:26px; height:26px; border-radius:50%; background:var(--panel-2); border:1px solid var(--line);
+    color:var(--sig-c); font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .steps b{color:var(--text);}
+
+  .grid3{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin:16px 0;}
+  @media(max-width:860px){.grid3{grid-template-columns:1fr;}}
+  .algobox{border:1px solid var(--line); border-radius:8px; padding:16px 18px; background:var(--panel-2);}
+  .algobox h4{margin:0 0 10px; font-size:14px; font-family:'IBM Plex Mono',monospace;}
+  .algobox .formula{
+    background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:10px 12px;
+    font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:var(--sig-c); margin-bottom:10px;
+    word-break:break-all; line-height:1.5;
+  }
+  .algobox p{font-size:13px; margin:0; color:#C4CDDC;}
+
+  /* Step visualizations */
+  .viz{margin-top:12px;}
+  .viz-label{font-size:11px; color:var(--muted); font-family:'IBM Plex Mono',monospace; margin-bottom:6px; display:flex; flex-wrap:wrap; gap:10px;}
+  .viz-label span{display:inline-flex; align-items:center; gap:4px;}
+  .viz-label i{width:9px; height:9px; border-radius:2px; display:inline-block;}
+
+  .bitrow{display:flex; flex-wrap:wrap; gap:3px;}
+  .bit{width:13px; height:13px; border-radius:3px; background:var(--panel-2); border:1px solid var(--line); flex:0 0 auto;}
+  .bit.msg{background:var(--header-c); border-color:var(--header-c);}
+  .bit.one{background:var(--sig-c); border-color:var(--sig-c);}
+  .bit.zero{background:var(--panel-2);}
+  .bit.len{background:var(--payload-c); border-color:var(--payload-c);}
+
+  .blockrow{display:flex; gap:3px; margin-top:4px;}
+  .blockseg{flex:1; height:30px; min-width:34px; border-radius:5px; display:flex; align-items:center; justify-content:center;
+    font-family:'IBM Plex Mono',monospace; font-size:11px; color:#0B1220; font-weight:700;}
+
+  .wordrow{display:flex; flex-wrap:wrap; gap:3px; align-items:center;}
+  .word{width:24px; height:20px; border-radius:3px; font-size:8px; display:flex; align-items:center; justify-content:center;
+    font-family:'IBM Plex Mono',monospace; font-weight:700;}
+  .word.given{background:var(--sig-c); color:#1a1400;}
+  .word.derived{background:transparent; border:1px dashed var(--payload-c); color:var(--payload-c);}
+  .wordrow .arrow2{color:var(--muted); font-size:16px; margin:0 4px;}
+
+  .regrow{display:flex; gap:8px; flex-wrap:wrap;}
+  .reg{width:44px; height:44px; border-radius:50%; border:2px solid var(--header-c); display:flex; flex-direction:column; align-items:center;
+    justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:700; color:var(--header-c); line-height:1.15; text-align:center;}
+  .reg span{font-weight:500;}
+
+  .loopbadge{display:inline-flex; align-items:center; gap:10px; padding:10px 16px; border:1px solid var(--sig-c);
+    border-radius:24px; background:rgba(255,209,102,0.08); font-family:'IBM Plex Mono',monospace; font-size:13px; color:var(--sig-c);}
+  .loopbadge .fn{color:var(--muted); font-size:11px;}
+
+  .mergerow{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+  .mergerow .hbox{width:30px; height:30px; border-radius:5px; background:var(--panel-2); border:1px solid var(--payload-c);
+    color:var(--payload-c); font-family:'IBM Plex Mono',monospace; font-size:10px; display:flex; align-items:center; justify-content:center;}
+  .digestbar{margin-top:8px; height:22px; border-radius:5px;
+    background:linear-gradient(90deg, var(--header-c), var(--payload-c), var(--sig-c), var(--header-c), var(--payload-c), var(--sig-c), var(--header-c), var(--payload-c));
+    display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:11px; color:#0B1220; font-weight:700;}
+
+  .warn{
+    border:1px solid #5a2c2c; background:rgba(255,107,107,0.08); border-radius:8px;
+    padding:14px 18px; margin:14px 0; font-size:14px; color:#F5C6C6;
+  }
+  .warn b{color:var(--header-c);}
+  .tip{
+    border:1px solid #22514d; background:rgba(78,205,196,0.07); border-radius:8px;
+    padding:14px 18px; margin:14px 0; font-size:14px; color:#BEEFEA;
+  }
+  .tip b{color:var(--payload-c);}
+
+  /* Lab */
+  .lab-grid{display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-top:10px;}
+  @media(max-width:860px){.lab-grid{grid-template-columns:1fr;}}
+  label{display:block; font-size:12px; color:var(--muted); margin:12px 0 6px; text-transform:uppercase; letter-spacing:.05em; font-family:'IBM Plex Mono',monospace;}
+  textarea, input[type=text]{
+    width:100%; background:var(--panel-2); color:var(--text); border:1px solid var(--line);
+    border-radius:6px; padding:10px 12px; font-size:13px; resize:vertical;
+  }
+  textarea{min-height:110px;}
+  button{
+    background:var(--sig-c); color:#1a1400; border:none; border-radius:6px; padding:10px 18px;
+    font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:600; cursor:pointer;
+    margin-top:14px;
+  }
+  button.secondary{background:transparent; border:1px solid var(--line); color:var(--text);}
+  button:hover{opacity:0.9;}
+  .out-token{
+    margin-top:16px; padding:14px 16px; background:var(--panel-2); border:1px solid var(--line);
+    border-radius:8px; word-break:break-all; font-size:13px;
+  }
+  .verdict{margin-top:14px; padding:12px 16px; border-radius:8px; font-size:14px; font-weight:600; display:none; word-break:break-all;}
+  .verdict.ok{display:block; background:rgba(110,231,168,0.1); border:1px solid #2c5a3f; color:var(--ok);}
+  .verdict.bad{display:block; background:rgba(255,107,107,0.1); border:1px solid #5a2c2c; color:var(--bad);}
+
+  /* Glossary terms */
+  .term{
+    background:none; border:none; padding:0; margin:0; font:inherit; color:inherit;
+    cursor:pointer; text-decoration:underline dotted; text-underline-offset:3px;
+    text-decoration-color:var(--sig-c); color:var(--sig-c); font-weight:600;
+  }
+  .term:hover, .term:focus{ text-decoration-style:solid; }
+
+  .term-overlay{
+    position:fixed; inset:0; background:rgba(4,8,16,0.7); backdrop-filter:blur(2px);
+    display:none; align-items:center; justify-content:center; z-index:100; padding:20px;
+  }
+  .term-overlay.open{display:flex;}
+  .term-modal{
+    background:var(--panel); border:1px solid var(--line); border-radius:12px;
+    max-width:420px; width:100%; padding:22px 22px 20px; position:relative;
+    box-shadow:0 20px 60px rgba(0,0,0,0.5);
+  }
+  .term-modal .term-close{
+    position:absolute; top:12px; right:14px; background:none; border:none; color:var(--muted);
+    font-size:20px; cursor:pointer; line-height:1; padding:4px;
+  }
+  .term-modal .term-close:hover{color:var(--text);}
+  .term-modal-abbr{font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--sig-c); letter-spacing:.06em; text-transform:uppercase; margin-bottom:6px;}
+  .term-modal-full{font-family:'Space Grotesk',sans-serif; font-size:20px; font-weight:600; margin-bottom:12px; color:var(--text);}
+  .term-modal-desc{font-size:14px; color:#DCE3EE; line-height:1.65;}
+  .term-modal-desc b{color:var(--payload-c);}
+
+  footer{padding:40px 48px 60px; border-top:1px solid var(--line); color:var(--muted); font-size:13px; background:var(--bg);}
+
+  /* Mobile */
+  @media(max-width:860px){
+    .shell{grid-template-columns:1fr;}
+    nav.side{
+      position:sticky; top:0; z-index:10; height:auto; width:100%;
+      display:flex; overflow-x:auto; overflow-y:hidden; gap:2px;
+      padding:12px 14px; border-right:none; border-bottom:1px solid var(--line);
+      background:var(--bg); -webkit-overflow-scrolling:touch;
+    }
+    nav.side::-webkit-scrollbar{height:4px;}
+    nav.side .brand{display:none;}
+    nav.side .navlink{
+      flex:0 0 auto; width:auto; white-space:nowrap; border-left:none; margin-left:0;
+      padding:8px 12px; border-bottom:2px solid transparent; border-radius:6px 6px 0 0;
+    }
+    nav.side .navlink:hover, nav.side .navlink.active{border-left-color:transparent; border-bottom-color:var(--sig-c); background:var(--panel);}
+
+    main{padding:0 18px 90px;}
+    section{padding-top:40px;}
+    section:first-of-type{padding-top:28px;}
+
+    .hero{padding:36px 0 40px;}
+    .hero h1{font-size:28px; line-height:1.32;}
+    .hero .lead{font-size:15px;}
+    .hero-token{font-size:12px; padding:14px;}
+
+    h2{font-size:22px;}
+    h3{font-size:16.5px;}
+    p{font-size:15px;}
+
+    .panel{padding:16px;}
+    table{font-size:13px;}
+    th,td{padding:8px 6px;}
+
+    .flow{gap:10px;}
+    .flow .step{flex:1 1 100%;}
+    .flow .arrow{display:none;}
+
+    footer{padding:28px 18px 50px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <nav class="side">
+    <div class="brand">JWT 해부도</div>
+    <button type="button" class="navlink" data-target="#hero"><span class="num">00</span>개요</button>
+    <button type="button" class="navlink" data-target="#anatomy"><span class="num">01</span>구조 해부</button>
+    <button type="button" class="navlink" data-target="#encoding"><span class="num">02</span>인코딩 ≠ 암호화</button>
+    <button type="button" class="navlink" data-target="#signing"><span class="num">03</span>서명 알고리즘</button>
+    <button type="button" class="navlink" data-target="#hashing"><span class="num">04</span>해시 내부 구조</button>
+    <button type="button" class="navlink" data-target="#flow"><span class="num">05</span>발급·검증 흐름</button>
+    <button type="button" class="navlink" data-target="#claims"><span class="num">06</span>클레임 치트시트</button>
+    <button type="button" class="navlink" data-target="#lab"><span class="num">07</span>변조 실습</button>
+    <button type="button" class="navlink" data-target="#pitfalls"><span class="num">08</span>보안 함정</button>
+    <button type="button" class="navlink" data-target="#refresh"><span class="num">09</span>Refresh 토큰</button>
+    <button type="button" class="navlink" data-target="#summary"><span class="num">10</span>요약 체크리스트</button>
+  </nav>
+
+  <main>
+
+    <section id="hero" class="hero">
+      <div class="eyebrow">JSON Web Token</div>
+      <h1>JWT는 암호화된 상자가 아니라,<br>서명이 붙은 투명한 영수증이다.</h1>
+      <p class="lead">
+        JWT(JSON Web Token)는 서버가 "이 사용자는 이런 권한을 가진다"는 주장(claim)을
+        발급 시점에 서명해 봉인한 문자열입니다. 서버는 이후 이 문자열을 다시 열어보지 않고도
+        <b>서명만 검증</b>해서 위조 여부를 판단합니다. 아래에서 실제로 이 문자열이
+        어떻게 세 조각으로 쪼개지고, 어떻게 서명되고, 어떻게 변조가 감지되는지
+        하나씩 뜯어봅니다.
+      </p>
+      <div class="hero-token mono">
+        <span class="seg-h">eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9</span><span class="dot">.</span><span class="seg-p">eyJzdWIiOiIxMjM0IiwibmFtZSI6IuqAgOu5hOyImCIsImlhdCI6MTcxMDAwMDAwMH0</span><span class="dot">.</span><span class="seg-s">4f_9k2xQvV1z...(서명)</span>
+      </div>
+    </section>
+
+    <section id="anatomy">
+      <div class="eyebrow">01 — Structure</div>
+      <h2>세 조각의 역할</h2>
+      <p>JWT는 <code>.</code>(마침표) 두 개로 구분된 세 부분으로 구성됩니다. 각 부분은 Base64Url로 인코딩된 JSON입니다(서명 제외).</p>
+      <div class="grid2">
+        <div class="segbox header">
+          <span class="tag">① Header</span>
+          <pre>{
+  "alg": "HS256",
+  "typ": "JWT"
+}</pre>
+          <p style="margin-top:10px;font-size:13px;">서명에 어떤 알고리즘을 썼는지 명시. 검증하는 쪽은 이 값을 <b>신뢰하지 않고</b> 자신이 기대하는 알고리즘과 일치하는지 검사해야 합니다 (07번 항목 참고).</p>
+        </div>
+        <div class="segbox payload">
+          <span class="tag">② Payload</span>
+          <pre>{
+  "sub": "1234",
+  "name": "김민수",
+  "role": "user",
+  "iat": 1710000000,
+  "exp": 1710003600
+}</pre>
+          <p style="margin-top:10px;font-size:13px;">실제 주장(claim)이 담기는 곳. 등록 클레임(sub, exp 등)과 커스텀 클레임을 함께 넣습니다.</p>
+        </div>
+      </div>
+      <div class="segbox sig" style="margin-top:16px;">
+        <span class="tag">③ Signature</span>
+        <pre><button type="button" class="term" data-key="hmac">HMAC</button>SHA256(
+  base64UrlEncode(header) + "." + base64UrlEncode(payload),
+  secret
+)</pre>
+        <p style="margin-top:10px;font-size:13px;">헤더와 페이로드를 이어붙인 문자열을 비밀키(또는 개인키)로 서명한 값. <b>페이로드 내용이 한 글자라도 바뀌면 서명 값이 완전히 달라집니다</b> — 이게 JWT 무결성 검증의 핵심입니다.</p>
+      </div>
+    </section>
+
+    <section id="encoding">
+      <div class="eyebrow">02 — 흔한 오해</div>
+      <h2>Base64Url은 암호화가 아니다</h2>
+      <p>
+        Header와 Payload는 <b>인코딩</b>되어 있을 뿐 <b>암호화</b>되어 있지 않습니다. 누구나 브라우저 콘솔에서
+        <code>atob()</code> 한 줄로 그대로 읽을 수 있습니다. 서명은 "내용을 숨기는" 용도가 아니라
+        "발급 이후 내용이 바뀌지 않았음을 증명하는" 용도입니다.
+      </p>
+      <div class="warn">
+        <b>따라서</b> 비밀번호, 주민등록번호, 카드번호 같은 민감정보를 Payload에 절대 넣지 마세요.
+        누구든 토큰만 가로채면 base64 디코딩으로 그대로 읽어낼 수 있습니다.
+      </div>
+    </section>
+
+    <section id="signing">
+      <div class="eyebrow">03 — Algorithms</div>
+      <h2>대칭키(<button type="button" class="term" data-key="hs256">HS256</button>) vs 비대칭키(<button type="button" class="term" data-key="rs256">RS256</button> / <button type="button" class="term" data-key="es256">ES256</button>)</h2>
+      <p>서명 방식에 따라 "누가 토큰을 발급할 수 있는가"와 "누가 검증만 할 수 있는가"가 달라집니다.</p>
+      <div class="keydiff">
+        <div class="col sym">
+          <h4><button type="button" class="term" data-key="hs256">HS256</button> — 대칭키(<button type="button" class="term" data-key="hmac">HMAC</button>)</h4>
+          <ul>
+            <li>발급자와 검증자가 <b>동일한 비밀키</b>를 공유</li>
+            <li>키를 아는 쪽은 발급도, 검증도, 위조도 가능</li>
+            <li>서버 하나 또는 신뢰할 수 있는 내부 서비스 간에 적합</li>
+            <li>구현이 단순하고 연산이 빠름</li>
+          </ul>
+        </div>
+        <div class="col asym">
+          <h4><button type="button" class="term" data-key="rs256">RS256</button> / <button type="button" class="term" data-key="es256">ES256</button> — 비대칭키</h4>
+          <ul>
+            <li>발급자는 <button type="button" class="term" data-key="rsa">RSA</button> 또는 타원곡선 알고리즘의 <b>개인키</b>로 서명, 검증자는 <b>공개키</b>로 검증만 가능</li>
+            <li>검증 서버가 여러 개고 서로 신뢰 수준이 다를 때 유리 (MSA, 외부 파트너 API)</li>
+            <li>공개키가 유출돼도 위조 서명은 만들 수 없음</li>
+            <li>연산 비용이 <button type="button" class="term" data-key="hmac">HMAC</button>보다 큼</li>
+          </ul>
+        </div>
+      </div>
+      <div class="tip"><b>실무 기준</b> — 검증 주체가 하나뿐이고 신뢰 경계 안이면 <button type="button" class="term" data-key="hs256">HS256</button>으로 충분합니다. 여러 마이크로서비스나 제3자가 "검증만" 해야 한다면 <button type="button" class="term" data-key="rs256">RS256</button>/<button type="button" class="term" data-key="es256">ES256</button>로 발급자와 검증자의 권한을 분리하세요.</div>
+    </section>
+
+    <section id="hashing">
+      <div class="eyebrow">04 — Under the hood</div>
+      <h2>해시 함수, 그 안에서는 무슨 일이 일어나는가</h2>
+      <p>
+        HS256, RS256, ES256 — 이름 뒤에 붙은 "256"은 전부 같은 것을 가리킵니다.
+        바로 <button type="button" class="term" data-key="sha256">SHA-256</button> 해시 함수입니다.
+        세 알고리즘의 차이는 사실 <b>"해시를 낸 다음, 그 해시를 어떻게 서명으로 바꾸는가"</b>에서 갈립니다.
+        먼저 해시 자체가 내부적으로 뭘 하는지부터 뜯어봅니다.
+      </p>
+
+      <h3>SHA-256이 밟는 6단계</h3>
+      <ol class="steps">
+        <li><b>패딩(Padding)</b> — 메시지 끝에 <code>1</code> 비트 하나를 붙이고 그 뒤를 <code>0</code>으로 채워서, 마지막 64비트를 뺀 나머지 길이가 512의 배수가 되게 만듭니다. 마지막 64비트에는 원본 메시지의 길이(비트 수)를 그대로 적어 넣습니다.
+          <div class="viz">
+            <div class="viz-label">
+              <span><i style="background:var(--header-c);"></i>원본 메시지</span>
+              <span><i style="background:var(--sig-c);"></i>패딩 시작 비트(1)</span>
+              <span><i style="background:var(--panel-2); border:1px solid var(--line);"></i>패딩 0</span>
+              <span><i style="background:var(--payload-c);"></i>길이(64bit)</span>
+            </div>
+            <div class="bitrow" id="vizPad"></div>
+          </div>
+        </li>
+        <li><b>512비트 블록 분할</b> — 패딩이 끝난 메시지를 512비트(64바이트)짜리 블록 N개로 자릅니다.
+          <div class="viz">
+            <div class="blockrow">
+              <div class="blockseg" style="background:var(--header-c);">블록 1</div>
+              <div class="blockseg" style="background:var(--payload-c);">블록 2</div>
+              <div class="blockseg" style="background:var(--sig-c);">블록 3</div>
+              <div class="blockseg" style="background:var(--header-c);">…</div>
+              <div class="blockseg" style="background:var(--payload-c);">블록 N</div>
+            </div>
+          </div>
+        </li>
+        <li><b>메시지 스케줄 확장</b> — 2번에서 나온 512비트(64바이트) 블록 하나를, 32비트(4바이트)씩 16조각으로 쪼갠 게 W0~W15입니다 (32비트 × 16개 = 512비트 = 64바이트 — 블록 하나와 정확히 같은 크기이고, 그냥 잘라서 이름만 붙인 것뿐입니다). 이 16개를 <button type="button" class="term" data-key="sigma_lower">σ0/σ1</button> 함수로 굴려가며 64개의 워드(W0~W63)로 늘립니다.
+          <div class="viz">
+            <div class="viz-label"><span>32비트 × 16 = 512비트(64바이트) — 블록 하나와 같은 크기</span></div>
+            <div class="wordrow" id="vizWords"></div>
+          </div>
+        </li>
+        <li><b>작업 변수 초기화</b> — 새로 계산하는 단계가 아니라 <b>복사해오는 단계</b>입니다. 64라운드 동안 뒤섞일 8개의 그릇(a~h)에, 직전 블록까지 누적된 해시값(H0~H7)을 그대로 옮겨 담습니다(a=H0, b=H1, … h=H7). 첫 블록이라 "직전 결과"가 없으면 처음 8개 소수(2,3,5,7,11,13,17,19)의 <b>제곱근</b> 소수부에서 뽑아낸 고정 상수를 대신 씁니다. 이 연결고리 때문에 앞쪽 블록이 하나만 바뀌어도 뒤 블록 전체의 계산이 도미노처럼 달라집니다.
+          <div class="viz">
+            <div class="viz-label"><span>이전 블록의 누적값 H0~H7 (각 32비트, 총 256비트) — 또는 첫 블록이면 고정 상수</span></div>
+            <div class="mergerow" style="margin-bottom:6px;">
+              <div class="hbox">H0</div><div class="hbox">H1</div><div class="hbox">H2</div><div class="hbox">H3</div>
+              <div class="hbox">H4</div><div class="hbox">H5</div><div class="hbox">H6</div><div class="hbox">H7</div>
+            </div>
+            <div style="text-align:center; color:var(--muted); font-size:13px; margin:2px 0;">그대로 복사 ↓</div>
+            <div class="viz-label"><span>a~h (각 32비트, 총 256비트 — H0~H7과 같은 크기)</span></div>
+            <div class="regrow">
+              <div class="reg">a</div><div class="reg">b</div><div class="reg">c</div><div class="reg">d</div>
+              <div class="reg">e</div><div class="reg">f</div><div class="reg">g</div><div class="reg">h</div>
+            </div>
+          </div>
+        </li>
+        <li><b>64라운드 압축</b> — 라운드마다 <b>워드 1개(Wt)</b>와 <b>고정 상수 1개(Kt)</b>만 새로 들어옵니다. a~h를 절반씩 나눠서 T1, T2 두 값을 먼저 계산한 다음, a~h 전체를 한 칸씩 밀며 그 자리에 새 값을 채웁니다. T1이 "갑자기" e 자리에 들어가는 게 아니라, <b>T1 자체가 원래 e·f·g·h로 계산된 값</b>이라 e 라인에 다시 흘러들어가는 게 자연스러운 흐름입니다 — 아래에서 순서대로 따라가 보세요.
+          <div class="viz">
+
+            <div class="viz-label"><span>1단계 — 먼저 T1, T2를 계산합니다 (아직 아무것도 밀지 않음)</span></div>
+            <div class="algobox" style="margin-bottom:10px;">
+              <h4 style="color:var(--sig-c);">T1 = h + <button type="button" class="term" data-key="sigma_upper">Σ1</button>(e) + Ch(e,f,g) + Kt + Wt</h4>
+              <p><span style="color:var(--header-c);">h, e, f, g</span> — 즉 <b>오른쪽 절반 라인</b>의 현재 값들만 사용합니다. T1은 "e 라인 정보를 압축한 값"이라고 보면 됩니다.</p>
+            </div>
+            <div class="algobox" style="margin-bottom:10px;">
+              <h4 style="color:var(--payload-c);">T2 = <button type="button" class="term" data-key="sigma_upper">Σ0</button>(a) + Maj(a,b,c)</h4>
+              <p><span style="color:var(--payload-c);">a, b, c</span> — <b>왼쪽 절반 라인</b>의 현재 값들만 사용합니다.</p>
+            </div>
+
+            <div class="viz-label"><span>2단계 — 계산해둔 T1, T2로 8개를 한 칸씩 밉니다</span></div>
+            <div class="regrow">
+              <div class="reg">a</div><div class="reg">b</div><div class="reg">c</div><div class="reg">d</div>
+              <div class="reg" style="border-color:var(--header-c); color:var(--header-c);">e</div>
+              <div class="reg" style="border-color:var(--header-c); color:var(--header-c);">f</div>
+              <div class="reg" style="border-color:var(--header-c); color:var(--header-c);">g</div>
+              <div class="reg" style="border-color:var(--header-c); color:var(--header-c);">h</div>
+            </div>
+            <div style="text-align:center; color:var(--muted); font-size:12.5px; margin:8px 0; font-family:'IBM Plex Mono',monospace;">
+              한 칸씩 밀기 ↓ (T1·T2는 새 a에, T1은 d와 합쳐져 새 e에도 들어감)
+            </div>
+            <div class="regrow">
+              <div class="reg" style="border-color:var(--sig-c); color:var(--sig-c);">a<br><span style="font-size:8px;">=T1+T2</span></div>
+              <div class="reg">b<br><span style="font-size:8px;">=a</span></div>
+              <div class="reg">c<br><span style="font-size:8px;">=b</span></div>
+              <div class="reg">d<br><span style="font-size:8px;">=c</span></div>
+              <div class="reg" style="border-color:var(--sig-c); color:var(--sig-c);">e<br><span style="font-size:8px;">=d+T1</span></div>
+              <div class="reg">f<br><span style="font-size:8px;">=e</span></div>
+              <div class="reg">g<br><span style="font-size:8px;">=f</span></div>
+              <div class="reg">h<br><span style="font-size:8px;">=g</span></div>
+            </div>
+            <div class="tip" style="margin-top:12px;">
+              <b>정리</b> — old e·f·g·h → T1로 압축 → T1이 new a(T1+T2)와 new e(d+T1) 두 곳에 동시에 들어갑니다. 그래서 오른쪽 라인(e~h)의 정보가 T1을 통해 왼쪽 라인(a~d)까지 새어 들어가고, 이게 매 라운드 반복되면서 8개 레지스터가 서로 완전히 뒤섞입니다.
+            </div>
+
+            <div style="text-align:center; margin-top:10px;">
+              <span class="loopbadge">⟳ 이 전체 과정을 ×64번 반복 (t = 0 … 63)</span>
+            </div>
+          </div>
+        </li>
+        <li><b>누적 &amp; 다음 블록</b> — 64라운드가 끝난 a~h를 H0~H7에 더합니다. 다음 블록이 있으면 3번으로 돌아가고, 마지막 블록까지 끝나면 H0~H7을 이어붙인 256비트가 최종 해시값입니다.
+          <div class="viz">
+            <div class="mergerow">
+              <div class="hbox">H0</div><div class="hbox">H1</div><div class="hbox">H2</div><div class="hbox">H3</div>
+              <div class="hbox">H4</div><div class="hbox">H5</div><div class="hbox">H6</div><div class="hbox">H7</div>
+              <span style="color:var(--muted); font-size:16px;">→</span>
+            </div>
+            <div class="digestbar">256비트 최종 해시값</div>
+          </div>
+        </li>
+      </ol>
+      <div class="tip"><b>왜 되돌릴 수 없나</b> — 각 라운드는 정보를 계속 섞고 뭉개는 다대일 연산입니다. 출력 256비트만 보고 64라운드 전의 입력 상태를 역산할 방법이 수학적으로 알려져 있지 않습니다.</div>
+      <div class="tip"><b>왜 a~h에서 한 번에 끝내지 않나</b> — 압축 로직 자체는 512비트짜리 블록 1개만 처리할 수 있게 설계돼 있습니다. 메시지가 그보다 길면 블록을 여러 개로 나눠야 하는데, 블록마다 따로 계산하면 "메시지 전체의 해시"가 아니라 "블록별 해시 여러 개"가 되어버립니다. 그래서 H0~H7이라는 누적 상태를 다음 블록으로 넘겨받아 이어서 계산합니다 — 여러 자릿수를 손으로 더할 때 자리마다 올림(carry)을 넘기는 것과 같은 원리입니다.</div>
+
+      <h3>직접 해시해보기 — 눈사태 효과</h3>
+      <p>아래 두 입력은 글자 하나만 다릅니다. 실제 <code>SubtleCrypto</code>로 SHA-256을 계산해서 출력이 얼마나 달라지는지 확인해보세요.</p>
+      <div class="panel">
+        <label>입력 A</label>
+        <input type="text" id="hashA" value="Hello, JWT">
+        <label>입력 B (한 글자만 다르게 바꿔보세요)</label>
+        <input type="text" id="hashB" value="Hello, JWU">
+        <button id="hashBtn">SHA-256 계산하기</button>
+        <div id="hashResult"></div>
+      </div>
+
+      <h3>서명 알고리즘마다 해시를 쓰는 방식이 다르다</h3>
+      <p>해시값 자체는 셋 다 SHA-256으로 똑같이 만듭니다. 그 다음이 다릅니다.</p>
+      <div class="grid3">
+        <div class="algobox">
+          <h4 style="color:var(--header-c);">HMAC (HS256)</h4>
+          <div class="formula">H((K'⊕opad) ‖ H((K'⊕ipad) ‖ m))</div>
+          <p>비밀키 K를 블록 크기에 맞춰 패딩한 뒤, 고정 상수 ipad/opad와 XOR해서 해시를 <b>두 겹으로</b> 감쌉니다. 겹쳐 해싱하는 이유는 해시 함수 단독의 알려진 취약점(길이 확장 공격)을 원천 차단하기 위해서입니다.</p>
+        </div>
+        <div class="algobox">
+          <h4 style="color:var(--payload-c);">RSA (RS256)</h4>
+          <div class="formula">c = pad(H(m))^d mod n</div>
+          <p>메시지를 해시한 값에 PKCS#1 패딩을 씌우고, 그 정수를 개인키 지수 <code>d</code>로 거듭제곱합니다. 검증자는 공개키 지수 <code>e</code>로 다시 거듭제곱해 패딩을 벗기고, 자신이 계산한 해시와 비교합니다.</p>
+        </div>
+        <div class="algobox">
+          <h4 style="color:var(--sig-c);">ECDSA (ES256)</h4>
+          <div class="formula">k → (r, s) on curve P-256</div>
+          <p>해시값을 정수로 바꾼 뒤, <b>매번 새로 뽑는 난수 k</b>로 타원곡선 위의 점 연산을 해 서명쌍 (r, s)를 만듭니다. 같은 메시지라도 서명할 때마다 다른 값이 나오지만, 둘 다 유효합니다.</p>
+        </div>
+      </div>
+      <div class="warn"><b>ECDSA의 함정</b> — 서명마다 쓰는 난수 k가 재사용되거나 예측 가능하면 개인키가 통째로 역산됩니다. 2010년 소니 PlayStation 3의 코드 서명이 뚫린 사고가 바로 이 실수(모든 서명에 같은 k를 사용) 때문이었습니다.</div>
+
+      <h3>세 알고리즘, 숫자로 비교</h3>
+      <table>
+        <tr><th>항목</th><th><button type="button" class="term" data-key="hs256">HMAC</button></th><th><button type="button" class="term" data-key="rs256">RSA</button></th><th><button type="button" class="term" data-key="es256">ECDSA</button></th></tr>
+        <tr><td class="k">키 구조</td><td>대칭키 1개 공유</td><td>개인키/공개키 쌍</td><td>개인키/공개키 쌍</td></tr>
+        <tr><td class="k">서명 크기</td><td>32바이트</td><td>256바이트 (2048비트 키 기준)</td><td>64바이트 (P-256 기준)</td></tr>
+        <tr><td class="k">연산 속도</td><td>매우 빠름</td><td>느림 (특히 서명 쪽)</td><td>빠름</td></tr>
+        <tr><td class="k">서명 결정성</td><td>결정적 — 같은 입력엔 항상 같은 서명</td><td>결정적 (PKCS#1 v1.5 기준)</td><td>비결정적 — 매번 다른 난수 사용</td></tr>
+        <tr><td class="k">대표 위험 요소</td><td>secret 유출 시 발급까지 위조 가능</td><td>개인키 유출, 짧은 키 길이</td><td>난수 k 재사용 시 개인키 역산</td></tr>
+      </table>
+    </section>
+
+    <section id="flow">
+      <div class="eyebrow">05 — End to end</div>
+      <h2>로그인부터 리소스 응답까지</h2>
+      <div class="flow">
+        <div class="step"><span class="n">1</span>클라이언트가 ID/PW로 로그인 요청</div>
+        <div class="arrow">→</div>
+        <div class="step"><span class="n">2</span>서버가 인증 후 JWT 생성 &amp; 서명</div>
+        <div class="arrow">→</div>
+        <div class="step"><span class="n">3</span>클라이언트가 토큰 저장 (쿠키/메모리)</div>
+        <div class="arrow">→</div>
+        <div class="step"><span class="n">4</span>이후 요청마다 <code>Authorization: Bearer &lt;token&gt;</code></div>
+        <div class="arrow">→</div>
+        <div class="step"><span class="n">5</span>서버가 서명 검증 + exp/aud/iss 확인</div>
+        <div class="arrow">→</div>
+        <div class="step"><span class="n">6</span>유효하면 요청 처리, 아니면 401</div>
+      </div>
+      <p class="muted">중요한 점: 서버는 3~6단계에서 <b>세션 스토리지를 조회하지 않습니다</b>. 서명 검증만으로 신뢰 여부를 판단하기 때문에 stateless합니다 — 이것이 JWT가 확장성 좋은 인증 방식으로 불리는 이유입니다.</p>
+    </section>
+
+    <section id="claims">
+      <div class="eyebrow">06 — Reference</div>
+      <h2>클레임 치트시트</h2>
+      <table>
+        <tr><th>클레임</th><th>의미</th><th>비고</th></tr>
+        <tr><td class="k">iss</td><td>발급자(issuer)</td><td>이 토큰을 누가 발급했는지</td></tr>
+        <tr><td class="k">sub</td><td>주체(subject)</td><td>보통 사용자 ID</td></tr>
+        <tr><td class="k">aud</td><td>대상(audience)</td><td>이 토큰을 받아야 할 서비스. 다른 서비스로 토큰이 흘러가는 걸 막는 용도</td></tr>
+        <tr><td class="k">exp</td><td>만료 시각(expiration)</td><td>Unix timestamp. 이 시각 이후 토큰은 무효</td></tr>
+        <tr><td class="k">nbf</td><td>유효 시작 시각(not before)</td><td>이 시각 이전에는 사용 불가</td></tr>
+        <tr><td class="k">iat</td><td>발급 시각(issued at)</td><td>토큰이 언제 만들어졌는지</td></tr>
+        <tr><td class="k">jti</td><td>토큰 고유 ID</td><td>블랙리스트/재사용 방지에 활용</td></tr>
+        <tr><td class="k">role, scope 등</td><td>커스텀 클레임</td><td>표준은 아니지만 관례적으로 널리 사용</td></tr>
+      </table>
+    </section>
+
+    <section id="lab">
+      <div class="eyebrow">07 — 직접 해보기</div>
+      <h2>변조 실습: 서명은 왜 깨지는가</h2>
+      <p>
+        아래에서 Header/Payload/Secret으로 토큰을 발급해보고, Payload만 몰래 수정한 뒤
+        (서명은 그대로 둔 채) 검증해서 서버가 위조를 어떻게 잡아내는지 확인해보세요.
+        모든 계산은 브라우저 안에서 <code>SubtleCrypto</code>로 직접 수행됩니다 — 서버로 전송되지 않습니다.
+      </p>
+
+      <div class="panel">
+        <h3 style="margin-top:0;">1단계 — 토큰 발급</h3>
+        <div class="lab-grid">
+          <div>
+            <label>Header (JSON)</label>
+            <textarea id="hdrInput">{
+  "alg": "HS256",
+  "typ": "JWT"
+}</textarea>
+            <label>Payload (JSON)</label>
+            <textarea id="payInput">{
+  "sub": "1234",
+  "name": "김민수",
+  "role": "user",
+  "exp": 1999999999
+}</textarea>
+          </div>
+          <div>
+            <label>서버만 아는 Secret</label>
+            <input type="text" id="secretInput" value="super-secret-key">
+            <label>발급된 토큰</label>
+            <div class="out-token mono" id="issuedToken">아래 버튼을 눌러 발급하세요 →</div>
+            <button id="issueBtn">토큰 발급하기</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3 style="margin-top:0;">2단계 — 공격자가 Payload만 바꿔치기</h3>
+        <p style="font-size:13.5px;">공격자는 secret을 모르기 때문에 서명은 <b>원본 그대로</b> 재사용할 수밖에 없습니다. Payload만 수정해보세요 (예: role을 "admin"으로).</p>
+        <label>변조할 Payload</label>
+        <textarea id="tamperInput">{
+  "sub": "1234",
+  "name": "김민수",
+  "role": "admin",
+  "exp": 1999999999
+}</textarea>
+        <button id="verifyBtn">서버 입장에서 검증하기</button>
+        <button class="secondary" id="resetBtn" type="button">리셋</button>
+        <div class="verdict" id="verdict"></div>
+      </div>
+    </section>
+
+    <section id="pitfalls">
+      <div class="eyebrow">08 — Security</div>
+      <h2>실무에서 자주 터지는 함정</h2>
+
+      <h3>① alg:none / 알고리즘 다운그레이드 공격</h3>
+      <p>공격자가 Header의 <code>alg</code>를 <code>none</code>으로 바꾸고 서명을 빈 문자열로 만들어 보내는 공격. 검증 로직이 토큰이 스스로 주장하는 <code>alg</code> 값을 그대로 신뢰하면 서명 검증을 건너뛰게 됩니다.</p>
+      <div class="warn"><b>대응</b> — 검증 시 알고리즘을 화이트리스트로 고정하세요 (예: "나는 <button type="button" class="term" data-key="hs256">HS256</button>만 허용한다"). 라이브러리 설정에서 허용 알고리즘을 명시적으로 지정하는 옵션을 반드시 사용합니다.</div>
+
+      <h3>② 약한 Secret에 대한 무차별대입</h3>
+      <p><button type="button" class="term" data-key="hs256">HS256</button>의 secret이 짧거나 예측 가능하면 오프라인에서 brute-force로 뚫릴 수 있습니다. secret은 최소 256비트 이상의 충분히 랜덤한 값을 사용해야 합니다.</p>
+
+      <h3>③ 저장 위치: localStorage vs httpOnly 쿠키</h3>
+      <p>localStorage에 저장하면 XSS 공격 시 JS로 토큰을 그대로 탈취당할 수 있습니다. httpOnly + Secure 쿠키에 저장하면 JS 접근은 막을 수 있지만 대신 CSRF 방어(SameSite, CSRF 토큰)를 별도로 챙겨야 합니다. "완전히 안전한 저장소"는 없고, 위협 모델에 맞춰 트레이드오프를 선택하는 문제입니다.</p>
+
+      <h3>④ 폐기(Revocation)가 원래 어렵다</h3>
+      <p>JWT는 stateless가 장점이라, 서버가 "이 토큰 이제 무효야"라고 즉시 선언하기가 구조적으로 어렵습니다. 로그아웃해도 만료 전까지는 토큰 자체는 여전히 유효합니다.</p>
+      <div class="tip"><b>대응 패턴</b> — 만료 시간을 짧게(수 분~수십 분) 잡고, 별도의 refresh token으로 재발급 구조를 만들거나, jti 기반 블랙리스트를 Redis 등에 두는 방식을 병행합니다.</div>
+
+      <h3>⑤ Payload는 열람 가능하다는 전제로 설계</h3>
+      <p>02번에서 다룬 내용의 반복이지만 실무에서 가장 흔한 실수라 다시 강조합니다 — 서명은 무결성만 보장하지, 기밀성은 보장하지 않습니다.</p>
+    </section>
+
+    <section id="refresh">
+      <div class="eyebrow">09 — Pattern</div>
+      <h2>Access Token + Refresh Token</h2>
+      <p>만료가 짧은 Access Token만으로는 매번 재로그인해야 하니 UX가 나빠집니다. 그래서 수명이 긴 Refresh Token을 별도로 발급해 조합합니다.</p>
+      <div class="flow">
+        <div class="step"><span class="n">1</span>로그인 시 Access(짧음) + Refresh(김) 동시 발급</div>
+        <div class="arrow">→</div>
+        <div class="step"><span class="n">2</span>Access 토큰으로 평소 API 요청</div>
+        <div class="arrow">→</div>
+        <div class="step"><span class="n">3</span>Access 만료되면 401 응답</div>
+        <div class="arrow">→</div>
+        <div class="step"><span class="n">4</span>Refresh 토큰으로 재발급 엔드포인트 호출</div>
+        <div class="arrow">→</div>
+        <div class="step"><span class="n">5</span>새 Access(필요시 새 Refresh) 발급</div>
+      </div>
+      <p class="muted">Refresh Token은 탈취 시 피해가 크므로 DB에 저장해 서버가 즉시 무효화할 수 있게 관리하는 경우가 많습니다 — 여기서는 stateless 원칙을 일부 포기하고 보안을 우선한 절충입니다.</p>
+    </section>
+
+    <section id="summary">
+      <div class="eyebrow">10 — Checklist</div>
+      <h2>실무 체크리스트</h2>
+      <table>
+        <tr><th>항목</th><th>확인할 것</th></tr>
+        <tr><td>알고리즘 고정</td><td>검증 시 허용 alg를 화이트리스트로 명시했는가</td></tr>
+        <tr><td>Secret/키 관리</td><td>충분히 랜덤한 secret인가, 개인키가 안전하게 보관되는가</td></tr>
+        <tr><td>만료 시간</td><td>Access는 짧게, exp/nbf를 검증 로직에서 실제로 체크하는가</td></tr>
+        <tr><td>민감정보</td><td>Payload에 비밀번호·개인식별정보를 넣지 않았는가</td></tr>
+        <tr><td>저장 위치</td><td>XSS/CSRF 위협 모델에 맞는 저장소를 선택했는가</td></tr>
+        <tr><td>폐기 전략</td><td>로그아웃/탈취 시 무효화할 방법이 있는가</td></tr>
+        <tr><td>aud/iss 검증</td><td>다른 서비스용 토큰이 잘못 재사용되지 않는가</td></tr>
+      </table>
+    </section>
+
+  </main>
+</div>
+
+<footer>JWT Study Notes · Base64Url 인코딩과 HMAC-SHA256 서명은 브라우저 SubtleCrypto API로 실시간 계산됩니다.</footer>
+
+<div class="term-overlay" id="termOverlay">
+  <div class="term-modal">
+    <button type="button" class="term-close" id="termClose" aria-label="닫기">×</button>
+    <div class="term-modal-abbr" id="termAbbr"></div>
+    <div class="term-modal-full" id="termFull"></div>
+    <div class="term-modal-desc" id="termDesc"></div>
+  </div>
+</div>
+
+<script>
+function b64urlFromString(str){
+  const utf8 = unescape(encodeURIComponent(str));
+  return btoa(utf8).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+function b64urlFromBuffer(buf){
+  const bytes = new Uint8Array(buf);
+  let binary='';
+  bytes.forEach(b => binary += String.fromCharCode(b));
+  return btoa(binary).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+async function hmacSign(headerB64, payloadB64, secret){
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    'raw', enc.encode(secret), {name:'HMAC', hash:'SHA-256'}, false, ['sign']
+  );
+  const sigBuf = await crypto.subtle.sign('HMAC', key, enc.encode(headerB64 + '.' + payloadB64));
+  return b64urlFromBuffer(sigBuf);
+}
+
+let issued = null; // { headerB64, payloadB64, sigB64 }
+
+function renderToken(headerB64, payloadB64, sigB64){
+  return `<span class="seg-h">${headerB64}</span><span class="dot">.</span><span class="seg-p">${payloadB64}</span><span class="dot">.</span><span class="seg-s">${sigB64}</span>`;
+}
+
+document.getElementById('issueBtn').addEventListener('click', async () => {
+  const out = document.getElementById('issuedToken');
+  try{
+    const headerObj = JSON.parse(document.getElementById('hdrInput').value);
+    const payloadObj = JSON.parse(document.getElementById('payInput').value);
+    const secret = document.getElementById('secretInput').value;
+
+    const headerB64 = b64urlFromString(JSON.stringify(headerObj));
+    const payloadB64 = b64urlFromString(JSON.stringify(payloadObj));
+    const sigB64 = await hmacSign(headerB64, payloadB64, secret);
+
+    issued = { headerB64, payloadB64, sigB64, secret };
+    out.innerHTML = renderToken(headerB64, payloadB64, sigB64);
+
+    document.getElementById('tamperInput').value = JSON.stringify(payloadObj, null, 2);
+    document.getElementById('verdict').className = 'verdict';
+    document.getElementById('verdict').innerHTML = '';
+  }catch(e){
+    out.textContent = 'JSON 형식 오류: ' + e.message;
+  }
+});
+
+document.getElementById('verifyBtn').addEventListener('click', async () => {
+  const verdict = document.getElementById('verdict');
+  if(!issued){
+    verdict.className = 'verdict bad';
+    verdict.innerHTML = '먼저 1단계에서 토큰을 발급하세요.';
+    return;
+  }
+  try{
+    const tamperedPayloadObj = JSON.parse(document.getElementById('tamperInput').value);
+    const tamperedPayloadB64 = b64urlFromString(JSON.stringify(tamperedPayloadObj));
+
+    // 공격자는 secret을 모르므로 원본 서명(issued.sigB64)을 그대로 재사용한다고 가정
+    const attackerToken = renderToken(issued.headerB64, tamperedPayloadB64, issued.sigB64);
+
+    // 서버는 secret을 알고 있으므로 실제로 와야 할 서명을 재계산해서 비교한다
+    const expectedSig = await hmacSign(issued.headerB64, tamperedPayloadB64, issued.secret);
+
+    const match = expectedSig === issued.sigB64;
+
+    if(match){
+      verdict.className = 'verdict ok';
+      verdict.innerHTML = `✅ 서명 일치 — Payload가 원본과 동일하므로 검증 통과<br><span class="mono" style="font-size:12px;">${attackerToken}</span>`;
+    } else {
+      verdict.className = 'verdict bad';
+      verdict.innerHTML = `❌ 서명 불일치 — 서버가 재계산한 서명과 토큰에 실린 서명이 다릅니다. 401 Unauthorized 처리됩니다.<br><br>
+        <span class="mono" style="font-size:12px;">보낸 토큰(위조): ${attackerToken}</span><br><br>
+        <span class="mono" style="font-size:12px;">서버가 기대한 서명: ${expectedSig.slice(0,28)}...</span>`;
+    }
+  }catch(e){
+    verdict.className = 'verdict bad';
+    verdict.innerHTML = 'JSON 형식 오류: ' + e.message;
+  }
+});
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  issued = null;
+  document.getElementById('issuedToken').textContent = '아래 버튼을 눌러 발급하세요 →';
+  document.getElementById('verdict').className = 'verdict';
+  document.getElementById('verdict').innerHTML = '';
+});
+
+// nav: buttons only, no anchor navigation at all
+const links = document.querySelectorAll('nav.side .navlink');
+const sections = [...links].map(a => document.querySelector(a.getAttribute('data-target')));
+
+links.forEach(a => {
+  a.addEventListener('click', () => {
+    const target = document.querySelector(a.getAttribute('data-target'));
+    if(target){
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
+});
+
+// scroll-spy for nav
+const spy = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if(entry.isIntersecting){
+      const id = '#' + entry.target.id;
+      links.forEach(a => a.classList.toggle('active', a.getAttribute('data-target') === id));
+    }
+  });
+}, { rootMargin: '-20% 0px -70% 0px' });
+sections.forEach(s => s && spy.observe(s));
+
+// glossary term popups
+const glossary = {
+  hs256: {
+    abbr: 'HS256', full: 'HMAC using SHA-256',
+    desc: '대칭키 하나(secret)로 서명하고 검증도 같은 키로 하는 방식. <b>H</b>MAC 알고리즘에 <b>SHA-256</b> 해시 함수를 사용합니다. 발급자와 검증자가 같은 신뢰 영역에 있을 때 적합합니다.'
+  },
+  rs256: {
+    abbr: 'RS256', full: 'RSA Signature with SHA-256',
+    desc: '<b>R</b>SA 공개키 암호 방식으로 서명하는 알고리즘. 개인키로 서명하고 공개키로 검증하므로, 검증자에게 공개키만 나눠줘도 위조 서명은 만들 수 없습니다. 여러 서비스가 검증만 해야 할 때 적합합니다.'
+  },
+  es256: {
+    abbr: 'ES256', full: 'ECDSA Signature with SHA-256 (P-256 curve)',
+    desc: '<b>E</b>lliptic Curve 기반 비대칭키 서명 알고리즘. RS256과 마찬가지로 개인키/공개키를 분리해서 쓰지만, 타원곡선 암호를 사용해 <b>키 길이가 짧고 연산이 더 빠릅니다.</b>'
+  },
+  hmac: {
+    abbr: 'HMAC', full: 'Hash-based Message Authentication Code',
+    desc: '비밀키와 메시지를 함께 해시 함수에 넣어 만드는 서명 값. 같은 비밀키를 가진 쪽만 동일한 값을 재계산할 수 있어서, 메시지가 변조되지 않았고 올바른 키로 만들어졌음을 동시에 증명합니다.'
+  },
+  rsa: {
+    abbr: 'RSA', full: 'Rivest–Shamir–Adleman',
+    desc: '가장 널리 쓰이는 비대칭키(공개키) 암호 알고리즘. 큰 소수 두 개를 곱한 값을 소인수분해하기 어렵다는 수학적 사실에 기반합니다. <b>개인키</b>로 서명하고 <b>공개키</b>로 검증하며, 공개키가 공개되어도 개인키 없이는 서명을 위조할 수 없습니다. RS256은 이 RSA로 서명하고 SHA-256으로 해시하는 조합입니다.'
+  },
+  sha256: {
+    abbr: 'SHA-256', full: 'Secure Hash Algorithm 256-bit',
+    desc: '임의 길이의 입력을 받아 항상 256비트(32바이트) 고정 길이 출력을 내는 <b>단방향 해시 함수</b>. 입력이 한 비트만 달라져도 출력은 완전히 무작위로 보일 만큼 달라집니다(눈사태 효과). HS256/RS256/ES256이 실제로 사용하는 해시 함수가 바로 이것입니다.'
+  },
+  sigma_lower: {
+    abbr: 'σ0 / σ1', full: '소문자 시그마 (메시지 스케줄용)',
+    desc: '비밀키 없이 <b>같은 32비트 워드를 여러 각도로 회전·시프트시켜 XOR로 합치는</b> 고정 함수입니다.<br><br>σ0(x) = ROTR⁷(x) ⊕ ROTR¹⁸(x) ⊕ SHR³(x)<br>σ1(x) = ROTR¹⁷(x) ⊕ ROTR¹⁹(x) ⊕ SHR¹⁰(x)<br><br>(ROTRⁿ = 오른쪽으로 n비트 회전, SHRⁿ = 오른쪽으로 n비트 시프트) W0~W15의 비트를 이런 식으로 굴려서 W16~W63을 만들어냅니다 — 원래 16개 워드의 영향이 뒤쪽 워드까지 넓게 퍼지게 하는 역할입니다.'
+  },
+  sigma_upper: {
+    abbr: 'Σ0 / Σ1', full: '대문자 시그마 (압축 라운드용)',
+    desc: '소문자 σ와 이름은 비슷하지만 <b>다른 함수</b>입니다. 메시지 워드가 아니라 <b>작업 레지스터(a, e)</b>를 회전·XOR시켜서 T1, T2 계산에 씁니다.<br><br>Σ0(x) = ROTR²(x) ⊕ ROTR¹³(x) ⊕ ROTR²²(x)<br>Σ1(x) = ROTR⁶(x) ⊕ ROTR¹¹(x) ⊕ ROTR²⁵(x)<br><br>둘 다 비밀키 없이 정해진 규칙대로 비트를 섞기만 하는 함수라, 계산은 결정적이지만 결과는 뒤섞여서 원래 값을 짐작하기 어렵습니다.'
+  }
+};
+
+const termOverlay = document.getElementById('termOverlay');
+const termAbbr = document.getElementById('termAbbr');
+const termFull = document.getElementById('termFull');
+const termDesc = document.getElementById('termDesc');
+
+function openTerm(key){
+  const entry = glossary[key];
+  if(!entry) return;
+  termAbbr.textContent = entry.abbr;
+  termFull.textContent = entry.full;
+  termDesc.innerHTML = entry.desc;
+  termOverlay.classList.add('open');
+}
+function closeTerm(){
+  termOverlay.classList.remove('open');
+}
+
+document.querySelectorAll('.term').forEach(btn => {
+  btn.addEventListener('click', () => openTerm(btn.getAttribute('data-key')));
+});
+document.getElementById('termClose').addEventListener('click', closeTerm);
+termOverlay.addEventListener('click', (e) => {
+  if(e.target === termOverlay) closeTerm();
+});
+document.addEventListener('keydown', (e) => {
+  if(e.key === 'Escape') closeTerm();
+});
+
+// Static illustrative visualizations for the SHA-256 step list
+(function renderHashViz(){
+  const pad = document.getElementById('vizPad');
+  if(pad){
+    let html = '';
+    for(let i=0;i<24;i++) html += '<div class="bit msg"></div>';
+    html += '<div class="bit one"></div>';
+    for(let i=0;i<39;i++) html += '<div class="bit zero"></div>';
+    for(let i=0;i<8;i++) html += '<div class="bit len"></div>';
+    pad.innerHTML = html;
+  }
+  const words = document.getElementById('vizWords');
+  if(words){
+    let html = '';
+    for(let i=0;i<16;i++) html += `<div class="word given">W${i}</div>`;
+    html += '<span class="arrow2">→</span>';
+    ['W16','W17','W18','⋯','⋯','W63'].forEach(label => {
+      html += `<div class="word derived">${label}</div>`;
+    });
+    words.innerHTML = html;
+  }
+})();
+
+// SHA-256 avalanche-effect demo
+async function sha256Hex(str){
+  const enc = new TextEncoder().encode(str);
+  const buf = await crypto.subtle.digest('SHA-256', enc);
+  return { hex: [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2,'0')).join(''), byteLen: enc.length };
+}
+function paddingStats(byteLen){
+  const bitLen = byteLen * 8;
+  const paddedBits = Math.ceil((bitLen + 1 + 64) / 512) * 512;
+  return { bitLen, paddedBits, addedBits: paddedBits - bitLen, blocks: paddedBits / 512 };
+}
+function hammingDistanceHex(hexA, hexB){
+  let diffBits = 0;
+  for(let i = 0; i < hexA.length; i++){
+    const x = parseInt(hexA[i], 16) ^ parseInt(hexB[i], 16);
+    diffBits += x.toString(2).split('1').length - 1;
+  }
+  return diffBits;
+}
+
+document.getElementById('hashBtn').addEventListener('click', async () => {
+  const inA = document.getElementById('hashA').value;
+  const inB = document.getElementById('hashB').value;
+  const out = document.getElementById('hashResult');
+
+  const [a, b] = await Promise.all([sha256Hex(inA), sha256Hex(inB)]);
+  const statsA = paddingStats(a.byteLen);
+  const statsB = paddingStats(b.byteLen);
+  const diffBits = hammingDistanceHex(a.hex, b.hex);
+  const diffPct = ((diffBits / 256) * 100).toFixed(1);
+
+  out.innerHTML = `
+    <div class="segbox header" style="margin-top:16px;">
+      <span class="tag">입력 A → ${statsA.bitLen}비트, 패딩 후 ${statsA.paddedBits}비트 (${statsA.blocks}블록)</span>
+      <pre style="word-break:break-all;">${a.hex}</pre>
+    </div>
+    <div class="segbox payload" style="margin-top:10px;">
+      <span class="tag">입력 B → ${statsB.bitLen}비트, 패딩 후 ${statsB.paddedBits}비트 (${statsB.blocks}블록)</span>
+      <pre style="word-break:break-all;">${b.hex}</pre>
+    </div>
+    <div class="tip" style="margin-top:12px;">
+      256비트 중 <b>${diffBits}비트(약 ${diffPct}%)</b>가 달라졌습니다. 이상적인 해시 함수는 입력이 한 비트만 바뀌어도 출력 비트의 약 50%가 뒤집힙니다 — 이게 눈사태 효과입니다.
+    </div>
+  `;
+});
+</script>
+
+</body>
+</html>
