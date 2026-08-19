@@ -6,6 +6,9 @@
 <title>프록시 배선반 — JDK 동적 프록시 vs CGLIB</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script>(function(){try{var t=localStorage.getItem('kye-theme');if(!t){t=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<link rel="stylesheet" href="../assets/site-header.css">
+<script src="../assets/theme.js" defer></script>
 <style>
   :root{
     --bg: #f5f6f4;
@@ -22,7 +25,7 @@
     --shadow: 0 1px 2px rgba(20,30,25,0.06), 0 8px 24px rgba(20,30,25,0.05);
     --radius: 10px;
   }
-  html.dark{
+  html[data-theme="dark"]{
     --bg: #0d1412;
     --panel: #131c19;
     --panel-2: #182420;
@@ -48,25 +51,6 @@
   }
   code, .mono{font-family:'IBM Plex Mono', monospace;}
   h1,h2,h3{font-family:'Space Grotesk','IBM Plex Sans KR',sans-serif;}
-
-  /* ---- top bar ---- */
-  .topbar{
-    position:sticky; top:0; z-index:50;
-    display:flex; align-items:center; justify-content:space-between;
-    padding:14px 28px;
-    background:var(--panel);
-    border-bottom:1px solid var(--line);
-    backdrop-filter:blur(6px);
-  }
-  .brand{display:flex; align-items:center; gap:10px; font-size:14px; letter-spacing:0.02em; color:var(--ink-soft);}
-  .brand .jack-dot{width:9px;height:9px;border-radius:50%;background:var(--jack); box-shadow:0 0 0 4px var(--jack-glow);}
-  .toggle{
-    border:1px solid var(--line); background:var(--panel-2); color:var(--ink);
-    padding:7px 14px; border-radius:999px; cursor:pointer; font-size:13px;
-    font-family:'IBM Plex Mono',monospace;
-    display:flex; align-items:center; gap:8px;
-  }
-  .toggle:hover{border-color:var(--jack);}
 
   /* ---- hero ---- */
   .hero{
@@ -210,9 +194,12 @@
 </head>
 <body>
 
-<div class="topbar">
-  <div class="brand"><span class="jack-dot"></span> SPRING AOP · PATCH PANEL 01</div>
-  <button class="toggle" id="modeToggle">🌙 다크모드</button>
+<div class="kye-topbar" role="navigation" aria-label="사이트 내비게이션">
+  <a class="kye-topbar-brand" href="../index.html">📚 KYE Study Notes</a>
+  <div class="kye-topbar-right">
+    <a class="kye-topbar-back" href="../index.html">← 목록으로</a>
+    <button type="button" class="kye-theme-toggle" aria-label="다크 모드로 전환">🌙</button>
+  </div>
 </div>
 
 <div class="hero">
@@ -414,15 +401,6 @@ public class UserService {
 <footer>
   Spring AOP Study Guide · JDK Dynamic Proxy / CGLIB Internals · for 영은
 </footer>
-
-<script>
-  const btn = document.getElementById('modeToggle');
-  btn.addEventListener('click', () => {
-    document.documentElement.classList.toggle('dark');
-    const isDark = document.documentElement.classList.contains('dark');
-    btn.textContent = isDark ? '☀️ 라이트모드' : '🌙 다크모드';
-  });
-</script>
 
 </body>
 </html>

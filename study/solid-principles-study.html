@@ -6,6 +6,9 @@
 <title>SOLID 원칙 — 객체지향 설계 스터디</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&family=Gowun+Batang:wght@400;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script>(function(){try{var t=localStorage.getItem('kye-theme');if(!t){t=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<link rel="stylesheet" href="../assets/site-header.css">
+<script src="../assets/theme.js" defer></script>
 <style>
 :root{
   --paper:#F2F4F8;
@@ -26,6 +29,20 @@
   --code-annot:#E4C580;
   --card:#FFFFFF;
   --hairline:#D5DBE7;
+}
+html[data-theme="dark"]{
+  --paper:#10141f;
+  --paper-line:rgba(143,180,255,0.06);
+  --ink:#e6ebf5;
+  --ink-soft:#a8b3c9;
+  --blue:#7fa8ff;
+  --blue-deep:#9db8f0;
+  --bad:#e0685c;
+  --bad-bg:#2a1512;
+  --good:#4ade80;
+  --good-bg:#10231a;
+  --card:#171d2b;
+  --hairline:#2a3142;
 }
 *{margin:0;padding:0;box-sizing:border-box;}
 html{scroll-behavior:smooth;}
@@ -287,6 +304,14 @@ footer{
 </style>
 </head>
 <body>
+
+<div class="kye-topbar" role="navigation" aria-label="사이트 내비게이션">
+  <a class="kye-topbar-brand" href="../index.html">📚 KYE Study Notes</a>
+  <div class="kye-topbar-right">
+    <a class="kye-topbar-back" href="../index.html">← 목록으로</a>
+    <button type="button" class="kye-theme-toggle" aria-label="다크 모드로 전환">🌙</button>
+  </div>
+</div>
 
 <header>
   <div class="wrap">

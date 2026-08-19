@@ -1,0 +1,94 @@
+/* KYE Study Notes — shared site header (topbar) + light/dark toggle chrome.
+   Loaded on every page. Scoped under the kye- prefix to avoid colliding
+   with each page's own bespoke styles. */
+
+:root {
+  --kye-bar-bg: rgba(255, 255, 255, 0.78);
+  --kye-bar-border: rgba(15, 20, 30, 0.10);
+  --kye-bar-text: #1c1f26;
+  --kye-bar-muted: #6b7280;
+  --kye-bar-shadow: 0 1px 0 rgba(15, 20, 30, 0.04);
+}
+
+html[data-theme="dark"] {
+  --kye-bar-bg: rgba(13, 17, 23, 0.80);
+  --kye-bar-border: rgba(255, 255, 255, 0.10);
+  --kye-bar-text: #e6edf3;
+  --kye-bar-muted: #8b949e;
+  --kye-bar-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
+}
+
+.kye-topbar {
+  position: static;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 20px;
+  background: var(--kye-bar-bg);
+  border-bottom: 1px solid var(--kye-bar-border);
+  box-shadow: var(--kye-bar-shadow);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Pretendard, Roboto, sans-serif;
+  box-sizing: border-box;
+}
+
+.kye-topbar-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--kye-bar-text);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.kye-topbar-brand:hover { opacity: 0.72; }
+
+.kye-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.kye-topbar-back {
+  font-size: 12.5px;
+  color: var(--kye-bar-muted);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.kye-topbar-back:hover { color: var(--kye-bar-text); }
+
+.kye-theme-toggle {
+  appearance: none;
+  -webkit-appearance: none;
+  border: 1px solid var(--kye-bar-border);
+  background: transparent;
+  color: var(--kye-bar-text);
+  border-radius: 999px;
+  width: 32px;
+  height: 32px;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease, transform 0.15s ease;
+  padding: 0;
+  flex: 0 0 auto;
+}
+.kye-theme-toggle:hover {
+  background: var(--kye-bar-border);
+  transform: translateY(-1px);
+}
+.kye-theme-toggle:focus-visible {
+  outline: 2px solid var(--kye-bar-muted);
+  outline-offset: 2px;
+}
+
+@media (max-width: 480px) {
+  .kye-topbar-back { display: none; }
+}

@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Docker Layer 스터디</title>
+<script>(function(){try{var t=localStorage.getItem('kye-theme');if(!t){t=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<link rel="stylesheet" href="../assets/site-header.css">
+<script src="../assets/theme.js" defer></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700&family=Noto+Sans+KR:wght@300;400;700&display=swap');
 
@@ -18,6 +21,17 @@
     --text: #e2e8f0;
     --muted: #64748b;
     --code-bg: #0d1117;
+  }
+  html[data-theme="light"] {
+    --bg: #f5f7fb;
+    --surface: #ffffff;
+    --border: #d7dee8;
+    --accent: #0086a8;
+    --accent2: #6425c9;
+    --accent3: #0a8f5c;
+    --warn: #b3720a;
+    --text: #101722;
+    --muted: #5b6572;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -458,6 +472,14 @@
 </style>
 </head>
 <body>
+
+<div class="kye-topbar" role="navigation" aria-label="사이트 내비게이션">
+  <a class="kye-topbar-brand" href="../index.html">📚 KYE Study Notes</a>
+  <div class="kye-topbar-right">
+    <a class="kye-topbar-back" href="../index.html">← 목록으로</a>
+    <button type="button" class="kye-theme-toggle" aria-label="다크 모드로 전환">🌙</button>
+  </div>
+</div>
 
 <header>
   <div class="header-tag">// Study Notes</div>

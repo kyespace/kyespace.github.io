@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Docker & OS 스터디 가이드</title>
+<script>(function(){try{var t=localStorage.getItem('kye-theme');if(!t){t=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<link rel="stylesheet" href="../assets/site-header.css">
+<script src="../assets/theme.js" defer></script>
 <style>
   :root {
     --bg: #f5f0e8;
@@ -21,6 +24,21 @@
     --text-dim: #7a6e65;
     --mono: 'JetBrains Mono','Fira Code','Cascadia Code',monospace;
     --sans: 'Pretendard','Apple SD Gothic Neo','Noto Sans KR',system-ui,sans-serif;
+  }
+  html[data-theme="dark"] {
+    --bg: #14120f;
+    --surface: #1c1914;
+    --surface2: #24211a;
+    --border: #3a352b;
+    --accent: #7fb3cf;
+    --accent2: #9fcbe0;
+    --accent-dim: #7fb3cf24;
+    --green: #5fbf8f;
+    --yellow: #d9a94a;
+    --red: #e0685c;
+    --purple: #a888d4;
+    --text: #ece6da;
+    --text-dim: #a89e8e;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 15px; line-height: 1.7; }
@@ -231,6 +249,14 @@
 </style>
 </head>
 <body>
+
+<div class="kye-topbar" role="navigation" aria-label="사이트 내비게이션">
+  <a class="kye-topbar-brand" href="../index.html">📚 KYE Study Notes</a>
+  <div class="kye-topbar-right">
+    <a class="kye-topbar-back" href="../index.html">← 목록으로</a>
+    <button type="button" class="kye-theme-toggle" aria-label="다크 모드로 전환">🌙</button>
+  </div>
+</div>
 
 <!-- ═══════════════ NAVBAR ═══════════════ -->
 <nav class="navbar">

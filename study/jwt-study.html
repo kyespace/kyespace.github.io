@@ -7,6 +7,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script>(function(){try{var t=localStorage.getItem('kye-theme');if(!t){t=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<link rel="stylesheet" href="../assets/site-header.css">
+<script src="../assets/theme.js" defer></script>
 <style>
   :root{
     --bg: #0B1220;
@@ -21,6 +24,19 @@
     --ok: #6EE7A8;
     --bad: #FF6B6B;
     --radius: 10px;
+  }
+  html[data-theme="light"]{
+    --bg: #f8f9fb;
+    --panel: #ffffff;
+    --panel-2: #f1f3f7;
+    --line: #dde2ea;
+    --text: #1a2130;
+    --muted: #5b6472;
+    --header-c: #d64545;
+    --payload-c: #0f9d94;
+    --sig-c: #b8860b;
+    --ok: #1f9d5c;
+    --bad: #d64545;
   }
   *{box-sizing:border-box;}
   html{scroll-behavior:smooth; background:var(--bg);}
@@ -294,6 +310,14 @@
 </style>
 </head>
 <body>
+
+<div class="kye-topbar" role="navigation" aria-label="사이트 내비게이션">
+  <a class="kye-topbar-brand" href="../index.html">📚 KYE Study Notes</a>
+  <div class="kye-topbar-right">
+    <a class="kye-topbar-back" href="../index.html">← 목록으로</a>
+    <button type="button" class="kye-theme-toggle" aria-label="다크 모드로 전환">🌙</button>
+  </div>
+</div>
 
 <div class="shell">
   <nav class="side">

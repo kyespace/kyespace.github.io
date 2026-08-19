@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>KYE Study Notes</title>
+<script>(function(){try{var t=localStorage.getItem('kye-theme');if(!t){t=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<link rel="stylesheet" href="assets/site-header.css">
+<script src="assets/theme.js" defer></script>
 <style>
   :root {
     --bg: #0d1117;
@@ -12,6 +15,14 @@
     --text: #e6edf3;
     --muted: #8b949e;
     --accent: #58a6ff;
+  }
+  html[data-theme="light"] {
+    --bg: #f6f8fa;
+    --card: #ffffff;
+    --border: #d0d7de;
+    --text: #1c1f26;
+    --muted: #57606a;
+    --accent: #1f6feb;
   }
   * { box-sizing: border-box; }
   body {
@@ -98,6 +109,12 @@
 </style>
 </head>
 <body>
+  <div class="kye-topbar" role="navigation" aria-label="사이트 내비게이션">
+    <a class="kye-topbar-brand" href="index.html">📚 KYE Study Notes</a>
+    <div class="kye-topbar-right">
+      <button type="button" class="kye-theme-toggle" aria-label="다크 모드로 전환">🌙</button>
+    </div>
+  </div>
   <header>
     <h1>📚 KYE Study Notes</h1>
     <p>개발 공부 자료 모음 · GitHub Pages로 어디서든 확인</p>

@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Spring 디자인 패턴 스터디</title>
+<script>(function(){try{var t=localStorage.getItem('kye-theme');if(!t){t=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<link rel="stylesheet" href="../assets/site-header.css">
+<script src="../assets/theme.js" defer></script>
 <style>
   :root {
     --ink: #17150f;
@@ -19,6 +22,19 @@
     --code-bg: #1c1a15;
     --code-ink: #e8e2d2;
     --dim: #6f6852;
+  }
+  html[data-theme="dark"] {
+    --ink: #ece6d8;
+    --paper: #14120d;
+    --paper-2: #1c1912;
+    --line: #3a3527;
+    --brass: #d4ac6a;
+    --brass-soft: #e8c98a;
+    --auto: #6fbfa1;
+    --auto-bg: #16261f;
+    --hand: #d68a68;
+    --hand-bg: #2a1c15;
+    --dim: #a89e82;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html { scroll-behavior: smooth; }
@@ -338,6 +354,14 @@
 </style>
 </head>
 <body>
+
+<div class="kye-topbar" role="navigation" aria-label="사이트 내비게이션">
+  <a class="kye-topbar-brand" href="../index.html">📚 KYE Study Notes</a>
+  <div class="kye-topbar-right">
+    <a class="kye-topbar-back" href="../index.html">← 목록으로</a>
+    <button type="button" class="kye-theme-toggle" aria-label="다크 모드로 전환">🌙</button>
+  </div>
+</div>
 
 <header>
   <div class="eyebrow">Backend Study · Design Patterns in Spring</div>
