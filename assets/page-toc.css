@@ -1,8 +1,9 @@
 /* KYE Study Notes — shared floating "on this page" TOC widget.
    Auto-populated by page-toc.js from headings found in the page.
-   Same click-to-expand interaction at every viewport width by design:
-   one component to maintain, and it never competes for space with
-   each page's own bespoke hero/section layout. */
+   Narrow/medium screens: a floating button that expands a popup panel.
+   Wide screens (see the min-width query below): the same panel docks
+   as a persistent right-hand rail, always visible, no click needed —
+   the same component and markup in both cases, just repositioned. */
 
 :root {
   --kye-toc-bg: #ffffff;
@@ -116,4 +117,33 @@ html[data-theme="dark"] {
 @media (max-width: 480px) {
   .kye-toc-btn .kye-toc-label { display: none; }
   .kye-toc-btn { padding: 11px; }
+}
+
+/* Wide screens: dock as a persistent right-hand rail instead of a
+   click-to-open popup. The widest page content column across the
+   site is jwt-study's 1180px .shell; the breakpoint below keeps a
+   220px rail clear of that (and everything narrower) with margin
+   to spare. */
+@media (min-width: 1680px) {
+  .kye-toc-btn { display: none; }
+
+  .kye-toc-panel {
+    display: flex !important;
+    position: fixed;
+    top: var(--kye-header-h, 56px);
+    right: 0;
+    bottom: 0;
+    left: auto;
+    width: 220px;
+    max-height: none;
+    border-radius: 0;
+    border-top: none;
+    border-right: none;
+    border-bottom: none;
+    box-shadow: -6px 0 24px rgba(15, 20, 30, 0.06);
+  }
+
+  .kye-toc-panel-head { flex-shrink: 0; }
+  .kye-toc-close { display: none; }
+  .kye-toc-list { flex: 1 1 auto; }
 }

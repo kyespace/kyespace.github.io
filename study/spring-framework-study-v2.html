@@ -16,6 +16,9 @@
   --paper:#FBFBF8;
   --surface:#ffffff;
   --ink:#1C2430;
+  --chip-dark:#1C2430;
+  --blue-chip:#2B50C8;
+  --teal-chip:#0E7A6E;
   --ink-soft:#4A5568;
   --line:#D8DCE2;
   --blue:#2B50C8;
@@ -136,7 +139,7 @@ nav.toc a::before{
 nav.toc a:hover{color:var(--blue)}
 nav.toc .new{
   font-family:var(--mono);font-size:10px;font-weight:600;
-  background:var(--teal);color:#fff;
+  background:var(--teal-chip);color:#fff;
   padding:1px 6px;border-radius:3px;margin-left:8px;
   letter-spacing:.05em;
 }
@@ -231,11 +234,11 @@ ul.plain li::before{content:"—";position:absolute;left:0;color:var(--blue);fon
 .layer .name{font-weight:600;font-size:15px}
 .layer .desc{font-size:13.5px;color:var(--ink-soft);line-height:1.6;margin-top:3px}
 .layer.l-mod{background:var(--blue-soft)}
-.layer.l-mod .tag{background:var(--blue);color:#fff}
+.layer.l-mod .tag{background:var(--blue-chip);color:#fff}
 .layer.l-mech{background:var(--teal-soft)}
-.layer.l-mech .tag{background:var(--teal);color:#fff}
+.layer.l-mech .tag{background:var(--teal-chip);color:#fff}
 .layer.l-core{background:var(--surface)}
-.layer.l-core .tag{background:var(--ink);color:#fff}
+.layer.l-core .tag{background:var(--chip-dark);color:#fff}
 .layer.l-env{background:#F1F2F4}
 .layer.l-env .tag{background:#8A93A0;color:#fff}
 
@@ -243,7 +246,7 @@ pre.diagram{
   font-family:var(--mono);
   font-size:12.5px;
   line-height:1.7;
-  background:var(--ink);
+  background:var(--chip-dark);
   color:#E8EDF5;
   border-radius:10px;
   padding:22px 24px;
@@ -279,7 +282,7 @@ th{
   font-size:12px;
   letter-spacing:.06em;
   text-align:left;
-  background:var(--ink);
+  background:var(--chip-dark);
   color:#fff;
   padding:10px 14px;
   font-weight:600;
@@ -298,7 +301,7 @@ table.wide td:first-child{white-space:normal}
 }
 .axis-head{
   padding:12px 18px;
-  background:var(--ink);
+  background:var(--chip-dark);
   color:#fff;
   display:flex;
   align-items:baseline;
@@ -370,7 +373,7 @@ details .ans p{margin-bottom:10px}
   content:attr(data-n);
   position:absolute;left:-34px;top:0;
   width:24px;height:24px;border-radius:50%;
-  background:var(--ink);color:#fff;
+  background:var(--chip-dark);color:#fff;
   font-family:var(--mono);font-size:12px;font-weight:600;
   display:flex;align-items:center;justify-content:center;
 }
