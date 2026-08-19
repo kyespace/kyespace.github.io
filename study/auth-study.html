@@ -373,7 +373,7 @@
   </div>
 
   <!-- ================= FORM LOGIN ================= -->
-  <section class="method form">
+  <section class="method form" id="form-login">
     <div class="method-head"><span class="method-tag">01 · Session</span></div>
     <h2>폼 로그인 (Form-based Login)</h2>
     <p class="lede">아이디/비밀번호를 서버에 직접 제출하고, 서버가 세션을 발급해 로그인 상태를 유지하는 가장 전통적인 방식. <b>인증 주체가 우리 서버 자신</b>이라는 점이 핵심이다.</p>
@@ -475,7 +475,7 @@
   </section>
 
   <!-- ================= OAUTH2 ================= -->
-  <section class="method oauth">
+  <section class="method oauth" id="oauth2">
     <div class="method-head"><span class="method-tag">02 · Token / Delegated</span></div>
     <h2>OAuth2 로그인 (Authorization Code + <span class="term" data-term="PKCE">PKCE</span>)</h2>
     <p class="lede">엄밀히 OAuth2는 <b>인가(authorization)</b> 프로토콜이다. 여기에 <b><span class="term" data-term="OIDC">OpenID Connect(OIDC)</span></b>가 얹혀 신원 확인용 <code>id_token</code>을 제공하면서 비로소 "로그인"에 쓰인다. 인증 주체는 외부 <span class="term" data-term="IdP">IdP</span>(구글, 카카오 등)다.</p>
@@ -775,7 +775,7 @@
   </section>
 
   <!-- ================= PKCE DEEP-DIVE ================= -->
-  <section class="method pkce">
+  <section class="method pkce" id="pkce-detail">
     <div class="method-head"><span class="method-tag">03 · Deep-dive</span></div>
     <h2><span class="term" data-term="code_verifier">code_verifier</span> / <span class="term" data-term="code_challenge">code_challenge</span>는 실제로 어떻게 동작할까</h2>
     <p class="lede">인가 코드(<code>authorization code</code>)는 리다이렉트 URL에 그대로 노출되기 때문에, 브라우저 히스토리·프록시 로그·악성 앱 등을 통해 <b>중간에 가로채일 가능성</b>이 있다. <span class="term" data-term="PKCE">PKCE</span>는 "코드를 훔쳐도 토큰으로 바꿀 수 없게" 만드는 장치다. 아래에서 직접 값을 생성해보며 원리를 확인해보자.</p>
@@ -846,7 +846,7 @@
   </section>
 
   <!-- ================= CLOSED NETWORK ================= -->
-  <section class="method closed">
+  <section class="method closed" id="closed-network">
     <div class="method-head"><span class="method-tag">04 · Air-gapped</span></div>
     <h2>폐쇄망 환경에서 OAuth2 적용하기</h2>
     <p class="lede">인터넷이 차단된 사내망·공공기관·금융권 등에서는 구글·카카오 같은 외부 <span class="term" data-term="IdP">IdP</span>에 접근할 수 없다. 이때도 OAuth2/OIDC의 <b>프로토콜 구조 자체는 그대로 두고</b>, Authorization Server를 내부에 직접 세우는 것이 일반적인 접근이다.</p>
@@ -902,7 +902,7 @@
   </section>
 
   <!-- ================= COMPARISON ================= -->
-  <div class="compare">
+  <div class="compare" id="compare">
     <div class="flow-title">Side by side</div>
     <h2>한눈에 비교</h2>
     <p>두 방식은 대체재라기보다, 신뢰를 어디에 둘 것인가에 대한 서로 다른 선택이다.</p>
@@ -923,7 +923,7 @@
   </div>
 
   <!-- ================= CLOSING ================= -->
-  <div class="closing">
+  <div class="closing" id="closing">
     <div class="note">
       <h3>실무에서는 대부분 두 방식을 같이 쓴다</h3>
       <p>흔한 패턴은 <b>폼 로그인 + 소셜 로그인 병행</b>이다. 이메일/비밀번호 가입도 열어두고, 구글·카카오 버튼도 함께 제공한 뒤, 어떤 경로로 로그인했든 <b>최종적으로는 우리 서버가 발급하는 세션이나 JWT로 통일</b>해서 이후 요청을 처리한다. 즉, OAuth2는 "누구인지 확인하는 단계"에서만 쓰이고, 그 이후의 인가·세션 관리는 결국 우리 시스템의 몫이다.</p>

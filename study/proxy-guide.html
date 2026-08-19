@@ -228,7 +228,7 @@
 <!-- SECTION 1 -->
 <section>
   <div class="section-tag">① 왜 프록시가 필요한가</div>
-  <h2>대리인을 세우는 이유</h2>
+  <h2 id="why-proxy">대리인을 세우는 이유</h2>
   <p class="sub">원본 코드를 건드리지 않고, 호출 앞뒤에 공통 로직을 끼워넣기 위함</p>
   <div class="card">
     <p>트랜잭션, 로깅, 보안 체크 같은 <b>횡단 관심사(cross-cutting concern)</b>를 모든 메서드에 직접 작성하면 중복이 폭발합니다. 그래서 스프링은 진짜 객체 앞에 <b>대리인(프록시)</b>을 세워두고, 그 대리인이 호출을 가로채서 부가 로직을 자동으로 끼워넣게 만듭니다.</p>
@@ -239,7 +239,7 @@
 <!-- SECTION 2 -->
 <section>
   <div class="section-tag">② JDK 동적 프록시</div>
-  <h2>기존 인터페이스를 구현하는 새 클래스</h2>
+  <h2 id="jdk-proxy">기존 인터페이스를 구현하는 새 클래스</h2>
   <p class="sub">인터페이스가 있을 때만 동작 — 상속이 아니라 위임(delegation)</p>
 
   <div class="card">
@@ -275,7 +275,7 @@ proxy.save(user)
 <!-- SECTION 3 -->
 <section>
   <div class="section-tag">③ CGLIB</div>
-  <h2>대상 클래스를 상속하는 자식 클래스</h2>
+  <h2 id="cglib">대상 클래스를 상속하는 자식 클래스</h2>
   <p class="sub">Code Generation LIBrary — 인터페이스 없이도 동작</p>
 
   <div class="card">
@@ -300,7 +300,7 @@ proxy.save(user)
 <!-- COMPARE -->
 <section>
   <div class="section-tag">④ 나란히 비교</div>
-  <h2>구현 vs 상속</h2>
+  <h2 id="compare-impl">구현 vs 상속</h2>
   <div class="compare-grid">
     <div class="compare-card">
       <span class="tag jdk">JDK 동적 프록시</span>
@@ -326,7 +326,7 @@ proxy.save(user)
 <!-- SECTION 5 -->
 <section>
   <div class="section-tag">⑤ 왜 요즘은 CGLIB이 기본값인가</div>
-  <h2>proxyTargetClass = true</h2>
+  <h2 id="proxy-target-class">proxyTargetClass = true</h2>
   <div class="card">
     <p>Spring Boot 2.x부터 AOP 자동설정의 <code>proxyTargetClass</code> 기본값이 <b>true</b>로 바뀌었습니다. 그 결과 인터페이스가 있든 없든 <b>CGLIB이 기본으로 선택</b>됩니다.</p>
     <p>배경: 예전엔 "인터페이스 있으면 JDK 프록시"가 기본이었지만, 실무에서 <b>인터페이스 없이 구현 클래스만 빈으로 등록</b>하는 스타일이 흔해지면서(구현체가 하나뿐인 경우가 대부분, Mockito로 클래스 자체를 목킹 가능) 일관성을 위해 CGLIB로 통일된 것입니다.</p>
@@ -337,7 +337,7 @@ proxy.save(user)
 <!-- SECTION 6 -->
 <section>
   <div class="section-tag">⑥ 흔한 함정</div>
-  <h2>Self-Invocation 문제</h2>
+  <h2 id="self-invocation">Self-Invocation 문제</h2>
   <p class="sub">프록시를 거치지 않으면 AOP는 작동하지 않는다</p>
 
   <div class="card">
@@ -373,7 +373,7 @@ public class UserService {
 <!-- SECTION 7 -->
 <section>
   <div class="section-tag">⑦ GoF와의 연결</div>
-  <h2>AOP ⊃ 프록시 패턴</h2>
+  <h2 id="aop-vs-proxy-pattern">AOP ⊃ 프록시 패턴</h2>
   <div class="card">
     <p><b>AOP</b>는 횡단 관심사를 분리한다는 <b>개념/패러다임</b>이고, <b>프록시 패턴</b>은 그걸 자바에서 구현하는 <b>실제 기술적 수단</b> 중 하나입니다. AOP를 구현하는 방법이 프록시만 있는 건 아니며, AspectJ 위빙이 그 다른 예입니다.</p>
   </div>
