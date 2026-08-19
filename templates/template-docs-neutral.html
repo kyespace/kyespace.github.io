@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{PAGE_TITLE}}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<script>(function(){try{var t=localStorage.getItem('kye-theme')||'dark';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<link rel="stylesheet" href="../assets/site-header.css">
+<script src="../assets/theme.js" defer></script>
+<link rel="stylesheet" href="../assets/page-toc.css">
+<script src="../assets/page-toc.js" defer></script>
+<style>
+  /*
+    TEMPLATE: docs-neutral
+    Clean, neutral, panel-and-table heavy — closest to conventional
+    docs sites. Light is the native palette; the dark override below
+    inverts it. Swap --wire/--amber for a new page's own accent family,
+    keep --bg/--panel/--ink/--slate/--line as the structural skeleton
+    every template shares.
+  */
+  :root {
+    --bg: #fafbfc;
+    --panel: #ffffff;
+    --ink: #101828;
+    --slate: #475467;
+    --faint: #98a2b3;
+    --line: #e4e7ec;
+    --wire: #0e7490;
+    --wire-soft: #ecfdff;
+    --amber: #b45309;
+    --amber-soft: #fffbeb;
+    --good: #15803d;
+    --good-soft: #f0fdf4;
+    --bad: #b91c1c;
+    --bad-soft: #fef2f2;
+    --mono: 'IBM Plex Mono', ui-monospace, monospace;
+    --sans: 'IBM Plex Sans KR', -apple-system, sans-serif;
+  }
+  html[data-theme="dark"] {
+    --bg: #0b0f16;
+    --panel: #121822;
+    --ink: #eef2f7;
+    --slate: #b7c0cc;
+    --faint: #78828f;
+    --line: #29323e;
+    --wire: #22d3ee;
+    --wire-soft: #0e2530;
+    --amber: #f59e0b;
+    --amber-soft: #2a1c05;
+    --good: #4ade80;
+    --good-soft: #0f2417;
+    --bad: #f87171;
+    --bad-soft: #2a1210;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--ink); font-family: var(--sans); line-height: 1.75; font-size: 16px; }
+  code, .mono { font-family: var(--mono); }
+
+  header.hero { border-bottom: 1px solid var(--line); padding: 56px 24px 40px; }
+  .hero-inner { max-width: 880px; margin: 0 auto; }
+  .proto-tag {
+    display: inline-block; font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em;
+    color: var(--wire); border: 1px solid var(--wire); background: var(--wire-soft);
+    padding: 4px 12px; border-radius: 3px; margin-bottom: 18px;
+  }
+  h1 { font-size: clamp(26px, 4vw, 38px); font-weight: 700; line-height: 1.3; }
+  .sub { margin-top: 14px; color: var(--slate); font-size: 16px; max-width: 680px; }
+
+  main { max-width: 880px; margin: 0 auto; padding: 40px 24px 100px; }
+  section { margin-top: 48px; scroll-margin-top: 24px; }
+  section:first-child { margin-top: 0; }
+  h2 { font-size: 21px; font-weight: 700; margin-bottom: 8px; }
+  p { color: var(--slate); margin-bottom: 14px; }
+  strong { color: var(--ink); }
+
+  .panel { border: 1px solid var(--line); border-radius: 8px; background: var(--panel); padding: 20px 22px; margin: 16px 0; }
+
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14.5px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  th { text-align: left; font-family: var(--mono); font-size: 12px; letter-spacing: 0.06em; color: var(--slate); background: var(--wire-soft); padding: 11px 16px; border-bottom: 1px solid var(--line); }
+  td { padding: 10px 16px; border-bottom: 1px solid var(--line); }
+
+  .callout { border-radius: 8px; padding: 16px 18px; margin: 16px 0; font-size: 13.5px; }
+  .callout.field { background: var(--amber-soft); border: 1px solid var(--amber); color: var(--ink); }
+  .callout.good { background: var(--good-soft); border: 1px solid var(--good); color: var(--ink); }
+  .callout.bad { background: var(--bad-soft); border: 1px solid var(--bad); color: var(--ink); }
+
+  code.inline { font-family: var(--mono); font-size: 0.875em; background: var(--wire-soft); border: 1px solid var(--line); padding: 1px 6px; border-radius: 4px; color: var(--wire); }
+
+  footer { max-width: 880px; margin: 0 auto; padding: 24px; color: var(--faint); font-size: 12px; text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="kye-topbar" role="navigation" aria-label="사이트 내비게이션">
+  <a class="kye-topbar-brand" href="../index.html">📚 KYE Study Notes</a>
+  <div class="kye-topbar-right">
+    <a class="kye-topbar-back" href="../index.html">← 목록으로</a>
+    <button type="button" class="kye-theme-toggle" aria-label="다크 모드로 전환">🌙</button>
+  </div>
+</div>
+
+<header class="hero">
+  <div class="hero-inner">
+    <div class="proto-tag">{{EYEBROW}}</div>
+    <h1>{{PAGE_TITLE}}</h1>
+    <p class="sub">{{PAGE_SUBTITLE}}</p>
+  </div>
+</header>
+
+<main>
+  <section id="intro">
+    <h2>{{SECTION_1_TITLE}}</h2>
+    <p>{{SECTION_1_BODY}}</p>
+    <div class="callout field"><strong>참고 —</strong> {{FIELD_NOTE}}</div>
+  </section>
+
+  <section id="detail">
+    <h2>{{SECTION_2_TITLE}}</h2>
+    <p>{{SECTION_2_BODY}} 인라인 코드는 이렇게 씁니다: <code class="inline">{{INLINE_CODE}}</code></p>
+    <table>
+      <tr><th>{{COL_1}}</th><th>{{COL_2}}</th></tr>
+      <tr><td>{{ROW_1_A}}</td><td>{{ROW_1_B}}</td></tr>
+      <tr><td>{{ROW_2_A}}</td><td>{{ROW_2_B}}</td></tr>
+    </table>
+  </section>
+
+  <section id="summary">
+    <h2>{{SECTION_3_TITLE}}</h2>
+    <div class="panel">{{SUMMARY_BODY}}</div>
+  </section>
+</main>
+
+<footer>{{PAGE_TITLE}} — KYE Study Notes</footer>
+
+</body>
+</html>

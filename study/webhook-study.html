@@ -5,9 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Webhook 기술 스터디</title>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
-<script>(function(){try{var t=localStorage.getItem('kye-theme');if(!t){t=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<script>(function(){try{var t=localStorage.getItem('kye-theme')||'dark';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
 <link rel="stylesheet" href="../assets/site-header.css">
 <script src="../assets/theme.js" defer></script>
+<link rel="stylesheet" href="../assets/page-toc.css">
+<script src="../assets/page-toc.js" defer></script>
 <style>
   :root {
     --bg: #0a0c10;
@@ -97,7 +99,7 @@
 
   /* ── NAV ── */
   nav {
-    position: sticky; top: 0; z-index: 100;
+    position: sticky; top: var(--kye-header-h,56px); z-index: 100;
     background: rgba(10,12,16,0.95);
     backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--border);

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{PAGE_TITLE}}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script>(function(){try{var t=localStorage.getItem('kye-theme')||'dark';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<link rel="stylesheet" href="../assets/site-header.css">
+<script src="../assets/theme.js" defer></script>
+<link rel="stylesheet" href="../assets/page-toc.css">
+<script src="../assets/page-toc.js" defer></script>
+<style>
+  /*
+    TEMPLATE: editorial-light
+    Warm, serif-adjacent, paper-toned. Light is the native palette;
+    the dark override below inverts it. Swap --blue/--blue-deep for a
+    new page's own accent family, keep --paper/--card/--ink/--ink-soft/
+    --line as the structural skeleton every template shares.
+  */
+  :root {
+    --paper: #f2f4f8;
+    --card: #ffffff;
+    --line: #d5dbe7;
+    --ink: #182338;
+    --ink-soft: #4a5670;
+    --blue: #2b4c8c;
+    --blue-deep: #16294f;
+    --good: #2f7d53;
+    --good-bg: #eff7f1;
+    --bad: #b3402a;
+    --bad-bg: #fbf1ee;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans KR', sans-serif;
+  }
+  html[data-theme="dark"] {
+    --paper: #10141f;
+    --card: #171d2b;
+    --line: #2a3142;
+    --ink: #e6ebf5;
+    --ink-soft: #a8b3c9;
+    --blue: #7fa8ff;
+    --blue-deep: #9db8f0;
+    --good: #4ade80;
+    --good-bg: #10231a;
+    --bad: #e0685c;
+    --bad-bg: #2a1512;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--paper); color: var(--ink); font-family: var(--sans); line-height: 1.75; font-size: 16px; }
+  code, .mono { font-family: var(--mono); }
+  .wrap { max-width: 800px; margin: 0 auto; padding: 0 24px; }
+
+  header { border-bottom: 2px solid var(--blue-deep); padding: 64px 0 40px; }
+  .eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: 0.16em; color: var(--blue); text-transform: uppercase; margin-bottom: 18px; }
+  h1 { font-size: 30px; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 12px; }
+  .hero-quote { font-size: 17px; color: var(--ink-soft); max-width: 620px; }
+
+  main { padding: 24px 0 80px; }
+  section { margin-top: 64px; scroll-margin-top: 24px; }
+  section:first-child { margin-top: 0; }
+  h2 { font-size: 22px; font-weight: 700; }
+  h2 small { display: block; font-family: var(--mono); font-size: 12px; font-weight: 500; color: var(--blue); margin-top: 4px; }
+  p { margin-bottom: 16px; }
+  p.soft { color: var(--ink-soft); }
+  h3 { font-size: 16px; font-weight: 600; margin: 28px 0 12px; }
+
+  .one-liner {
+    font-size: 17px; color: var(--blue-deep); border-left: 3px solid var(--blue);
+    padding: 6px 0 6px 16px; margin: 20px 0 24px;
+  }
+
+  .code-block { border: 1.5px solid var(--line); margin: 16px 0; background: var(--card); }
+  .code-label { font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: 0.06em; padding: 8px 14px; border-bottom: 1px solid var(--line); color: var(--ink-soft); }
+  pre { background: #131b2e; color: #d8deec; font-family: var(--mono); font-size: 13px; line-height: 1.7; padding: 16px 18px; overflow-x: auto; }
+
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14.5px; background: var(--card); border: 1px solid var(--line); }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+  th { font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); }
+
+  .signals { background: var(--card); border: 1.5px solid var(--line); padding: 18px 20px; margin: 24px 0; }
+  .signals.good { border-left: 3px solid var(--good); }
+  .signals.bad { border-left: 3px solid var(--bad); }
+  .sig-title { font-family: var(--mono); font-size: 11px; letter-spacing: 0.14em; font-weight: 600; margin-bottom: 8px; }
+
+  footer { max-width: 800px; margin: 0 auto; padding: 24px; color: var(--ink-soft); font-size: 12px; text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="kye-topbar" role="navigation" aria-label="사이트 내비게이션">
+  <a class="kye-topbar-brand" href="../index.html">📚 KYE Study Notes</a>
+  <div class="kye-topbar-right">
+    <a class="kye-topbar-back" href="../index.html">← 목록으로</a>
+    <button type="button" class="kye-theme-toggle" aria-label="다크 모드로 전환">🌙</button>
+  </div>
+</div>
+
+<header>
+  <div class="wrap">
+    <div class="eyebrow">{{EYEBROW}}</div>
+    <h1>{{PAGE_TITLE}}</h1>
+    <p class="hero-quote">{{PAGE_SUBTITLE}}</p>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <section id="intro">
+      <h2>{{SECTION_1_TITLE}}<small>{{SECTION_1_TAG}}</small></h2>
+      <p class="one-liner">{{ONE_LINER}}</p>
+      <p>{{SECTION_1_BODY}}</p>
+    </section>
+
+    <section id="detail">
+      <h2>{{SECTION_2_TITLE}}<small>{{SECTION_2_TAG}}</small></h2>
+      <p>{{SECTION_2_BODY}}</p>
+
+      <div class="code-block">
+        <div class="code-label">{{CODE_LANG}}</div>
+        <pre>{{CODE_SAMPLE}}</pre>
+      </div>
+
+      <table>
+        <tr><th>{{COL_1}}</th><th>{{COL_2}}</th></tr>
+        <tr><td>{{ROW_1_A}}</td><td>{{ROW_1_B}}</td></tr>
+        <tr><td>{{ROW_2_A}}</td><td>{{ROW_2_B}}</td></tr>
+      </table>
+    </section>
+
+    <section id="summary">
+      <h2>{{SECTION_3_TITLE}}<small>{{SECTION_3_TAG}}</small></h2>
+      <div class="signals good">
+        <div class="sig-title">✅ {{GOOD_LABEL}}</div>
+        <p>{{SUMMARY_BODY}}</p>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer>{{PAGE_TITLE}} — KYE Study Notes</footer>
+
+</body>
+</html>

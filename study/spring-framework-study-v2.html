@@ -6,9 +6,11 @@
 <title>스프링 프레임워크 — 구조와 위상의 완전한 그림 (증보판)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<script>(function(){try{var t=localStorage.getItem('kye-theme');if(!t){t=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<script>(function(){try{var t=localStorage.getItem('kye-theme')||'dark';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
 <link rel="stylesheet" href="../assets/site-header.css">
 <script src="../assets/theme.js" defer></script>
+<link rel="stylesheet" href="../assets/page-toc.css">
+<script src="../assets/page-toc.js" defer></script>
 <style>
 :root{
   --paper:#FBFBF8;
@@ -42,6 +44,11 @@ html[data-theme="dark"]{
   --amber:#d9a94a;
   --amber-soft:#2a2008;
 }
+html[data-theme="dark"] .layer.l-env{background:#232a3a}
+html[data-theme="dark"] code{background:#232a3a}
+html[data-theme="dark"] em{background:linear-gradient(transparent 62%, #33415e 62%)}
+html[data-theme="dark"] .fix{border-color:#5a3530}
+html[data-theme="dark"] .confuse{border-color:#5a4a26}
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
 body{

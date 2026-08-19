@@ -5,9 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MCP 완전 정복 — 프로토콜 내부 동작과 서버 개발 실무</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
-<script>(function(){try{var t=localStorage.getItem('kye-theme');if(!t){t=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<script>(function(){try{var t=localStorage.getItem('kye-theme')||'dark';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
 <link rel="stylesheet" href="../assets/site-header.css">
 <script src="../assets/theme.js" defer></script>
+<link rel="stylesheet" href="../assets/page-toc.css">
+<script src="../assets/page-toc.js" defer></script>
 <style>
   :root{
     --bg:#FAFBFC;
@@ -51,6 +53,11 @@
     --bad:#f87171;
     --bad-soft:#2a1210;
   }
+  html[data-theme="dark"] th{background:#17202c}
+  html[data-theme="dark"] .arch .server{background:#17202c}
+  html[data-theme="dark"] .wmsg .dir.right{background:#0e2530}
+  html[data-theme="dark"] .wmsg .dir.left{background:#241f3d;color:#b79cff}
+  html[data-theme="dark"] code.inline{background:#1c2532;color:#dbe4f0}
   *{box-sizing:border-box;margin:0;padding:0}
   html{scroll-behavior:smooth}
   body{
@@ -68,7 +75,7 @@
   /* ===== hero ===== */
   header.hero{
     border-bottom:1px solid var(--line);
-    background:linear-gradient(180deg,#FFFFFF 0%,var(--bg) 100%);
+    background:linear-gradient(180deg,var(--panel) 0%,var(--bg) 100%);
     padding:64px 24px 48px;
   }
   .hero-inner{max-width:920px;margin:0 auto}
@@ -84,7 +91,7 @@
     display:flex;gap:0;align-items:center;flex-wrap:wrap;
   }
   .wire-strip .node{
-    border:1px solid var(--line);background:#fff;padding:6px 14px;border-radius:4px;color:var(--slate);font-weight:500;
+    border:1px solid var(--line);background:var(--panel);padding:6px 14px;border-radius:4px;color:var(--slate);font-weight:500;
   }
   .wire-strip .arrow{color:var(--wire);padding:0 10px;font-weight:600}
 
@@ -177,7 +184,7 @@
   .wmsg .dir.note{color:var(--faint);background:transparent;font-weight:400}
 
   /* ===== tables ===== */
-  table{width:100%;border-collapse:collapse;margin:20px 0 28px;font-size:14.5px;background:#fff;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  table{width:100%;border-collapse:collapse;margin:20px 0 28px;font-size:14.5px;background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden}
   th{
     text-align:left;font-family:var(--mono);font-size:12px;letter-spacing:.08em;
     color:var(--slate);background:#F8FAFC;padding:11px 16px;border-bottom:1px solid var(--line);font-weight:600;
@@ -214,7 +221,7 @@
 
   /* ===== arch diagram ===== */
   .arch{
-    border:1px solid var(--line);border-radius:8px;background:#fff;padding:28px;margin:24px 0 32px;
+    border:1px solid var(--line);border-radius:8px;background:var(--panel);padding:28px;margin:24px 0 32px;
     font-family:var(--mono);font-size:13px;
   }
   .arch .row{display:flex;gap:14px;align-items:stretch;flex-wrap:wrap}
@@ -258,7 +265,7 @@
   /* ===== summary card ===== */
   .sumgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:24px}
   @media(max-width:680px){.sumgrid{grid-template-columns:1fr}}
-  .sumcard{border:1px solid var(--line);border-radius:8px;background:#fff;padding:20px 22px}
+  .sumcard{border:1px solid var(--line);border-radius:8px;background:var(--panel);padding:20px 22px}
   .sumcard h4{margin:0 0 10px;font-size:15px}
   .sumcard h4 code{color:var(--wire);font-family:var(--mono);font-size:13px}
   .sumcard p{font-size:14px;color:var(--slate);margin:0}

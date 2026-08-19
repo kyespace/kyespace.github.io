@@ -6,9 +6,11 @@
 <title>SOLID 원칙 — 객체지향 설계 스터디</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&family=Gowun+Batang:wght@400;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<script>(function(){try{var t=localStorage.getItem('kye-theme');if(!t){t=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<script>(function(){try{var t=localStorage.getItem('kye-theme')||'dark';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
 <link rel="stylesheet" href="../assets/site-header.css">
 <script src="../assets/theme.js" defer></script>
+<link rel="stylesheet" href="../assets/page-toc.css">
+<script src="../assets/page-toc.js" defer></script>
 <style>
 :root{
   --paper:#F2F4F8;
@@ -44,6 +46,10 @@ html[data-theme="dark"]{
   --card:#171d2b;
   --hairline:#2a3142;
 }
+html[data-theme="dark"] nav.toc a:hover{background:#1c2540;}
+html[data-theme="dark"] .spring-note{background:#152036;}
+html[data-theme="dark"] .spring-note code, html[data-theme="dark"] p code, html[data-theme="dark"] li code, html[data-theme="dark"] td code{background:#1c2540;}
+html[data-theme="dark"] tr:nth-child(even) td{background:#161c2b;}
 *{margin:0;padding:0;box-sizing:border-box;}
 html{scroll-behavior:smooth;}
 body{

@@ -4,9 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Spring 디자인 패턴 스터디</title>
-<script>(function(){try{var t=localStorage.getItem('kye-theme');if(!t){t=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<script>(function(){try{var t=localStorage.getItem('kye-theme')||'dark';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
 <link rel="stylesheet" href="../assets/site-header.css">
 <script src="../assets/theme.js" defer></script>
+<link rel="stylesheet" href="../assets/page-toc.css">
+<script src="../assets/page-toc.js" defer></script>
 <style>
   :root {
     --ink: #17150f;
@@ -36,6 +38,7 @@
     --hand-bg: #2a1c15;
     --dim: #a89e82;
   }
+  html[data-theme="dark"] .card .where code { background: #2a2618; }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html { scroll-behavior: smooth; }
   body {
@@ -76,7 +79,7 @@
     margin-top: 24px;
     font-size: clamp(17px, 2.2vw, 20px);
     max-width: 60ch;
-    color: #38342a;
+    color: var(--ink);
   }
 
   /* ---- Legend / key ---- */
@@ -192,7 +195,7 @@
     margin-top: 8px;
     font-weight: 500;
   }
-  .card .desc { margin-top: 16px; font-size: 15.5px; color: #38342a; }
+  .card .desc { margin-top: 16px; font-size: 15.5px; color: var(--ink); }
   .card .where {
     margin-top: 18px;
     padding: 14px 16px;

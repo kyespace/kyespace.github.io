@@ -4,9 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Docker & OS 스터디 가이드</title>
-<script>(function(){try{var t=localStorage.getItem('kye-theme');if(!t){t=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<script>(function(){try{var t=localStorage.getItem('kye-theme')||'dark';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
 <link rel="stylesheet" href="../assets/site-header.css">
 <script src="../assets/theme.js" defer></script>
+<link rel="stylesheet" href="../assets/page-toc.css">
+<script src="../assets/page-toc.js" defer></script>
 <style>
   :root {
     --bg: #f5f0e8;
@@ -17,9 +19,13 @@
     --accent2: #3d6e88;
     --accent-dim: #5b8fa820;
     --green: #3a7d5c;
+    --green-dim: #3a7d5c20;
     --yellow: #b07d2e;
+    --yellow-dim: #b07d2e20;
     --red: #c0392b;
+    --red-dim: #c0392b20;
     --purple: #7b5ea7;
+    --purple-dim: #7b5ea720;
     --text: #2c2420;
     --text-dim: #7a6e65;
     --mono: 'JetBrains Mono','Fira Code','Cascadia Code',monospace;
@@ -34,18 +40,25 @@
     --accent2: #9fcbe0;
     --accent-dim: #7fb3cf24;
     --green: #5fbf8f;
+    --green-dim: #5fbf8f24;
     --yellow: #d9a94a;
+    --yellow-dim: #d9a94a24;
     --red: #e0685c;
+    --red-dim: #e0685c24;
     --purple: #a888d4;
+    --purple-dim: #a888d424;
     --text: #ece6da;
     --text-dim: #a89e8e;
+  }
+  html[data-theme="dark"] .page-header {
+    background: linear-gradient(135deg, #211d16 0%, #17130f 50%, #211d16 100%);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 15px; line-height: 1.7; }
 
   /* ── NAV BAR ── */
   .navbar {
-    position: sticky; top: 0; z-index: 100;
+    position: sticky; top: var(--kye-header-h,56px); z-index: 100;
     background: var(--surface);
     border-bottom: 2px solid var(--border);
     display: flex; align-items: center;
@@ -143,11 +156,11 @@
   /* ── ARCH DIAGRAM ── */
   .arch-diagram { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin: 20px 0; font-family: var(--mono); font-size: 12px; line-height: 1.9; overflow-x: auto; }
   .arch-box { border: 1px solid var(--border); border-radius: 8px; padding: 10px 16px; margin: 6px 0; text-align: center; font-size: 12px; }
-  .arch-box.app    { background: #e8f3ed; border-color: var(--green);  color: var(--green); }
-  .arch-box.runtime{ background: #e8f0f5; border-color: var(--accent); color: var(--accent); }
-  .arch-box.kernel { background: #ede8f5; border-color: var(--purple); color: var(--purple); }
-  .arch-box.hw     { background: #f5ede8; border-color: var(--yellow); color: var(--yellow); }
-  .arch-box.hyper  { background: #f5e8e8; border-color: var(--red);    color: var(--red); }
+  .arch-box.app    { background: var(--green-dim); border-color: var(--green);  color: var(--green); }
+  .arch-box.runtime{ background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+  .arch-box.kernel { background: var(--purple-dim); border-color: var(--purple); color: var(--purple); }
+  .arch-box.hw     { background: var(--yellow-dim); border-color: var(--yellow); color: var(--yellow); }
+  .arch-box.hyper  { background: var(--red-dim); border-color: var(--red);    color: var(--red); }
   .arch-box.guestos{ background: var(--surface2); border-color: var(--text-dim); color: var(--text-dim); }
   .arch-row { display: grid; gap: 10px; margin: 6px 0; }
   .arch-row.col2 { grid-template-columns: 1fr 1fr; }
@@ -164,10 +177,10 @@
   .layer-name { font-weight: 600; font-size: 13.5px; }
   .layer-desc { font-size: 12px; color: var(--text-dim); }
   .layer-badge { font-family: var(--mono); font-size: 10px; padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
-  .badge-rw     { background: #e8f3ed; color: var(--green);  border: 1px solid var(--green); }
-  .badge-ro     { background: #e8f0f5; color: var(--accent); border: 1px solid var(--accent2); }
-  .badge-base   { background: #f5ede8; color: var(--yellow); border: 1px solid var(--yellow); }
-  .badge-cached { background: #ede8f5; color: var(--purple); border: 1px solid var(--purple); }
+  .badge-rw     { background: var(--green-dim); color: var(--green);  border: 1px solid var(--green); }
+  .badge-ro     { background: var(--accent-dim); color: var(--accent); border: 1px solid var(--accent2); }
+  .badge-base   { background: var(--yellow-dim); color: var(--yellow); border: 1px solid var(--yellow); }
+  .badge-cached { background: var(--purple-dim); color: var(--purple); border: 1px solid var(--purple); }
   .layer.l0 { background: linear-gradient(90deg, var(--bg), #e8f3ed30); }
   .layer.l1, .layer.l2, .layer.l3 { background: var(--surface); }
   .layer.l4 { background: var(--surface2); }
@@ -177,9 +190,9 @@
   .cache-step { display: flex; gap: 12px; margin-bottom: 14px; align-items: flex-start; }
   .cache-step:last-child { margin-bottom: 0; }
   .cache-icon { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; }
-  .icon-hit  { background: #e8f3ed; }
-  .icon-miss { background: #f5e8e8; }
-  .icon-info { background: #e8f0f5; }
+  .icon-hit  { background: var(--green-dim); }
+  .icon-miss { background: var(--red-dim); }
+  .icon-info { background: var(--accent-dim); }
   .cache-text strong { font-size: 13.5px; display: block; margin-bottom: 2px; }
   .cache-text span { font-size: 12.5px; color: var(--text-dim); }
 
@@ -1195,7 +1208,7 @@ $ sudo modprobe kvm_intel</pre>
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:11px;margin-top:8px">
             <div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px;text-align:center;color:var(--text-dim)">가상 디스크<br>(qcow2 파일)</div>
             <div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px;text-align:center;color:var(--text-dim)">가상 NIC<br>(virtio)</div>
-            <div style="background:#e8f0f5;border:1px solid var(--accent2);border-radius:6px;padding:8px;text-align:center;color:var(--accent2);font-weight:700">CPU/메모리<br>→ KVM에 위임</div>
+            <div style="background:var(--accent-dim);border:1px solid var(--accent2);border-radius:6px;padding:8px;text-align:center;color:var(--accent2);font-weight:700">CPU/메모리<br>→ KVM에 위임</div>
           </div>
         </div>
         <div class="arch-arrow">⬇ /dev/kvm 을 통해 CPU 가상화 요청</div>

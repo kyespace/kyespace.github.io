@@ -7,9 +7,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<script>(function(){try{var t=localStorage.getItem('kye-theme');if(!t){t=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<script>(function(){try{var t=localStorage.getItem('kye-theme')||'dark';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
 <link rel="stylesheet" href="../assets/site-header.css">
 <script src="../assets/theme.js" defer></script>
+<link rel="stylesheet" href="../assets/page-toc.css">
+<script src="../assets/page-toc.js" defer></script>
 <style>
   :root{
     --bg: #0B1220;
@@ -62,7 +64,7 @@
   /* Layout */
   .shell{ display:grid; grid-template-columns:240px 1fr; max-width:1180px; margin:0 auto; background:var(--bg); min-height:100vh;}
   nav.side{
-    position:sticky; top:0; align-self:start; height:100vh; overflow-y:auto;
+    position:sticky; top:var(--kye-header-h,56px); align-self:start; height:calc(100vh - var(--kye-header-h,56px)); overflow-y:auto;
     padding:36px 20px 40px 28px; border-right:1px solid var(--line);
   }
   nav.side .brand{font-size:14px; color:var(--muted); margin-bottom:28px; letter-spacing:0.08em;}
@@ -271,7 +273,7 @@
   @media(max-width:860px){
     .shell{grid-template-columns:1fr;}
     nav.side{
-      position:sticky; top:0; z-index:10; height:auto; width:100%;
+      position:sticky; top:var(--kye-header-h,56px); z-index:10; height:auto; width:100%;
       display:flex; overflow-x:auto; overflow-y:hidden; gap:2px;
       padding:12px 14px; border-right:none; border-bottom:1px solid var(--line);
       background:var(--bg); -webkit-overflow-scrolling:touch;
