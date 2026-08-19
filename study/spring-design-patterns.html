@@ -239,6 +239,82 @@
     margin-top: 2px;
   }
 
+  /* ---- Deep-dive panel ---- */
+  .deepdive {
+    max-width: 1100px;
+    margin: 0 auto 40px;
+    padding: 32px 34px;
+    background: var(--paper-2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+  }
+  .deepdive .dd-tag { margin-bottom: 14px; }
+  .deepdive h4 {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 28px 0 12px;
+    letter-spacing: -0.01em;
+  }
+  .deepdive h4:first-of-type { margin-top: 0; }
+  .deepdive p {
+    font-size: 14.5px;
+    color: var(--ink);
+    margin-bottom: 12px;
+    line-height: 1.7;
+  }
+  .deepdive code {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-family: 'SF Mono', monospace;
+    font-size: 0.88em;
+  }
+  .deepdive .code-wrap { margin: 16px 0; }
+  .deepdive table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0 24px;
+    font-size: 13.5px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .deepdive th {
+    text-align: left;
+    font-family: 'SF Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--dim);
+    background: var(--paper-2);
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--line);
+  }
+  .deepdive td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+    color: var(--ink);
+  }
+  .deepdive tr:last-child td { border-bottom: none; }
+  .deepdive td:first-child {
+    font-weight: 600;
+    white-space: nowrap;
+    color: var(--brass);
+  }
+  .deepdive .note {
+    margin-top: 20px;
+    padding: 16px 18px;
+    background: var(--auto-bg);
+    border-left: 3px solid var(--auto);
+    border-radius: 0 8px 8px 0;
+    font-size: 14px;
+    color: var(--ink);
+  }
+  .deepdive .note b { color: var(--auto); }
+
   /* ---- Code blocks ---- */
   .code-wrap {
     background: var(--code-bg);
@@ -511,6 +587,118 @@
     ),
     repoName
 );</pre>
+    </div>
+  </div>
+
+  <!-- Template Method deep-dive -->
+  <div class="deepdive" id="template-method-deepdive">
+    <span class="tag auto dd-tag"><span class="tdot"></span>Deep-dive</span>
+    <h4>왜 인터페이스가 아니라 추상 클래스인가</h4>
+    <p>템플릿 메서드 패턴은 <b>인터페이스가 아니라 추상 클래스</b>를 쓴다. 추상 클래스에 알고리즘 흐름을 고정하는 <code>템플릿 메서드</code>(보통 <code>final</code>)를 두고, 그 안에서 호출하는 세부 단계만 <code>추상 메서드</code> 또는 기본 구현이 있는 <code>hook 메서드</code>로 선언한다. 하위 클래스는 그 추상 클래스를 <code>extends</code>해서 세부 단계만 오버라이드한다. 인터페이스는 원칙적으로 구현 코드를 가질 수 없어서, "공통 로직은 부모가 갖고 가변 부분만 자식이 채운다"는 이 패턴의 핵심에는 상속 기반 재사용이 자연스러운 추상 클래스 쪽이 맞다.</p>
+
+    <table>
+      <tr><th>구분</th><th>Interface</th><th>Abstract Class</th></tr>
+      <tr><td>목적</td><td>구현체가 지켜야 할 계약 정의</td><td>공통 로직 공유 + 일부만 자식이 채움</td></tr>
+      <tr><td>상속 방식</td><td><code>implements</code>, 다중 구현 가능</td><td><code>extends</code>, 단일 상속만</td></tr>
+      <tr><td>필드(상태)</td><td>상수만 가능</td><td>일반 인스턴스 필드 보유 가능</td></tr>
+      <tr><td>메서드 구현</td><td>원칙적으로 없음 (8+ default로 일부 가능)</td><td>구체 + 추상 메서드 혼합</td></tr>
+      <tr><td>생성자</td><td>없음</td><td>있음</td></tr>
+      <tr><td>관계 표현</td><td>"~할 수 있다" (Comparable, Runnable)</td><td>"~의 일종이다" (Animal → Dog)</td></tr>
+      <tr><td>대표 패턴</td><td>Strategy, Adapter</td><td>Template Method</td></tr>
+    </table>
+
+    <div class="code-wrap">
+      <div class="code-bar">
+        <span class="bdot" style="background:#e06c5a"></span>
+        <span class="bdot" style="background:#e0b64f"></span>
+        <span class="bdot" style="background:#7fbfa8"></span>
+        <span class="fname">DataProcessor.java</span>
+      </div>
+<pre><span class="c-key">abstract class</span> <span class="c-typ">DataProcessor</span> {
+
+    <span class="c-com">// 템플릿 메서드: 흐름은 고정, final이라 오버라이드 불가</span>
+    <span class="c-key">public final void</span> process() {
+        readData();
+        processData();            <span class="c-com">// 추상 — 자식이 반드시 구현</span>
+        <span class="c-key">if</span> (needsValidation()) {  <span class="c-com">// hook — 선택적 오버라이드</span>
+            validate();
+        }
+        saveData();
+    }
+
+    <span class="c-key">private void</span> readData() { <span class="c-mut">...</span> }
+    <span class="c-key">protected abstract void</span> processData();
+    <span class="c-key">protected boolean</span> needsValidation() { <span class="c-key">return true</span>; } <span class="c-com">// 기본값 제공</span>
+    <span class="c-key">private void</span> validate() { <span class="c-mut">...</span> }
+    <span class="c-key">private void</span> saveData() { <span class="c-mut">...</span> }
+}
+
+<span class="c-key">class</span> <span class="c-typ">JsonProcessor</span> <span class="c-key">extends</span> <span class="c-typ">DataProcessor</span> {
+    <span class="c-ann">@Override</span> <span class="c-key">protected void</span> processData() { <span class="c-mut">...</span> }
+
+    <span class="c-ann">@Override</span>
+    <span class="c-key">protected boolean</span> needsValidation() { <span class="c-key">return false</span>; } <span class="c-com">// JSON은 검증 스킵</span>
+}</pre>
+    </div>
+
+    <h4>JdbcTemplate 내부 구조 — 인터페이스 + 추상 클래스 조합</h4>
+    <p><code>JdbcTemplate</code>이 이 둘을 실무에서 같이 쓰는 대표 예다. <code>JdbcAccessor</code>(추상 클래스)를 상속해 <code>DataSource</code>·예외 변환기 같은 공통 인프라를 재사용하고, <code>JdbcOperations</code>(인터페이스)를 구현해 <code>query()</code>·<code>update()</code> 같은 계약을 노출한다.</p>
+
+    <div class="code-wrap">
+      <div class="code-bar">
+        <span class="bdot" style="background:#e06c5a"></span>
+        <span class="bdot" style="background:#e0b64f"></span>
+        <span class="bdot" style="background:#7fbfa8"></span>
+        <span class="fname">JdbcTemplate (simplified)</span>
+      </div>
+<pre><span class="c-key">public abstract class</span> <span class="c-typ">JdbcAccessor</span> {
+    <span class="c-key">private</span> <span class="c-typ">DataSource</span> dataSource;
+    <span class="c-key">private</span> <span class="c-typ">SQLExceptionTranslator</span> exceptionTranslator;
+
+    <span class="c-com">// Bean 초기화 시 자동 호출 — 필수 설정 검증</span>
+    <span class="c-key">public void</span> afterPropertiesSet() {
+        <span class="c-key">if</span> (getDataSource() == <span class="c-key">null</span>)
+            <span class="c-key">throw new</span> <span class="c-typ">IllegalArgumentException</span>(<span class="c-str">"dataSource is required"</span>);
+    }
+}
+
+<span class="c-key">public interface</span> <span class="c-typ">JdbcOperations</span> {
+    &lt;T&gt; T queryForObject(<span class="c-typ">String</span> sql, <span class="c-typ">RowMapper</span>&lt;T&gt; mapper);  <span class="c-com">// 계약만</span>
+    <span class="c-typ">int</span> update(<span class="c-typ">String</span> sql, <span class="c-typ">Object</span>... args);
+}
+
+<span class="c-key">public class</span> <span class="c-typ">JdbcTemplate</span> <span class="c-key">extends</span> <span class="c-typ">JdbcAccessor</span>          <span class="c-com">// 공통 인프라 상속</span>
+                                <span class="c-key">implements</span> <span class="c-typ">JdbcOperations</span> {  <span class="c-com">// 계약 구현</span>
+    <span class="c-ann">@Override</span>
+    <span class="c-key">public</span> &lt;T&gt; T queryForObject(<span class="c-typ">String</span> sql, <span class="c-typ">RowMapper</span>&lt;T&gt; mapper) {
+        <span class="c-key">try</span> {
+            <span class="c-com">// getDataSource() — 부모가 관리하던 걸 그대로 사용</span>
+            <span class="c-typ">Connection</span> con = <span class="c-typ">DataSourceUtils</span>.getConnection(obtainDataSource());
+            <span class="c-mut">...</span>
+        } <span class="c-key">catch</span> (<span class="c-typ">SQLException</span> ex) {
+            <span class="c-key">throw</span> getExceptionTranslator().translate(<span class="c-str">"Query"</span>, sql, ex);  <span class="c-com">// 부모가 세팅한 translator</span>
+        }
+    }
+}</pre>
+    </div>
+
+    <table>
+      <tr><th>구성 요소</th><th>종류</th><th>역할</th></tr>
+      <tr><td>JdbcOperations</td><td>Interface</td><td><code>query()</code>, <code>update()</code> 등 계약만 정의</td></tr>
+      <tr><td>JdbcAccessor</td><td>Abstract Class</td><td>DataSource·예외 변환기 등 공통 상태·로직 제공</td></tr>
+      <tr><td>JdbcTemplate</td><td>구체 클래스</td><td>둘을 합쳐 실제 JDBC 호출 로직 구현</td></tr>
+    </table>
+
+    <h4>JdbcAccessor가 제공하는 공통 인프라</h4>
+    <table>
+      <tr><th>인프라</th><th>내용</th></tr>
+      <tr><td>DataSource 관리</td><td>커넥션 얻는 창구를 필드로 보관</td></tr>
+      <tr><td>예외 변환기 관리</td><td>Vendor별 SQLException → Spring 공통 DataAccessException 매핑</td></tr>
+      <tr><td>초기화 검증</td><td><code>afterPropertiesSet()</code> — 필수 설정이 안 됐으면 앱 구동 시점에 즉시 에러</td></tr>
+    </table>
+
+    <div class="note">
+      <b>정리 —</b> 인터페이스(<code>JdbcOperations</code>)로 사용자에게 보여줄 계약을 정의해서 테스트 때 Mock으로 손쉽게 대체하고, 추상 클래스(<code>JdbcAccessor</code>)로 DataSource·예외 변환 같은 내부 공통 인프라를 중복 없이 재사용한다. 인터페이스만 썼다면 이 필드와 검증 로직을 <code>JdbcTemplate</code>, <code>NamedParameterJdbcTemplate</code> 등 모든 구현체가 각자 중복 작성해야 했을 것이다.
     </div>
   </div>
 
