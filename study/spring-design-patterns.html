@@ -15,8 +15,8 @@
     --paper: #f6f2e9;
     --paper-2: #efe9db;
     --line: #d6cdb8;
-    --brass: #a6803a;
-    --brass-soft: #c9a75f;
+    --brass: #2f5aa8;
+    --brass-soft: #6f93d9;
     --auto: #2f6d5b;   /* framework / automatic */
     --auto-bg: #e3ede6;
     --hand: #9c4a2f;   /* hand-built */
@@ -30,8 +30,8 @@
     --paper: #14120d;
     --paper-2: #1c1912;
     --line: #3a3527;
-    --brass: #d4ac6a;
-    --brass-soft: #e8c98a;
+    --brass: #7fa8ff;
+    --brass-soft: #a8c4ff;
     --auto: #6fbfa1;
     --auto-bg: #16261f;
     --hand: #d68a68;
@@ -271,10 +271,18 @@
     font-size: 0.88em;
   }
   .deepdive .code-wrap { margin: 16px 0; }
+  .deepdive .table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
+    border-radius: 8px;
+    margin: 12px 0 24px;
+  }
   .deepdive table {
     width: 100%;
+    min-width: 480px;
     border-collapse: collapse;
-    margin: 12px 0 24px;
+    margin: 0;
     font-size: 13.5px;
     background: var(--paper);
     border: 1px solid var(--line);
@@ -596,6 +604,7 @@
     <h4>왜 인터페이스가 아니라 추상 클래스인가</h4>
     <p>템플릿 메서드 패턴은 <b>인터페이스가 아니라 추상 클래스</b>를 쓴다. 추상 클래스에 알고리즘 흐름을 고정하는 <code>템플릿 메서드</code>(보통 <code>final</code>)를 두고, 그 안에서 호출하는 세부 단계만 <code>추상 메서드</code> 또는 기본 구현이 있는 <code>hook 메서드</code>로 선언한다. 하위 클래스는 그 추상 클래스를 <code>extends</code>해서 세부 단계만 오버라이드한다. 인터페이스는 원칙적으로 구현 코드를 가질 수 없어서, "공통 로직은 부모가 갖고 가변 부분만 자식이 채운다"는 이 패턴의 핵심에는 상속 기반 재사용이 자연스러운 추상 클래스 쪽이 맞다.</p>
 
+    <div class="table-scroll">
     <table>
       <tr><th>구분</th><th>Interface</th><th>Abstract Class</th></tr>
       <tr><td>목적</td><td>구현체가 지켜야 할 계약 정의</td><td>공통 로직 공유 + 일부만 자식이 채움</td></tr>
@@ -606,6 +615,7 @@
       <tr><td>관계 표현</td><td>"~할 수 있다" (Comparable, Runnable)</td><td>"~의 일종이다" (Animal → Dog)</td></tr>
       <tr><td>대표 패턴</td><td>Strategy, Adapter</td><td>Template Method</td></tr>
     </table>
+    </div>
 
     <div class="code-wrap">
       <div class="code-bar">
@@ -682,20 +692,24 @@
 }</pre>
     </div>
 
+    <div class="table-scroll">
     <table>
       <tr><th>구성 요소</th><th>종류</th><th>역할</th></tr>
       <tr><td>JdbcOperations</td><td>Interface</td><td><code>query()</code>, <code>update()</code> 등 계약만 정의</td></tr>
       <tr><td>JdbcAccessor</td><td>Abstract Class</td><td>DataSource·예외 변환기 등 공통 상태·로직 제공</td></tr>
       <tr><td>JdbcTemplate</td><td>구체 클래스</td><td>둘을 합쳐 실제 JDBC 호출 로직 구현</td></tr>
     </table>
+    </div>
 
     <h4>JdbcAccessor가 제공하는 공통 인프라</h4>
+    <div class="table-scroll">
     <table>
       <tr><th>인프라</th><th>내용</th></tr>
       <tr><td>DataSource 관리</td><td>커넥션 얻는 창구를 필드로 보관</td></tr>
       <tr><td>예외 변환기 관리</td><td>Vendor별 SQLException → Spring 공통 DataAccessException 매핑</td></tr>
       <tr><td>초기화 검증</td><td><code>afterPropertiesSet()</code> — 필수 설정이 안 됐으면 앱 구동 시점에 즉시 에러</td></tr>
     </table>
+    </div>
 
     <div class="note">
       <b>정리 —</b> 인터페이스(<code>JdbcOperations</code>)로 사용자에게 보여줄 계약을 정의해서 테스트 때 Mock으로 손쉽게 대체하고, 추상 클래스(<code>JdbcAccessor</code>)로 DataSource·예외 변환 같은 내부 공통 인프라를 중복 없이 재사용한다. 인터페이스만 썼다면 이 필드와 검증 로직을 <code>JdbcTemplate</code>, <code>NamedParameterJdbcTemplate</code> 등 모든 구현체가 각자 중복 작성해야 했을 것이다.
