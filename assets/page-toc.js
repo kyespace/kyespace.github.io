@@ -1,14 +1,23 @@
-/* KYE Study Notes — shared floating "on this page" TOC widget.
-   Builds its list from whatever navigation the page already has,
-   in priority order, so it stays organized instead of dumping every
+/* KYE Study Notes — the site's only "on this page" navigation.
+   Every page used to carry its own bespoke TOC/sidebar; those have
+   all been removed in favor of this one shared, auto-built widget so
+   there's a single consistent nav experience site-wide (see
+   assets/page-toc.css for the left-rail-on-wide-screens layout).
+
+   Builds its list from whatever navigation the page already has, in
+   priority order, so it stays organized instead of dumping every
    heading it can find:
-     1. an existing nav.toc / .toc block with #anchor links (most pages)
-     2. a plain <nav>/.sidebar with #anchor links (webhook, linux-permissions)
-     3. data-target="#id" buttons (jwt-study's JS-driven sidebar)
-     4. fallback: top-level h1/h2[id] headings in document order
-   Skips itself entirely on pages with fewer than two sections, or
-   pages that use a multi-page tab switcher instead of scroll nav
-   (docker-container-study's .navbar .nav-tab). */
+     1. an existing nav.toc / .toc block with #anchor links (legacy; none left)
+     2. a plain <nav>/.sidebar with #anchor links (legacy; none left)
+     3. data-target="#id" buttons (legacy; none left)
+     4. fallback: top-level h1/h2[id] headings in document order — this
+        is the path every page actually takes today
+   Skips itself entirely on pages with fewer than two sections. On
+   docker-container-study.html (which shows one "page" of several at a
+   time via its own .navbar tab switcher) the heading scan is scoped
+   to .page.active, and a MutationObserver rebuilds the list whenever
+   that switch happens. Also highlights the current section as you
+   scroll via IntersectionObserver. */
 (function () {
   function ready(fn) {
     if (document.readyState !== 'loading') fn();
@@ -17,7 +26,7 @@
 
   function cleanText(el) {
     var clone = el.cloneNode(true);
-    clone.querySelectorAll('.new, .sub, .badge').forEach(function (x) { x.remove(); });
+    clone.querySelectorAll('.new, .sub, .badge, small').forEach(function (x) { x.remove(); });
     var parts = [];
     clone.childNodes.forEach(function (n) { parts.push(n.textContent); });
     return parts.join(' ').replace(/\s+/g, ' ').trim();
@@ -62,7 +71,9 @@
   }
 
   function fromHeadings() {
-    if (document.querySelector('.navbar .nav-tab')) return null; // multi-page tab switcher, not scroll nav
+    // docker-container-study.html shows one "page" of several at a time
+    // (its own .navbar switches between them); scope to the visible one
+    // so the list only ever shows sections actually on screen.
     var scope = document.querySelector('.page.active') || document.querySelector('main') || document.body;
 
     var direct = scope.querySelectorAll('h1[id], h2[id]');
@@ -92,7 +103,10 @@
     return isNaN(n) ? 56 : n;
   }
 
-  function build(entries) {
+  ready(function () {
+    var entries = findEntries();
+    if (entries.length < 2) return;
+
     var wrap = document.createElement('div');
     wrap.className = 'kye-toc';
 
@@ -122,23 +136,63 @@
 
     var list = document.createElement('div');
     list.className = 'kye-toc-list';
-    entries.forEach(function (e) {
-      var a = document.createElement('a');
-      a.href = '#' + e.id;
-      a.textContent = e.text;
-      a.addEventListener('click', function (ev) {
-        ev.preventDefault();
-        var target = document.getElementById(e.id);
-        if (target) {
-          var top = target.getBoundingClientRect().top + window.pageYOffset - headerOffset() - 12;
-          window.scrollTo({ top: top, behavior: 'smooth' });
-          history.pushState(null, '', '#' + e.id);
-        }
-        close();
-      });
-      list.appendChild(a);
-    });
     panel.appendChild(list);
+
+    var spyObserver = null;
+
+    function renderList(newEntries) {
+      list.innerHTML = '';
+      if (spyObserver) { spyObserver.disconnect(); spyObserver = null; }
+
+      var linkById = {};
+      newEntries.forEach(function (e) {
+        var a = document.createElement('a');
+        a.href = '#' + e.id;
+        a.textContent = e.text;
+        a.addEventListener('click', function (ev) {
+          ev.preventDefault();
+          var target = document.getElementById(e.id);
+          if (target) {
+            var top = target.getBoundingClientRect().top + window.pageYOffset - headerOffset() - 12;
+            window.scrollTo({ top: top, behavior: 'smooth' });
+            history.pushState(null, '', '#' + e.id);
+          }
+          close();
+        });
+        list.appendChild(a);
+        linkById[e.id] = a;
+      });
+
+      if ('IntersectionObserver' in window) {
+        var offset = headerOffset();
+        spyObserver = new IntersectionObserver(function (obs) {
+          obs.forEach(function (entry) {
+            var link = linkById[entry.target.id];
+            if (!link) return;
+            link.classList.toggle('active', entry.isIntersecting);
+          });
+        }, { rootMargin: '-' + (offset + 8) + 'px 0px -70% 0px' });
+        newEntries.forEach(function (e) {
+          var target = document.getElementById(e.id);
+          if (target) spyObserver.observe(target);
+        });
+      }
+    }
+
+    renderList(entries);
+
+    // Rebuild when docker-container-study.html's own tab switcher
+    // changes which .page is active, so the list tracks what's visible.
+    var pages = document.querySelectorAll('.page');
+    if (pages.length) {
+      var pageObserver = new MutationObserver(function () {
+        var next = findEntries();
+        if (next.length >= 2) renderList(next);
+      });
+      pages.forEach(function (p) {
+        pageObserver.observe(p, { attributes: true, attributeFilter: ['class'] });
+      });
+    }
 
     function onDocClick(ev) {
       if (!wrap.contains(ev.target)) close();
@@ -168,11 +222,5 @@
     wrap.appendChild(panel);
     wrap.appendChild(btn);
     document.body.appendChild(wrap);
-  }
-
-  ready(function () {
-    var entries = findEntries();
-    if (entries.length < 2) return;
-    build(entries);
   });
 })();

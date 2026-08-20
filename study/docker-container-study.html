@@ -116,14 +116,6 @@
   .container { max-width: 960px; margin: 0 auto; padding: 0 24px 80px; }
 
   /* ── TOC ── */
-  .toc { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px 28px; margin: 36px 0; }
-  .toc-title { font-size: 11px; font-family: var(--mono); color: var(--accent); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 14px; }
-  .toc ol { list-style: none; counter-reset: toc; display: grid; grid-template-columns: 1fr 1fr; gap: 6px 24px; }
-  @media(max-width:600px){ .toc ol { grid-template-columns: 1fr; } }
-  .toc li { counter-increment: toc; }
-  .toc a { color: var(--text-dim); text-decoration: none; font-size: 13.5px; display: flex; align-items: center; gap: 8px; transition: color 0.2s; }
-  .toc a::before { content: counter(toc,decimal-leading-zero); font-family: var(--mono); font-size: 10px; color: var(--accent2); min-width: 20px; }
-  .toc a:hover { color: var(--accent); }
 
   /* ── SECTION ── */
   section { margin: 52px 0; scroll-margin-top: 70px; }
@@ -293,21 +285,6 @@
     <p>VM과의 차이점 · 레이어 캐싱 · Docker Daemon 아키텍처</p>
   </div>
   <div class="container">
-    <nav class="toc">
-      <div class="toc-title">// Contents</div>
-      <ol>
-        <li><a href="#s1">VM vs Container 핵심 차이</a></li>
-        <li><a href="#s2">아키텍처 비교 다이어그램</a></li>
-        <li><a href="#s3">레이어(Layer) 개념</a></li>
-        <li><a href="#s3b">Container Layer · OverlayFS 구조</a></li>
-        <li><a href="#s3c">파일 추가·수정·삭제 — 실제 동작</a></li>
-        <li><a href="#s3d">레이어 = diff 스냅샷 · 실제 디렉터리 구조</a></li>
-        <li><a href="#s4">레이어 캐시 Hit / Miss</a></li>
-        <li><a href="#s5">Docker Daemon 역할</a></li>
-        <li><a href="#s6">핵심 개념 요약</a></li>
-      </ol>
-    </nav>
-
     <!-- S1 -->
     <section id="s1">
       <div class="section-label"><span class="section-num">01</span><h2>VM vs Container — 핵심 차이</h2></div>
@@ -749,18 +726,6 @@ $ docker image inspect myapp --format='{{json .RootFS.Layers}}'
     <p>Kernel Space · 부팅 과정 · RAM/ROM · 칩 · 플래시 메모리</p>
   </div>
   <div class="container">
-    <nav class="toc">
-      <div class="toc-title">// Contents</div>
-      <ol>
-        <li><a href="#s7">Kernel Space / User Space</a></li>
-        <li><a href="#s8">시스템 콜 (syscall)</a></li>
-        <li><a href="#s9">부팅 과정 상세</a></li>
-        <li><a href="#s10">RAM / ROM / Storage 계층</a></li>
-        <li><a href="#s11">칩 · 반도체란</a></li>
-        <li><a href="#s12">플래시 메모리 · ROM의 역사</a></li>
-      </ol>
-    </nav>
-
     <!-- S7 -->
     <section id="s7">
       <div class="section-label"><span class="section-num">07</span><h2>Kernel Space / User Space</h2></div>
@@ -964,19 +929,6 @@ $ strace ls -la   <span class="c-comment"># ls가 날리는 모든 syscall 출�
     <p>Hypervisor · Type 1/2 · KVM · QEMU · Proxmox</p>
   </div>
   <div class="container">
-    <nav class="toc">
-      <div class="toc-title">// Contents</div>
-      <ol>
-        <li><a href="#s13">Hypervisor란</a></li>
-        <li><a href="#s14">Type 1 vs Type 2</a></li>
-        <li><a href="#s14b">VirtualBox on Linux — KVM과의 관계</a></li>
-        <li><a href="#s15">KVM — Linux 커널 가상화</a></li>
-        <li><a href="#s16">QEMU — 하드웨어 에뮬레이터</a></li>
-        <li><a href="#s17">KVM + QEMU 역할 분담</a></li>
-        <li><a href="#s18">Proxmox 구조 · 전체 정리</a></li>
-      </ol>
-    </nav>
-
     <!-- S13 -->
     <section id="s13">
       <div class="section-label"><span class="section-num">13</span><h2>Hypervisor란</h2></div>

@@ -83,15 +83,6 @@
   .wire-strip .node{border:1px solid var(--line);background:var(--panel);padding:6px 14px;border-radius:4px;color:var(--slate);font-weight:500}
   .wire-strip .arrow{color:var(--wire);padding:0 10px;font-weight:600}
 
-  nav.toc{margin:48px 0 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel);padding:28px 32px}
-  nav.toc h2{font-size:13px;font-family:var(--mono);letter-spacing:.14em;color:var(--faint);margin-bottom:16px;font-weight:600}
-  nav.toc ol{list-style:none;counter-reset:toc;columns:2;column-gap:40px}
-  nav.toc li{counter-increment:toc;margin-bottom:8px;break-inside:avoid}
-  nav.toc a{color:var(--ink);text-decoration:none;font-size:15px;font-weight:500}
-  nav.toc a:hover{color:var(--wire)}
-  nav.toc a::before{content:counter(toc,decimal-leading-zero);font-family:var(--mono);font-size:12px;color:var(--wire);margin-right:12px}
-  @media(max-width:640px){nav.toc ol{columns:1}}
-
   section{margin-top:88px}
   .sec-label{font-family:var(--mono);font-size:12px;letter-spacing:.14em;color:var(--wire);font-weight:600;margin-bottom:10px}
   h2{font-size:28px;font-weight:700;letter-spacing:-.015em;margin-bottom:8px;line-height:1.35}
@@ -192,22 +183,6 @@
 </header>
 
 <div class="shell">
-
-<nav class="toc">
-  <h2>CONTENTS · PART 2</h2>
-  <ol>
-    <li><a href="#http">Streamable HTTP 내부 — 세션, SSE, 재개</a></li>
-    <li><a href="#auth">인증 — OAuth 2.1과 Resource Server로서의 MCP</a></li>
-    <li><a href="#reverse">역방향 프리미티브 — Sampling · Elicitation · Roots</a></li>
-    <li><a href="#ops-msg">운용 메시지 — Progress · Cancellation · Logging · Pagination</a></li>
-    <li><a href="#structured">Structured Output과 Context 객체</a></li>
-    <li><a href="#spring">Spring AI로 MCP 서버 만들기</a></li>
-    <li><a href="#client">클라이언트를 직접 만들어보기 — 에이전트 루프의 실체</a></li>
-    <li><a href="#testing">테스트 전략 — Inspector 이후의 자동화</a></li>
-    <li><a href="#deploy">배포와 운영 — 사내 공용 MCP 서버</a></li>
-    <li><a href="#summary2">요약과 로드맵</a></li>
-  </ol>
-</nav>
 
 <!-- ============ 1 ============ -->
 <section id="http">

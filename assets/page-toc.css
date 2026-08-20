@@ -1,16 +1,19 @@
-/* KYE Study Notes — shared floating "on this page" TOC widget.
-   Auto-populated by page-toc.js from headings found in the page.
-   Narrow/medium screens: a floating button that expands a popup panel.
-   Wide screens (see the min-width query below): the same panel docks
-   as a persistent right-hand rail, always visible, no click needed —
-   the same component and markup in both cases, just repositioned. */
+/* KYE Study Notes — shared "on this page" TOC widget.
+   Narrow/medium screens: a floating button (bottom-left) that expands
+   a popup panel. Wide screens (see the min-width query below): the
+   same panel docks as a persistent left-hand rail, always visible,
+   no click needed. Same markup and list in both cases, just
+   repositioned by CSS — this is now the *only* in-page navigation
+   every study page has, so it also tracks the current section as you
+   scroll (see .kye-toc-list a.active). */
 
 :root {
   --kye-toc-bg: #ffffff;
   --kye-toc-border: rgba(15, 20, 30, 0.14);
   --kye-toc-text: #1c1f26;
   --kye-toc-muted: #6b7280;
-  --kye-toc-hover: rgba(15, 20, 30, 0.06);
+  --kye-toc-hover: rgba(31, 111, 235, 0.08);
+  --kye-toc-accent: #1f6feb;
   --kye-toc-shadow: 0 10px 30px rgba(15, 20, 30, 0.16);
 }
 
@@ -19,17 +22,19 @@ html[data-theme="dark"] {
   --kye-toc-border: rgba(255, 255, 255, 0.12);
   --kye-toc-text: #e6edf3;
   --kye-toc-muted: #8b949e;
-  --kye-toc-hover: rgba(255, 255, 255, 0.07);
+  --kye-toc-hover: rgba(88, 166, 255, 0.10);
+  --kye-toc-accent: #58a6ff;
   --kye-toc-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
 }
 
 .kye-toc {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Pretendard, Roboto, sans-serif;
+  counter-reset: kye-toc;
 }
 
 .kye-toc-btn {
   position: fixed;
-  right: 18px;
+  left: 18px;
   bottom: 18px;
   z-index: 900;
   display: inline-flex;
@@ -53,7 +58,7 @@ html[data-theme="dark"] {
 
 .kye-toc-panel {
   position: fixed;
-  right: 18px;
+  left: 18px;
   bottom: 68px;
   z-index: 900;
   width: min(320px, 88vw);
@@ -103,44 +108,65 @@ html[data-theme="dark"] {
 }
 
 .kye-toc-list a {
-  display: block;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
   padding: 9px 10px;
   border-radius: 8px;
+  border-left: 2px solid transparent;
   font-size: 13.5px;
   line-height: 1.4;
   color: var(--kye-toc-text);
   text-decoration: none;
 }
+.kye-toc-list a::before {
+  counter-increment: kye-toc;
+  content: counter(kye-toc, decimal-leading-zero);
+  flex: 0 0 auto;
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--kye-toc-accent);
+  opacity: 0.7;
+}
 .kye-toc-list a:hover,
 .kye-toc-list a:focus-visible { background: var(--kye-toc-hover); }
+.kye-toc-list a.active {
+  border-left-color: var(--kye-toc-accent);
+  background: var(--kye-toc-hover);
+  color: var(--kye-toc-text);
+  font-weight: 600;
+}
+.kye-toc-list a.active::before { opacity: 1; }
 
 @media (max-width: 480px) {
   .kye-toc-btn .kye-toc-label { display: none; }
   .kye-toc-btn { padding: 11px; }
 }
 
-/* Wide screens: dock as a persistent right-hand rail instead of a
-   click-to-open popup. The widest page content column across the
-   site is jwt-study's 1180px .shell; the breakpoint below keeps a
-   220px rail clear of that (and everything narrower) with margin
+/* Wide screens: dock as a persistent left-hand rail instead of a
+   click-to-open popup. Every page's content column is centered with
+   margin:0 auto, so the same left/right gutter clears the rail; the
+   widest column on the site is spring-design-patterns' 1100px .band,
+   which the breakpoint below keeps clear of a 220px rail with margin
    to spare. */
-@media (min-width: 1680px) {
+@media (min-width: 1600px) {
   .kye-toc-btn { display: none; }
 
   .kye-toc-panel {
     display: flex !important;
     position: fixed;
     top: var(--kye-header-h, 56px);
-    right: 0;
+    left: 0;
+    right: auto;
     bottom: 0;
-    left: auto;
     width: 220px;
     max-height: none;
     border-radius: 0;
     border-top: none;
-    border-right: none;
+    border-left: none;
     border-bottom: none;
-    box-shadow: -6px 0 24px rgba(15, 20, 30, 0.06);
+    box-shadow: 6px 0 24px rgba(15, 20, 30, 0.06);
   }
 
   .kye-toc-panel-head { flex-shrink: 0; }

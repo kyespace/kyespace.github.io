@@ -117,33 +117,6 @@ h1 .sub{
 .dot.a{background:var(--amber)}
 .dot.n{background:var(--teal)}
 
-/* ===== TOC ===== */
-nav.toc{
-  margin:36px 0 0;
-  border:1px solid var(--line);
-  border-radius:8px;
-  padding:22px 26px;
-  background:var(--surface);
-}
-nav.toc h2{font-size:13px;font-family:var(--mono);letter-spacing:.12em;color:var(--ink-soft);margin-bottom:14px;font-weight:600}
-nav.toc ol{list-style:none;counter-reset:toc}
-nav.toc li{counter-increment:toc;margin:7px 0}
-nav.toc a{
-  color:var(--ink);text-decoration:none;font-weight:500;font-size:15px;
-  display:flex;gap:12px;align-items:baseline;
-}
-nav.toc a::before{
-  content:counter(toc,decimal-leading-zero);
-  font-family:var(--mono);font-size:12px;color:var(--blue);font-weight:600;
-}
-nav.toc a:hover{color:var(--blue)}
-nav.toc .new{
-  font-family:var(--mono);font-size:10px;font-weight:600;
-  background:var(--teal-chip);color:#fff;
-  padding:1px 6px;border-radius:3px;margin-left:8px;
-  letter-spacing:.05em;
-}
-
 /* ===== sections ===== */
 section{padding:52px 0 8px;border-bottom:1px solid var(--line)}
 section:last-of-type{border-bottom:none}
@@ -430,26 +403,6 @@ footer{
       <span><span class="dot a"></span>헷갈렸던 지점 — 특히 주의해서 볼 부분</span>
       <span><span class="dot n"></span>NEW — 이번 증보에서 추가된 장</span>
     </div>
-    <nav class="toc">
-      <h2>CONTENTS</h2>
-      <ol>
-        <li><a href="#s1">전체 위상 구조 — 한 장의 지도</a></li>
-        <li><a href="#s2">서블릿과 톰캣 — ⓪층 해부<span class="new">NEW</span></a></li>
-        <li><a href="#s3">소켓 — 요청의 바닥까지<span class="new">NEW</span></a></li>
-        <li><a href="#s4">DispatcherServlet — 국경선과 전화번호부<span class="new">NEW</span></a></li>
-        <li><a href="#s5">WebMVC vs WebFlux — 톰캣 없이도 되나<span class="new">NEW</span></a></li>
-        <li><a href="#s5b">스레드·코어·커넥션 풀 — 숫자들의 근거<span class="new">NEW</span></a></li>
-        <li><a href="#s6">구조 vs 메커니즘 — 위치가 있는 것과 없는 것</a></li>
-        <li><a href="#s7">IoC vs DI — 원칙과 구현의 관계</a></li>
-        <li><a href="#s8">IoC의 두 차원 — 객체와 흐름</a></li>
-        <li><a href="#s9">AOP — 개념, 그리고 프록시라는 구현</a></li>
-        <li><a href="#s10">@Transactional 해부 — 두 축의 협력</a></li>
-        <li><a href="#s11">PSA의 진짜 위상 — 엔진이 아니라 설계 철학</a></li>
-        <li><a href="#s12">Spring Boot — 무엇을 자동화했나</a></li>
-        <li><a href="#s13">오답노트 — 정정 사항 총정리</a></li>
-        <li><a href="#s14">학습 로드맵</a></li>
-      </ol>
-    </nav>
   </div>
 </header>
 

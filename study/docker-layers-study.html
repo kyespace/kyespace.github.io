@@ -80,25 +80,6 @@
     font-size: 15px;
     max-width: 600px;
   }
-  .toc {
-    margin-top: 30px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-  }
-  .toc a {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
-    color: var(--muted);
-    text-decoration: none;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    padding: 6px 14px;
-    border-radius: 3px;
-    transition: all .2s;
-  }
-  .toc a:hover { color: var(--accent); border-color: var(--accent); }
-
   /* ─── Layout ─── */
   main { max-width: 960px; margin: 0 auto; padding: 50px 30px; }
 
@@ -487,15 +468,6 @@
   <div class="header-tag">// Study Notes</div>
   <h1>Docker <span>Layer</span> 내부 구조</h1>
   <p>이미지가 어떻게 레이어로 쌓이고, Union Filesystem이 이를 하나의 뷰로 합치는지 기술적으로 이해한다.</p>
-  <nav class="toc">
-    <a href="#overview">개요</a>
-    <a href="#how">레이어 생성 원리</a>
-    <a href="#unionfs">Union Filesystem</a>
-    <a href="#cow">Copy-on-Write</a>
-    <a href="#storage">Storage Driver</a>
-    <a href="#cache">레이어 캐시</a>
-    <a href="#quiz">퀴즈</a>
-  </nav>
 </header>
 
 <main>

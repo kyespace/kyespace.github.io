@@ -62,22 +62,9 @@
   a{color:inherit;}
 
   /* Layout */
-  .shell{ display:grid; grid-template-columns:240px 1fr; max-width:1180px; margin:0 auto; background:var(--bg); min-height:100vh;}
-  nav.side{
-    position:sticky; top:var(--kye-header-h,56px); align-self:start; height:calc(100vh - var(--kye-header-h,56px)); overflow-y:auto;
-    padding:36px 20px 40px 28px; border-right:1px solid var(--line);
-  }
-  nav.side .brand{font-size:14px; color:var(--muted); margin-bottom:28px; letter-spacing:0.08em;}
-  nav.side .navlink{
-    display:block; width:100%; text-align:left; font-size:13.5px; color:var(--muted); text-decoration:none;
-    background:transparent; border:none; border-left:2px solid transparent; font-family:inherit;
-    padding:7px 0 7px 12px; margin-left:-12px; cursor:pointer;
-    transition:color .15s, border-color .15s;
-  }
-  nav.side .navlink:hover, nav.side .navlink.active{ color:var(--text); border-left-color:var(--sig-c); }
-  nav.side .num{color:var(--payload-c); margin-right:6px; font-family:'IBM Plex Mono',monospace;}
+  .shell{ max-width:860px; margin:0 auto; background:var(--bg); min-height:100vh;}
 
-  main{padding:0 40px 120px 48px;}
+  main{padding:0 24px 120px;}
   section{padding-top:64px; scroll-margin-top:24px;}
   section:first-of-type{padding-top:56px;}
 
@@ -271,21 +258,6 @@
 
   /* Mobile */
   @media(max-width:860px){
-    .shell{grid-template-columns:1fr;}
-    nav.side{
-      position:sticky; top:var(--kye-header-h,56px); z-index:10; height:auto; width:100%;
-      display:flex; overflow-x:auto; overflow-y:hidden; gap:2px;
-      padding:12px 14px; border-right:none; border-bottom:1px solid var(--line);
-      background:var(--bg); -webkit-overflow-scrolling:touch;
-    }
-    nav.side::-webkit-scrollbar{height:4px;}
-    nav.side .brand{display:none;}
-    nav.side .navlink{
-      flex:0 0 auto; width:auto; white-space:nowrap; border-left:none; margin-left:0;
-      padding:8px 12px; border-bottom:2px solid transparent; border-radius:6px 6px 0 0;
-    }
-    nav.side .navlink:hover, nav.side .navlink.active{border-left-color:transparent; border-bottom-color:var(--sig-c); background:var(--panel);}
-
     main{padding:0 18px 90px;}
     section{padding-top:40px;}
     section:first-of-type{padding-top:28px;}
@@ -322,21 +294,6 @@
 </div>
 
 <div class="shell">
-  <nav class="side">
-    <div class="brand">JWT 해부도</div>
-    <button type="button" class="navlink" data-target="#hero"><span class="num">00</span>개요</button>
-    <button type="button" class="navlink" data-target="#anatomy"><span class="num">01</span>구조 해부</button>
-    <button type="button" class="navlink" data-target="#encoding"><span class="num">02</span>인코딩 ≠ 암호화</button>
-    <button type="button" class="navlink" data-target="#signing"><span class="num">03</span>서명 알고리즘</button>
-    <button type="button" class="navlink" data-target="#hashing"><span class="num">04</span>해시 내부 구조</button>
-    <button type="button" class="navlink" data-target="#flow"><span class="num">05</span>발급·검증 흐름</button>
-    <button type="button" class="navlink" data-target="#claims"><span class="num">06</span>클레임 치트시트</button>
-    <button type="button" class="navlink" data-target="#lab"><span class="num">07</span>변조 실습</button>
-    <button type="button" class="navlink" data-target="#pitfalls"><span class="num">08</span>보안 함정</button>
-    <button type="button" class="navlink" data-target="#refresh"><span class="num">09</span>Refresh 토큰</button>
-    <button type="button" class="navlink" data-target="#summary"><span class="num">10</span>요약 체크리스트</button>
-  </nav>
-
   <main>
 
     <section id="hero" class="hero">
@@ -829,30 +786,6 @@ document.getElementById('resetBtn').addEventListener('click', () => {
   document.getElementById('verdict').className = 'verdict';
   document.getElementById('verdict').innerHTML = '';
 });
-
-// nav: buttons only, no anchor navigation at all
-const links = document.querySelectorAll('nav.side .navlink');
-const sections = [...links].map(a => document.querySelector(a.getAttribute('data-target')));
-
-links.forEach(a => {
-  a.addEventListener('click', () => {
-    const target = document.querySelector(a.getAttribute('data-target'));
-    if(target){
-      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  });
-});
-
-// scroll-spy for nav
-const spy = new IntersectionObserver((entries) => {
-  entries.forEach(entry => {
-    if(entry.isIntersecting){
-      const id = '#' + entry.target.id;
-      links.forEach(a => a.classList.toggle('active', a.getAttribute('data-target') === id));
-    }
-  });
-}, { rootMargin: '-20% 0px -70% 0px' });
-sections.forEach(s => s && spy.observe(s));
 
 // glossary term popups
 const glossary = {

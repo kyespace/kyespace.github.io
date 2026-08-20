@@ -95,24 +95,6 @@
   }
   .wire-strip .arrow{color:var(--wire);padding:0 10px;font-weight:600}
 
-  /* ===== TOC ===== */
-  nav.toc{
-    margin:48px 0 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel);
-    padding:28px 32px;
-  }
-  nav.toc h2{font-size:13px;font-family:var(--mono);letter-spacing:.14em;color:var(--faint);margin-bottom:16px;font-weight:600}
-  nav.toc ol{list-style:none;counter-reset:toc;columns:2;column-gap:40px}
-  nav.toc li{counter-increment:toc;margin-bottom:8px;break-inside:avoid}
-  nav.toc a{
-    color:var(--ink);text-decoration:none;font-size:15px;font-weight:500;
-  }
-  nav.toc a:hover{color:var(--wire)}
-  nav.toc a::before{
-    content:counter(toc,decimal-leading-zero);
-    font-family:var(--mono);font-size:12px;color:var(--wire);margin-right:12px;
-  }
-  @media(max-width:640px){nav.toc ol{columns:1}}
-
   /* ===== sections ===== */
   section{margin-top:88px}
   .sec-label{
@@ -302,23 +284,6 @@
 </header>
 
 <div class="shell">
-
-<nav class="toc">
-  <h2>CONTENTS</h2>
-  <ol>
-    <li><a href="#why">왜 MCP인가 — M×N 문제</a></li>
-    <li><a href="#arch">아키텍처 — Host · Client · Server</a></li>
-    <li><a href="#protocol">프로토콜 계층 — JSON-RPC 2.0과 생명주기</a></li>
-    <li><a href="#transport">Transport — stdio와 Streamable HTTP</a></li>
-    <li><a href="#primitives">3대 서버 프리미티브 — Tools · Resources · Prompts</a></li>
-    <li><a href="#toolcall">Tool 호출의 전체 흐름 (와이어 레벨)</a></li>
-    <li><a href="#build">서버 만들기 — Python FastMCP 실습</a></li>
-    <li><a href="#register">등록과 디버깅 — Claude Code · Inspector</a></li>
-    <li><a href="#design">실무 설계 원칙 — 좋은 Tool의 조건</a></li>
-    <li><a href="#security">보안 — Tool Poisoning과 방어</a></li>
-    <li><a href="#summary">요약과 체크리스트</a></li>
-  </ol>
-</nav>
 
 <!-- ============ 1 ============ -->
 <section id="why">
