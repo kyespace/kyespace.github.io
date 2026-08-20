@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>KYE Study Notes</title>
+<meta name="description" content="스프링 내부 구조, 인증 프로토콜, 컨테이너 원리처럼 실무에서 자주 흔들리는 지점을 파고들어 남긴 백엔드 스터디 노트.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script>(function(){try{var t=localStorage.getItem('kye-theme')||'dark';document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
 <link rel="stylesheet" href="assets/site-header.css">
 <script src="assets/theme.js" defer></script>
@@ -12,101 +15,234 @@
 <style>
   :root {
     --bg: #0d1117;
+    --bg-grid: rgba(88, 166, 255, 0.06);
     --card: #161b22;
+    --card-hover: #1c2129;
     --border: #30363d;
     --text: #e6edf3;
     --muted: #8b949e;
     --accent: #58a6ff;
+    --accent-soft: rgba(88, 166, 255, 0.12);
+    --shadow: 0 16px 40px rgba(1, 4, 9, 0.45);
+    --mono: 'IBM Plex Mono', ui-monospace, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Pretendard, Roboto, sans-serif;
   }
   html[data-theme="light"] {
     --bg: #f6f8fa;
+    --bg-grid: rgba(31, 111, 235, 0.05);
     --card: #ffffff;
+    --card-hover: #fbfcfe;
     --border: #d0d7de;
     --text: #1c1f26;
     --muted: #57606a;
     --accent: #1f6feb;
+    --accent-soft: rgba(31, 111, 235, 0.08);
+    --shadow: 0 16px 40px rgba(31, 41, 55, 0.10);
   }
   * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
   body {
     margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Pretendard, Roboto, sans-serif;
+    font-family: var(--sans);
     background: var(--bg);
     color: var(--text);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
   }
-  header {
-    padding: 64px 24px 28px;
+
+  /* ---- Hero ---- */
+  header.hero {
+    position: relative;
+    padding: 88px 24px 56px;
     text-align: center;
+    overflow: hidden;
+    background-image:
+      linear-gradient(var(--bg-grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px);
+    background-size: 32px 32px;
+    -webkit-mask-image: linear-gradient(to bottom, #000 60%, transparent 100%);
+            mask-image: linear-gradient(to bottom, #000 60%, transparent 100%);
   }
-  header h1 {
-    margin: 0 0 8px;
-    font-size: 2rem;
-  }
-  header p {
-    color: var(--muted);
-    margin: 0;
-  }
-  .archive-link {
-    display: inline-block;
-    margin-top: 20px;
-    font-size: 0.85rem;
-    color: var(--accent);
-    text-decoration: none;
-    border: 1px solid var(--border);
-    border-radius: 100px;
-    padding: 6px 16px;
-  }
-  .archive-link:hover { border-color: var(--accent); }
-  main {
-    max-width: 960px;
-    margin: 0 auto;
-    padding: 8px 24px 80px;
-  }
-  .group {
-    margin-top: 40px;
-  }
-  .group h2 {
-    font-size: 1rem;
-    color: var(--muted);
+  .hero-inner { max-width: 720px; margin: 0 auto; }
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 12px;
     font-weight: 600;
-    letter-spacing: .03em;
+    letter-spacing: 0.16em;
     text-transform: uppercase;
-    border-bottom: 1px solid var(--border);
-    padding-bottom: 10px;
-    margin-bottom: 16px;
+    color: var(--accent);
+    margin-bottom: 22px;
   }
+  .eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+  header.hero h1 {
+    margin: 0 0 18px;
+    font-size: clamp(2rem, 5vw, 2.75rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
+  header.hero .lead {
+    color: var(--muted);
+    font-size: 1.05rem;
+    line-height: 1.7;
+    max-width: 560px;
+    margin: 0 auto;
+  }
+  .meta-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 30px;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: var(--muted);
+  }
+  .meta-row b { color: var(--text); font-weight: 700; }
+  .meta-row .sep { color: var(--border); }
+
+  /* ---- Layout ---- */
+  main {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 8px 24px 100px;
+    position: relative;
+  }
+  .group { margin-top: 56px; }
+  .group-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 14px;
+    margin-bottom: 20px;
+  }
+  .group-head h2 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .group-head h2 .idx {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent);
+    background: var(--accent-soft);
+    border-radius: 5px;
+    padding: 3px 7px;
+  }
+  .group-head .group-desc {
+    margin: 0;
+    color: var(--muted);
+    font-size: 13.5px;
+  }
+
   .grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 16px;
   }
   .card {
-    display: block;
+    display: flex;
+    flex-direction: column;
     background: var(--card);
     border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 20px;
+    border-radius: 12px;
+    padding: 22px 22px 20px;
     text-decoration: none;
     color: var(--text);
-    transition: border-color .15s ease, transform .15s ease;
+    transition: border-color .18s ease, transform .18s ease, box-shadow .18s ease, background .18s ease;
   }
-  .card:hover {
+  .card:hover, .card:focus-visible {
     border-color: var(--accent);
-    transform: translateY(-2px);
+    background: var(--card-hover);
+    transform: translateY(-3px);
+    box-shadow: var(--shadow);
   }
   .card h3 {
-    margin: 0 0 6px;
+    margin: 0 0 8px;
     font-size: 1rem;
+    font-weight: 700;
     line-height: 1.4;
+    letter-spacing: -0.005em;
   }
-  .card span {
+  .card .badge {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--accent);
+    background: var(--accent-soft);
+    border-radius: 4px;
+    padding: 1px 6px;
+    margin-left: 6px;
+    vertical-align: 2px;
+  }
+  .card p {
+    margin: 0;
     color: var(--muted);
-    font-size: 0.8rem;
+    font-size: 13.5px;
+    line-height: 1.6;
+    flex: 1;
   }
+  .card .card-file {
+    margin-top: 14px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    opacity: 0.7;
+  }
+
   footer {
-    text-align: center;
+    border-top: 1px solid var(--border);
+    margin-top: 40px;
+    padding: 40px 24px 48px;
+  }
+  .footer-inner {
+    max-width: 980px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .footer-brand {
+    font-weight: 700;
+    font-size: 14px;
+  }
+  footer p {
+    margin: 4px 0 0;
     color: var(--muted);
-    font-size: 0.8rem;
-    padding: 24px;
+    font-size: 12.5px;
+  }
+  .footer-links {
+    display: flex;
+    gap: 18px;
+    font-family: var(--mono);
+    font-size: 12.5px;
+  }
+  .footer-links a {
+    color: var(--muted);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+  }
+  .footer-links a:hover { color: var(--accent); border-bottom-color: var(--accent); }
+
+  @media (max-width: 560px) {
+    header.hero { padding: 64px 20px 44px; }
+    .footer-inner { flex-direction: column; align-items: flex-start; }
   }
 </style>
 </head>
@@ -117,85 +253,130 @@
       <button type="button" class="kye-theme-toggle" aria-label="다크 모드로 전환">🌙</button>
     </div>
   </div>
-  <header>
-    <h1>📚 KYE Study Notes</h1>
-    <p>개발 공부 자료 모음 · GitHub Pages로 어디서든 확인</p>
+
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="eyebrow"><span class="dot"></span>Backend · Infra · Security · AI</div>
+      <h1>📚 KYE Study Notes</h1>
+      <p class="lead">코드를 읽는 것과 남에게 설명할 수 있는 것은 다릅니다. 스프링 내부 구조, 인증 프로토콜, 컨테이너 원리처럼 실무에서 자주 흔들리는 지점을 파고들어 남긴 기록입니다.</p>
+      <div class="meta-row">
+        <span><b>12</b> study notes</span>
+        <span class="sep">·</span>
+        <span><b>4</b> topics</span>
+        <span class="sep">·</span>
+        <span>Updated 2026.08</span>
+      </div>
+    </div>
   </header>
+
   <main>
     <div class="group">
-      <h2>Spring / Java</h2>
+      <div class="group-head">
+        <h2><span class="idx">01</span>Spring / Java</h2>
+        <p class="group-desc">프레임워크가 대신 해주는 것과, 내가 직접 설계해야 하는 것을 가른다</p>
+      </div>
       <div class="grid">
         <a class="card" href="study/spring-framework-study-v2.html">
-          <h3>스프링 프레임워크 — 구조와 위상의 완전한 그림 (증보판)</h3>
-          <span>spring-framework-study-v2.html</span>
+          <h3>스프링 프레임워크 — 구조와 위상의 완전한 그림<span class="badge">증보판</span></h3>
+          <p>IoC 컨테이너부터 서블릿·톰캣 내부 동작까지, 스프링의 구조와 위상을 한 장으로 정리.</p>
+          <span class="card-file">spring-framework-study-v2.html</span>
         </a>
         <a class="card" href="study/spring-design-patterns.html">
           <h3>Spring 디자인 패턴 스터디</h3>
-          <span>spring-design-patterns.html</span>
+          <p>프레임워크가 알아서 쓰는 패턴과, 내가 직접 설계해야 하는 패턴을 가른다.</p>
+          <span class="card-file">spring-design-patterns.html</span>
         </a>
         <a class="card" href="study/solid-principles-study.html">
           <h3>SOLID 원칙 — 객체지향 설계 스터디</h3>
-          <span>solid-principles-study.html</span>
+          <p>다섯 원칙을 "원칙 자체"와 "구현 방법"의 관계로 다시 정리.</p>
+          <span class="card-file">solid-principles-study.html</span>
         </a>
         <a class="card" href="study/proxy-guide.html">
           <h3>프록시 배선반 — JDK 동적 프록시 vs CGLIB</h3>
-          <span>proxy-guide.html</span>
+          <p>Spring AOP가 실제로 프록시 객체를 만드는 방식과 그 차이.</p>
+          <span class="card-file">proxy-guide.html</span>
         </a>
       </div>
     </div>
 
     <div class="group">
-      <h2>Docker / Infra</h2>
+      <div class="group-head">
+        <h2><span class="idx">02</span>Docker / Infra</h2>
+        <p class="group-desc">컨테이너가 "왜" 그렇게 동작하는지, 커널까지 내려가서 확인한다</p>
+      </div>
       <div class="grid">
         <a class="card" href="study/docker-container-study.html">
           <h3>Docker &amp; OS 스터디 가이드</h3>
-          <span>docker-container-study.html</span>
+          <p>VM과 컨테이너의 근본적 차이부터 레이어 캐시 동작 원리까지.</p>
+          <span class="card-file">docker-container-study.html</span>
         </a>
         <a class="card" href="study/docker-layers-study.html">
           <h3>Docker Layer 스터디</h3>
-          <span>docker-layers-study.html</span>
+          <p>Union Filesystem과 Copy-on-Write로 보는 이미지 레이어의 실체.</p>
+          <span class="card-file">docker-layers-study.html</span>
         </a>
         <a class="card" href="study/linux-permissions-study-v2.html">
           <h3>Linux 권한 심화 스터디</h3>
-          <span>linux-permissions-study-v2.html</span>
+          <p>setgid·ACL·umask — 실제 겪은 권한 사고를 복기하며 정리.</p>
+          <span class="card-file">linux-permissions-study-v2.html</span>
         </a>
       </div>
     </div>
 
     <div class="group">
-      <h2>Security / Auth</h2>
+      <div class="group-head">
+        <h2><span class="idx">03</span>Security / Auth</h2>
+        <p class="group-desc">누가, 무엇을, 누구에게 증명하는지 — 인증의 신뢰 주체를 따라간다</p>
+      </div>
       <div class="grid">
         <a class="card" href="study/auth-study.html">
           <h3>인증 스터디 — 폼 로그인 vs OAuth2</h3>
-          <span>auth-study.html</span>
+          <p>신뢰 주체가 다른 두 인증 방식을 흐름 단위로 뜯어 비교.</p>
+          <span class="card-file">auth-study.html</span>
         </a>
         <a class="card" href="study/jwt-study.html">
           <h3>JWT 해부도 — 토큰 발급부터 검증까지</h3>
-          <span>jwt-study.html</span>
+          <p>서명은 무결성 증명이지 암호화가 아니다 — 구조를 직접 해부.</p>
+          <span class="card-file">jwt-study.html</span>
         </a>
       </div>
     </div>
 
     <div class="group">
-      <h2>AI / Protocol</h2>
+      <div class="group-head">
+        <h2><span class="idx">04</span>AI / Protocol</h2>
+        <p class="group-desc">사용자 관점을 넘어, 프로토콜을 직접 만드는 사람의 관점으로</p>
+      </div>
       <div class="grid">
         <a class="card" href="study/mcp-study-guide.html">
-          <h3>MCP 완전 정복 — 프로토콜 내부 동작과 서버 개발 실무</h3>
-          <span>mcp-study-guide.html</span>
+          <h3>MCP 완전 정복</h3>
+          <p>프로토콜 내부 동작 원리와 서버 개발 실무를 함께 다룬다.</p>
+          <span class="card-file">mcp-study-guide.html</span>
         </a>
         <a class="card" href="study/mcp-study-guide-part2.html">
-          <h3>MCP 심화 — 원격 운용, 인증, 프로덕션 (Part 2)</h3>
-          <span>mcp-study-guide-part2.html</span>
+          <h3>MCP 심화<span class="badge">Part 2</span></h3>
+          <p>원격 운용, OAuth 2.1 인증, 프로덕션 배포까지 이어서.</p>
+          <span class="card-file">mcp-study-guide-part2.html</span>
         </a>
         <a class="card" href="study/webhook-study.html">
           <h3>Webhook 기술 스터디</h3>
-          <span>webhook-study.html</span>
+          <p>이벤트 기반 HTTP 콜백의 동작 원리와 재시도·멱등성 처리.</p>
+          <span class="card-file">webhook-study.html</span>
         </a>
       </div>
     </div>
   </main>
+
   <footer>
-    kyespace.github.io
+    <div class="footer-inner">
+      <div>
+        <div class="footer-brand">📚 KYE Study Notes</div>
+        <p>혼자 보려고 정리했지만, 검색하다 들어온 누군가에게도 도움이 되면 좋겠습니다.</p>
+      </div>
+      <div class="footer-links">
+        <a href="https://github.com/kyespace/kyespace.github.io" target="_blank" rel="noopener">GitHub</a>
+      </div>
+    </div>
   </footer>
 </body>
 </html>
